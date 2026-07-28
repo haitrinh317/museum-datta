@@ -384,6 +384,8 @@
       searchTimeout = setTimeout(applyFilters, 350);
     });
 
+    window.applyFilters = applyFilters;
+
     window.resetFilters = function() {
       document.querySelectorAll('.filter-group-cb, .filter-site-cb').forEach(el => el.checked = false);
       ['filterCites','filterIucn','filterRedbook'].forEach(id => document.getElementById(id).checked = false);
