@@ -400,12 +400,12 @@
 
       // Leaflet mini map (L already imported via npm)
       if (hasMap) {
-        const miniMap = L.map('specimen-map', { zoomControl: false });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          attribution: '© CartoDB', maxZoom: 18,
+        const miniMap = L.map('specimen-map', { zoomControl: false, scrollWheelZoom: false });
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: 'Tiles &copy; Esri', maxZoom: 18,
         }).addTo(miniMap);
         const marker = L.circleMarker([site.latitude, site.longitude], {
-          radius: 10, fillColor: '#06b6d4', color: '#0891b2',
+          radius: 10, fillColor: '#06b6d4', color: '#fff',
           weight: 3, opacity: 1, fillOpacity: 0.9,
         }).addTo(miniMap);
         marker.bindPopup(`<b>${site.name}</b>`).openPopup();
