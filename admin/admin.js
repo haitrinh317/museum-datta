@@ -469,16 +469,41 @@ async function handleSpecimenSubmit(e) {
   loadSpecimens();
 }
 
+// Compress image to WebP before upload — Canvas API, no deps
+// ponytail: max 2048px long edge, 85% quality. Upgrade path: lower quality for >2MB originals.
+async function compressImage(file, maxPx = 2048, quality = 0.85) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxPx || height > maxPx) {
+        const ratio = Math.min(maxPx / width, maxPx / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => resolve(blob ?? file), 'image/webp', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 async function uploadSpecimenImages(specimenId) {
   let firstPublicUrl = null;
 
   for (const file of state.pendingImages) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    const fileName = `${specimenId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const compressed = await compressImage(file);
+    const fileName = `${specimenId}/${Date.now()}_${Math.random().toString(36).slice(2)}.webp`;
 
     const { error: uploadError } = await supabase.storage
       .from('specimen-images')
-      .upload(fileName, file, { upsert: false });
+      .upload(fileName, compressed, { upsert: false, contentType: 'image/webp' });
 
     if (uploadError) {
       console.error('Upload error:', uploadError.message);
