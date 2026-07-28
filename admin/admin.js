@@ -880,6 +880,7 @@ function parseMuseumCSV(text) {
 }
 
 function parseThongTin(text) {
+  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const result = {
     morphology: '',
     ecology: '',
@@ -915,6 +916,9 @@ function parseThongTin(text) {
       }
     }
   }
+
+  // Capitalize first letter of each field
+  for (const k of Object.keys(result)) result[k] = cap(result[k]);
 
   return result;
 }
