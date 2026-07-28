@@ -404,12 +404,36 @@
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
           attribution: 'Tiles &copy; Esri', maxZoom: 18,
         }).addTo(miniMap);
+
+        // ── Overlay: Quần đảo Hoàng Sa ──
+        L.circle([16.5, 112.0], {
+          radius: 80000, color: '#fbbf24', weight: 1.5, dashArray: '6 4',
+          fillColor: '#fbbf24', fillOpacity: 0.08, interactive: false,
+        }).addTo(miniMap);
+        L.marker([16.5, 112.0], {
+          icon: L.divIcon({ className: '', html: '<div style="white-space:nowrap;font-size:11px;font-weight:700;color:#fbbf24;text-shadow:0 1px 4px rgba(0,0,0,0.9)">QĐ. HOÀNG SA</div>', iconAnchor: [52, 10] }),
+          interactive: false,
+        }).addTo(miniMap);
+
+        // ── Overlay: Quần đảo Trường Sa ──
+        L.circle([9.5, 113.5], {
+          radius: 160000, color: '#38bdf8', weight: 1.5, dashArray: '6 4',
+          fillColor: '#38bdf8', fillOpacity: 0.08, interactive: false,
+        }).addTo(miniMap);
+        L.marker([9.5, 113.5], {
+          icon: L.divIcon({ className: '', html: '<div style="white-space:nowrap;font-size:11px;font-weight:700;color:#38bdf8;text-shadow:0 1px 4px rgba(0,0,0,0.9)">QĐ. TRƯỜNG SA</div>', iconAnchor: [58, 10] }),
+          interactive: false,
+        }).addTo(miniMap);
+
+        // ── Marker điểm thu mẫu ──
         const marker = L.circleMarker([site.latitude, site.longitude], {
           radius: 10, fillColor: '#06b6d4', color: '#fff',
           weight: 3, opacity: 1, fillOpacity: 0.9,
         }).addTo(miniMap);
         marker.bindPopup(`<b>${site.name}</b>`).openPopup();
-        miniMap.setView([site.latitude, site.longitude], 8);
+
+        // Zoom 5 để thấy cả Biển Đông + 2 quần đảo
+        miniMap.setView([12.5, 113.0], 5);
       }
     }
 
