@@ -400,7 +400,7 @@
 
       // Leaflet mini map (L already imported via npm)
       if (hasMap) {
-        const miniMap = L.map('specimen-map', { zoomControl: false, scrollWheelZoom: false });
+        const miniMap = L.map('specimen-map', { zoomControl: true, scrollWheelZoom: true });
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
           attribution: 'Tiles &copy; Esri', maxZoom: 18,
         }).addTo(miniMap);
