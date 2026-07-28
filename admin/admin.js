@@ -935,12 +935,33 @@ function parseViDate(dateStr) {
 
 function parseDMS(dms) {
   if (!dms) return null;
-  // Format: 11°23'07.0 or similar
-  const match = dms.match(/(\d+)[°](\d+)['](\d+\.?\d*)/);
-  if (match) {
-    return parseFloat(match[1]) + parseFloat(match[2]) / 60 + parseFloat(match[3]) / 3600;
-  }
-  return null;
+  const s = dms.trim();
+
+  // Already decimal
+  if (/^-?\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+
+  // DMS: degrees can be °, º, o, O, or just space; minutes '; seconds optional
+  // Handles: 11°23'07.0  |  11°23'07.0"N  |  11 23 07.0  |  11°23.456'
+  const match = s.match(/(\d+)[°ºo\s](\d+)['\s](\d+\.?\d*)["\s]?[NSEW]?/i)
+             || s.match(/(\d+)[°ºo](\d+\.?\d*)[']?/); // deg + decimal minutes
+  if (!match) return null;
+
+  const deg = parseFloat(match[1]);
+  const min = parseFloat(match[2]);
+  const sec = parseFloat(match[3] || 0);
+  const val = deg + min / 60 + sec / 3600;
+
+  // South / West → negative
+  return /[SW]/i.test(s) ? -val : val;
+}
+
+// Auto-fix swapped lat/lng: CSV header từ bảo tàng đôi khi ghi ngược
+// Lat phải trong [-90, 90]; nếu "lat" > 90 → chắc chắn là lng bị swap
+function autoFixLatLng(lat, lng) {
+  if (lat == null || lng == null) return { lat, lng };
+  // Swap if lat is clearly out of range
+  if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) return { lat: lng, lng: lat };
+  return { lat, lng };
 }
 
 function renderImportPreview() {
@@ -1011,8 +1032,9 @@ async function executeImport() {
 
   const siteMap = {};
   for (const r of uniqueSites) {
-    const lat = parseDMS(r.latitude_raw);
-    const lng = parseDMS(r.longitude_raw);
+    const rawLat = parseDMS(r.latitude_raw);
+    const rawLng = parseDMS(r.longitude_raw);
+    const { lat, lng } = autoFixLatLng(rawLat, rawLng);
 
     const { data, error } = await supabase
       .from('collection_sites')
