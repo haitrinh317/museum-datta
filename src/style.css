@@ -131,6 +131,15 @@ body::before {
   white-space: nowrap;
 }
 .navbar-brand .material-icons { color: var(--accent-light); font-size: 22px; }
+.navbar-logo {
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+  transition: opacity 0.2s;
+}
+.navbar-brand:hover .navbar-logo { opacity: 1; }
 .navbar-spacer { flex: 1; }
 .navbar-links {
   display: flex;
