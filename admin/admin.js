@@ -265,7 +265,7 @@ function renderSpecimensTable() {
 
   if (!state.specimens.length) {
     tbody.innerHTML = `
-      <tr><td colspan="10">
+      <tr><td colspan="11">
         <div class="empty-state">
           <span class="material-icons">pets</span>
           <p>Chưa có mẫu vật nào. Thêm mới hoặc import từ CSV.</p>
@@ -282,6 +282,12 @@ function renderSpecimensTable() {
 
     return `
       <tr data-id="${s.id}">
+        <td style="padding:4px 6px">
+          ${s.primary_image_url
+            ? `<img src="${s.primary_image_url}" alt="" class="specimen-thumb" onclick="editSpecimen('${s.id}')" title="Có ảnh - click để sửa">`
+            : `<span class="material-icons specimen-thumb-empty" title="Chưa có ảnh">image_not_supported</span>`
+          }
+        </td>
         <td>${s.serial_number || ''}</td>
         <td><span class="code-badge">${s.specimen_code}</span></td>
         <td>${s.specimen_groups?.name || ''}</td>
