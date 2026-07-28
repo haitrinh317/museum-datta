@@ -1,6 +1,6 @@
 # MEMORY — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-28 (Session 3 — Deploy + Data + Skill)
+> Cập nhật lần cuối: 2026-07-28 (Session 4 — Import Rắn biển + Dashboard Redesign)
 
 ## 1. TỔNG QUAN DỰ ÁN
 
@@ -108,7 +108,7 @@ specimen_images          # Gallery ảnh
 - **URL:** `https://wwkrpbxtvkaxfbewhdor.supabase.co`
 - **Dashboard:** `https://supabase.com/dashboard/project/wwkrpbxtvkaxfbewhdor`
 - **Project ID:** `wwkrpbxtvkaxfbewhdor`
-- **Admin email:** `haitrinhnt@gmail.com`
+- **Admin email:** `haitrinhnt@gmail.com` / password: `123456`
 
 ## 6. CSV IMPORT PARSER — LOGIC QUAN TRỌNG
 
@@ -161,14 +161,21 @@ Parser trong `admin.js` (`parseThongTin()`) tách bằng regex theo keyword head
 
 ## 8. DỮ LIỆU HIỆN CÓ
 
-| Nhóm mẫu | Số mẫu vật | Địa điểm | Trạng thái |
-|---|---|---|---|
-| Da gai (Echinodermata) | 16 | 5 (Trường Sa) | ✅ Đã import |
-| Giáp xác (Crustacea) | 7 | Trường Sa | ✅ Đã import |
-| Rắn biển (Hydrophiidae) | 21 | Biển Đông | ⏳ CSV đã convert, chờ import |
-| Cá biển | 109 | Trường Sa | ❌ .docx, thiếu số hiệu mẫu |
+| Nhóm mẫu | Số mẫu vật | Ảnh | Địa điểm | Trạng thái |
+|---|---|---|---|---|
+| Da gai (Echinodermata) | 16 | 0 | 5 (Trường Sa) | ✅ Imported |
+| Giáp xác (Crustacea) | 7 | 0 | Trường Sa | ✅ Imported |
+| Rắn biển (Hydrophiidae) | 21 | 18 | 6 (Biển Đông) | ✅ Imported + ảnh |
+| Cá biển | 109 | 0 | Trường Sa | ❌ .docx, thiếu số hiệu mẫu |
+| Thân mềm | ? | 0 | ? | ❌ Chờ convert CSV |
+| Giun nhiều tơ | ? | 0 | ? | ❌ Chờ convert CSV |
 
-**Mẫu vật cần bảo tồn:** Da gai 4/16, Rắn biển 4/21 (Sách Đỏ VN)
+**Tổng: 44 mẫu vật, 18 có ảnh, 8 cần bảo tồn (CITES/IUCN/Sách Đỏ VN)**
+
+### Image Upload Script
+- **Workaround Storage RLS:** Delete file trước → upload mới (bypass UPDATE policy)
+- **Matching:** tên file → tên khoa học (direct) + manual mapping tên Việt
+- **Path format:** `ran-bien/{specimen_code}.jpg`
 
 ## 9. QUYẾT ĐỊNH KIẾN TRÚC ĐÃ THỐNG NHẤT
 
