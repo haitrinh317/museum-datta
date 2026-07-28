@@ -292,9 +292,10 @@
     async function applyFilters() {
       const q = document.getElementById('searchInput').value.trim();
       const sortVal = document.getElementById('sortSelect').value;
-      const [sortField, sortDir] = sortVal.split('_asc').length > 1
-        ? [sortVal.replace('_asc',''), 'asc']
-        : [sortVal.replace('_desc',''), 'desc'];
+
+      // Fix: parse sort value properly - format is "field_asc" or "field_desc"
+      const sortDir = sortVal.endsWith('_asc') ? 'asc' : 'desc';
+      const sortField = sortVal.replace(/_asc$|_desc$/, '');
 
       const groupIds = [...document.querySelectorAll('.filter-group-cb:checked')].map(el => el.value);
       const siteIds  = [...document.querySelectorAll('.filter-site-cb:checked')].map(el => el.value);
@@ -331,7 +332,8 @@
       if (iucnOn)    query = query.not('iucn_status', 'is', null);
       if (redbookOn) query = query.eq('is_red_book_vn', true);
 
-      const { data } = await query;
+      const { data, error } = await query;
+      if (error) console.error('Filter query error:', error.message);
       renderGrid(data || []);
     }
 
