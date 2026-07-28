@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-28
+> Cập nhật lần cuối: 2026-07-28 (Session 3)
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
@@ -56,8 +56,8 @@
 
 ## 🔲 PHASE 3 — Polish & Deploy
 
-- [ ] GitHub repo setup
-- [ ] Vercel deployment
+- [x] GitHub repo setup (`haitrinh317/museum-datta`)
+- [x] Vercel deployment (https://museum-datta.vercel.app/)
 - [ ] Custom domain (nếu bảo tàng cung cấp)
 - [ ] SEO: meta tags, structured data (Schema.org Dataset)
 - [ ] PWA: offline support cho public site
@@ -83,13 +83,23 @@
 - CSV parser: test thêm với dữ liệu các nhóm mẫu khác (có thể format khác Da gai)
 - RLS policy hiện dùng `auth.role() = 'authenticated'` — tất cả user đăng nhập đều là admin
 
-### Đã sửa (2026-07-28)
+### Đã sửa (2026-07-28 Session 2+3)
 - [x] Image upload: `uploadSpecimenImages` giờ update `specimens.primary_image_url` trực tiếp
 - [x] Search tiếng Việt không dấu: computed column `search_text` + `unaccent()` + `removeAccents()` client-side
 - [x] Map tiles: CartoDB → Esri World Imagery (CartoDB bị chặn ở VN)
 - [x] Map layout: tách `map-header` ra khỏi `#main-map` Leaflet container
 - [x] Tọa độ collection_sites: swap lat/lng bị đảo ngược trong DB
+- [x] Fix tọa độ 7 loài Giáp xác + gom duplicate sites
+- [x] Filter browse: sort regex, onchange handlers CITES/IUCN/SĐVN, module scope
+- [x] QR Code URL: `/specimen/CODE` → `/specimen/?code=CODE`
+- [x] Admin tab persistence: URL hash (#specimens, #import...)
+- [x] Logo Viện Hải dương học tích hợp navbar
+- [x] Thumbnail ảnh mẫu vật + no-photo.png placeholder
+- [x] Tạo skill `csv-converter` (convert CSV bất kỳ format → chuẩn 18 cột)
+- [x] Convert thành công `ran-bien-QR2023.csv` → `ran-bien-chuan.csv` (21 records)
 
 ### Dữ liệu chờ import
-- Bảo tàng có thể cung cấp thêm CSV cho nhóm: Thân mềm, San hô, Giáp xác, Cá...
+- `Data/ran-bien-chuan.csv` — 21 mẫu Rắn biển, đã convert, chờ import thủ công
+- `Data/ca bien.docx` — 109 loài cá, format .docx (chưa có số hiệu mẫu + họ)
+- Bảo tàng có thể cung cấp thêm CSV cho nhóm: Thân mềm, San hô...
 - Ảnh mẫu vật: chưa có — cần bảo tàng cung cấp hoặc chụp bổ sung

@@ -1,6 +1,6 @@
 # MEMORY — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-28 (Session 2 — Bugfix & Polish)
+> Cập nhật lần cuối: 2026-07-28 (Session 3 — Deploy + Data + Skill)
 
 ## 1. TỔNG QUAN DỰ ÁN
 
@@ -40,8 +40,12 @@ CSDL-Museum/
 ├── supabase/
 │   └── migrations/
 │       └── 001_create_schema.sql  # Full schema + RLS + indexes
-├── Data/                       # CSV gốc từ bảo tàng
-│   └── danh sach da gai - QR 2023.xlsx - Sheet1.csv
+├── Data/                       # CSV gốc + đã convert
+│   ├── danh sach da gai - QR 2023.xlsx - Sheet1.csv
+│   ├── giap-xac-QR2023.csv
+│   ├── ran-bien-QR2023.csv       # Format B (12 cột)
+│   ├── ran-bien-chuan.csv        # Đã convert → 18 cột chuẩn
+│   └── ca bien.docx              # 109 loài cá (chưa convert)
 ├── index.html                  # Public site (Phase 2)
 ├── vite.config.js              # Multi-page config
 ├── package.json                # type: module, scripts: dev/build
@@ -157,11 +161,14 @@ Parser trong `admin.js` (`parseThongTin()`) tách bằng regex theo keyword head
 
 ## 8. DỮ LIỆU HIỆN CÓ
 
-| Nhóm mẫu | Số mẫu vật | Địa điểm | Ghi chú |
+| Nhóm mẫu | Số mẫu vật | Địa điểm | Trạng thái |
 |---|---|---|---|
-| Da gai (Echinodermata) | 16 | 5 (Đá Nam, Tốc Tan, Thuyền Chài, Đá Lớn, Nam Yết) | Import từ CSV, 2020-2021, Trường Sa |
+| Da gai (Echinodermata) | 16 | 5 (Trường Sa) | ✅ Đã import |
+| Giáp xác (Crustacea) | 7 | Trường Sa | ✅ Đã import |
+| Rắn biển (Hydrophiidae) | 21 | Biển Đông | ⏳ CSV đã convert, chờ import |
+| Cá biển | 109 | Trường Sa | ❌ .docx, thiếu số hiệu mẫu |
 
-**Mẫu vật cần bảo tồn:** 4/16 (có CITES hoặc IUCN hoặc Sách Đỏ VN)
+**Mẫu vật cần bảo tồn:** Da gai 4/16, Rắn biển 4/21 (Sách Đỏ VN)
 
 ## 9. QUYẾT ĐỊNH KIẾN TRÚC ĐÃ THỐNG NHẤT
 
@@ -172,4 +179,20 @@ Parser trong `admin.js` (`parseThongTin()`) tách bằng regex theo keyword head
 | 3 | QR Code là core feature | Use case chính: khách quét QR tại bảo tàng |
 | 4 | Bản đồ Leaflet | Data có tọa độ sẵn, hiển thị Biển Đông |
 | 5 | Vanilla JS, không framework | YAGNI — app không cần SPA routing phức tạp |
-| 6 | Chưa cần GitHub/Vercel | Build local trước, deploy Phase 2 |
+| 6 | Deploy Vercel | Auto-deploy từ GitHub main branch |
+| 7 | URL hash cho admin tab | F5 giữ nguyên tab thay vì về dashboard |
+
+## 10. DEPLOY
+
+- **GitHub:** `haitrinh317/museum-datta` (main branch)
+- **Vercel:** https://museum-datta.vercel.app/
+- **Auto-deploy:** Push to main → Vercel auto build
+
+## 11. SKILLS
+
+| Skill | Mục đích |
+|---|---|
+| `csv-converter` | Convert CSV bất kỳ format → chuẩn 18 cột |
+| `session-end` | Tổng kết phiên, cập nhật memory/todo/log |
+| `skill-creator-ultra` | Tạo skill mới từ quy trình |
+| `skill-stocktake` | Audit skills định kỳ |

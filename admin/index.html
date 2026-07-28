@@ -108,51 +108,97 @@
             <div class="page-content">
                 <!-- Dashboard Page -->
                 <section id="page-dashboard" class="page active">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon" style="--accent: #3b82f6;">
-                                <span class="material-icons">pets</span>
-                            </div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="stat-total">0</span>
-                                <span class="stat-label">Tổng mẫu vật</span>
-                            </div>
+                    <!-- Welcome Hero -->
+                    <div class="dash-hero">
+                        <div class="dash-hero-content">
+                            <h2 class="dash-hero-title">
+                                <span class="material-icons">waves</span>
+                                Bảo tàng Hải dương học
+                            </h2>
+                            <p class="dash-hero-subtitle">Cơ sở dữ liệu mẫu vật sinh vật biển</p>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon" style="--accent: #10b981;">
-                                <span class="material-icons">category</span>
+                        <div class="dash-hero-stats">
+                            <div class="dash-hero-stat">
+                                <span class="dash-hero-stat-value" id="stat-total">0</span>
+                                <span class="dash-hero-stat-label">Mẫu vật</span>
                             </div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="stat-groups">0</span>
-                                <span class="stat-label">Nhóm mẫu</span>
+                            <div class="dash-hero-stat-divider"></div>
+                            <div class="dash-hero-stat">
+                                <span class="dash-hero-stat-value" id="stat-groups">0</span>
+                                <span class="dash-hero-stat-label">Nhóm</span>
                             </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon" style="--accent: #f59e0b;">
-                                <span class="material-icons">pin_drop</span>
+                            <div class="dash-hero-stat-divider"></div>
+                            <div class="dash-hero-stat">
+                                <span class="dash-hero-stat-value" id="stat-sites">0</span>
+                                <span class="dash-hero-stat-label">Địa điểm</span>
                             </div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="stat-sites">0</span>
-                                <span class="stat-label">Địa điểm thu</span>
+                            <div class="dash-hero-stat-divider"></div>
+                            <div class="dash-hero-stat">
+                                <span class="dash-hero-stat-value" id="stat-conservation">0</span>
+                                <span class="dash-hero-stat-label">Bảo tồn</span>
                             </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon" style="--accent: #ef4444;">
-                                <span class="material-icons">warning</span>
-                            </div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="stat-conservation">0</span>
-                                <span class="stat-label">Cần bảo tồn</span>
+                            <div class="dash-hero-stat-divider"></div>
+                            <div class="dash-hero-stat">
+                                <span class="dash-hero-stat-value" id="stat-images">0</span>
+                                <span class="dash-hero-stat-label">Có ảnh</span>
                             </div>
                         </div>
                     </div>
-                    <div class="dashboard-charts">
-                        <div class="chart-card">
-                            <h3>Phân bố theo nhóm mẫu</h3>
+
+                    <!-- Quick Actions -->
+                    <div class="dash-actions">
+                        <button class="dash-action-btn" onclick="navigateTo('specimens'); openAddSpecimenForm();">
+                            <span class="material-icons">add_circle</span>
+                            <span>Thêm mẫu vật</span>
+                        </button>
+                        <button class="dash-action-btn" onclick="navigateTo('import')">
+                            <span class="material-icons">upload_file</span>
+                            <span>Import CSV</span>
+                        </button>
+                        <button class="dash-action-btn" onclick="navigateTo('qrcodes')">
+                            <span class="material-icons">qr_code</span>
+                            <span>QR Codes</span>
+                        </button>
+                        <button class="dash-action-btn" onclick="window.open('/', '_blank')">
+                            <span class="material-icons">public</span>
+                            <span>Xem trang công cộng</span>
+                        </button>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="dash-grid-2">
+                        <!-- Group Distribution -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <h3><span class="material-icons">donut_large</span> Phân bố theo nhóm</h3>
+                            </div>
                             <div id="chart-groups" class="chart-container"></div>
                         </div>
-                        <div class="chart-card">
-                            <h3>Mẫu vật gần đây</h3>
+
+                        <!-- Conservation Donut -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <h3><span class="material-icons">shield</span> Tình trạng bảo tồn</h3>
+                            </div>
+                            <div id="chart-conservation" class="chart-container"></div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row -->
+                    <div class="dash-grid-2">
+                        <!-- Top Sites -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <h3><span class="material-icons">pin_drop</span> Địa điểm thu mẫu hàng đầu</h3>
+                            </div>
+                            <div id="top-sites" class="top-sites-list"></div>
+                        </div>
+
+                        <!-- Recent Specimens -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <h3><span class="material-icons">schedule</span> Mẫu vật gần đây</h3>
+                            </div>
                             <div id="recent-specimens" class="recent-list"></div>
                         </div>
                     </div>

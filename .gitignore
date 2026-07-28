@@ -3,3 +3,7 @@ dist
 .env
 .env.local
 *.log
+
+# Agent config (internal, not for repo)
+.agents/
+.backups/

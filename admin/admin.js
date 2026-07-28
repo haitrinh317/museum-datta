@@ -164,10 +164,13 @@ async function loadDashboard() {
   const conservation = specimens.filter(s => s.is_cites || s.iucn_status || s.is_red_book_vn).length;
   document.getElementById('stat-conservation').textContent = conservation;
 
-  // Chart: specimens by group
-  renderGroupChart(specimens, groups);
+  const withImages = specimens.filter(s => s.primary_image_url).length;
+  document.getElementById('stat-images').textContent = withImages;
 
-  // Recent specimens
+  // Charts
+  renderGroupChart(specimens, groups);
+  renderConservationChart(specimens);
+  renderTopSites(specimens, sites);
   renderRecentSpecimens(specimens);
 }
 
@@ -184,18 +187,124 @@ function renderGroupChart(specimens, groups) {
     if (s.group_id && counts[s.group_id]) counts[s.group_id].count++;
   });
 
-  const maxCount = Math.max(...Object.values(counts).map(c => c.count), 1);
+  const sorted = Object.values(counts).sort((a, b) => b.count - a.count);
+  const maxCount = Math.max(...sorted.map(c => c.count), 1);
+  const colors = ['cyan', 'blue', 'green', 'amber', 'rose', 'purple'];
 
   container.innerHTML = `
-    <div class="chart-bar">
-      ${Object.values(counts).map(c => `
-        <div class="chart-bar-item">
-          <div class="chart-bar-fill" style="height: ${(c.count / maxCount) * 100}%" data-value="${c.count}"></div>
-          <span class="chart-bar-label" title="${c.name}">${c.name}</span>
+    <div class="hbar-chart">
+      ${sorted.map((c, i) => `
+        <div class="hbar-row">
+          <span class="hbar-label" title="${c.name}">${c.name}</span>
+          <div class="hbar-track">
+            <div class="hbar-fill" data-color="${colors[i % colors.length]}" style="width: ${(c.count / maxCount) * 100}%">
+              ${c.count}
+            </div>
+          </div>
         </div>
       `).join('')}
     </div>
   `;
+}
+
+function renderConservationChart(specimens) {
+  const container = document.getElementById('chart-conservation');
+  const total = specimens.length;
+  if (!total) {
+    container.innerHTML = '<div class="empty-state"><p>Chưa có dữ liệu</p></div>';
+    return;
+  }
+
+  const cites = specimens.filter(s => s.is_cites).length;
+  const iucn = specimens.filter(s => s.iucn_status).length;
+  const redbook = specimens.filter(s => s.is_red_book_vn).length;
+  const safe = specimens.filter(s => !s.is_cites && !s.iucn_status && !s.is_red_book_vn).length;
+
+  // SVG donut chart
+  const circumference = 2 * Math.PI * 60;
+  const segments = [
+    { label: 'CITES', count: cites, color: '#f43f5e' },
+    { label: 'IUCN Red List', count: iucn, color: '#f59e0b' },
+    { label: 'Sách Đỏ VN', count: redbook, color: '#ef4444' },
+    { label: 'An toàn', count: safe, color: '#10b981' },
+  ].filter(s => s.count > 0);
+
+  const conservationTotal = cites + iucn + redbook;
+  // Deduplicate: some specimens may be in multiple lists
+  const conserved = specimens.filter(s => s.is_cites || s.iucn_status || s.is_red_book_vn).length;
+
+  let offset = 0;
+  const circles = segments.map(seg => {
+    const pct = seg.count / total;
+    const dash = pct * circumference;
+    const circle = `<circle class="donut-seg" stroke="${seg.color}" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" />`;
+    offset += dash;
+    return circle;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="conservation-chart">
+      <div class="donut-wrap">
+        <svg viewBox="0 0 160 160">
+          <circle class="donut-bg" />
+          ${circles}
+        </svg>
+        <div class="donut-center">
+          <span class="donut-center-value">${conserved}</span>
+          <span class="donut-center-label">Bảo tồn</span>
+        </div>
+      </div>
+      <div class="conservation-legend">
+        ${segments.map(seg => `
+          <div class="legend-item">
+            <span class="legend-dot" style="background:${seg.color}"></span>
+            <span>${seg.label}</span>
+            <span class="legend-count">${seg.count}</span>
+          </div>
+        `).join('')}
+        <div class="legend-item" style="margin-top:6px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.78rem; color:var(--text-muted);">Tổng mẫu vật</span>
+          <span class="legend-count">${total}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTopSites(specimens, sites) {
+  const container = document.getElementById('top-sites');
+  if (!sites.length) {
+    container.innerHTML = '<div class="empty-state"><p>Chưa có địa điểm nào</p></div>';
+    return;
+  }
+
+  // Count specimens per site
+  const siteCounts = {};
+  sites.forEach(s => { siteCounts[s.id] = { name: s.name, count: 0 }; });
+  specimens.forEach(s => {
+    if (s.site_id && siteCounts[s.site_id]) siteCounts[s.site_id].count++;
+  });
+
+  const sorted = Object.values(siteCounts)
+    .filter(s => s.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const maxCount = sorted.length ? sorted[0].count : 1;
+
+  container.innerHTML = sorted.map((s, i) => {
+    const rankClass = i < 3 ? `rank-${i + 1}` : 'rank-other';
+    return `
+      <div class="site-rank-item">
+        <span class="site-rank-num ${rankClass}">${i + 1}</span>
+        <span class="site-rank-name" title="${s.name}">${s.name}</span>
+        <span class="site-rank-count">${s.count}</span>
+        <div class="site-rank-bar">
+          <div class="site-rank-bar-fill" style="width: ${(s.count / maxCount) * 100}%"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderRecentSpecimens(specimens) {
@@ -209,17 +318,30 @@ function renderRecentSpecimens(specimens) {
     return;
   }
 
-  container.innerHTML = recent.map(s => `
-    <div class="recent-item">
-      <div class="recent-item-icon">
+  container.innerHTML = recent.map(s => {
+    const hasImage = s.primary_image_url;
+    const isConserved = s.is_cites || s.iucn_status || s.is_red_book_vn;
+    const thumb = hasImage
+      ? `<img class="recent-item-thumb" src="${s.primary_image_url}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : '';
+    const icon = `<div class="recent-item-icon" ${hasImage ? 'style="display:none"' : ''}>
         <span class="material-icons">pets</span>
+      </div>`;
+    const badge = isConserved
+      ? `<span class="recent-item-badge conservation">${s.is_cites ? 'CITES' : s.is_red_book_vn ? 'Sách Đỏ' : 'IUCN'}</span>`
+      : '';
+
+    return `
+      <div class="recent-item">
+        ${thumb}${icon}
+        <div class="recent-item-info">
+          <div class="recent-item-name">${s.common_name_vi || s.species || 'N/A'}</div>
+          <div class="recent-item-meta">${s.specimen_code} · ${s.specimen_groups?.name || ''}</div>
+        </div>
+        ${badge}
       </div>
-      <div class="recent-item-info">
-        <div class="recent-item-name">${s.common_name_vi || s.species || 'N/A'}</div>
-        <div class="recent-item-meta">${s.specimen_code} · ${s.specimen_groups?.name || ''}</div>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // ============================================================
