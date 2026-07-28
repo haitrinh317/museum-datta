@@ -285,7 +285,7 @@ function renderSpecimensTable() {
         <td style="padding:4px 6px">
           ${s.primary_image_url
             ? `<img src="${s.primary_image_url}" alt="" class="specimen-thumb" onclick="editSpecimen('${s.id}')" title="Có ảnh - click để sửa">`
-            : `<span class="material-icons specimen-thumb-empty" title="Chưa có ảnh">image_not_supported</span>`
+            : `<img src="/no-photo.png" alt="Chưa có ảnh" class="specimen-thumb specimen-thumb-nophoto" onclick="editSpecimen('${s.id}')" title="Chưa có ảnh">`
           }
         </td>
         <td>${s.serial_number || ''}</td>

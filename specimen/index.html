@@ -301,7 +301,7 @@
         <section class="specimen-hero">
           ${s.primary_image_url
             ? `<img class="specimen-hero-img" src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}">`
-            : `<div class="specimen-hero-placeholder"><span class="material-icons">photo</span></div>`
+            : `<img class="specimen-hero-img" src="/no-photo.png" alt="Chưa có ảnh" style="opacity:0.5;filter:saturate(0.6)">`
           }
           <div class="specimen-hero-overlay"></div>
           <div class="container specimen-hero-content">

@@ -358,7 +358,7 @@
           <div class="card-img">
             ${s.primary_image_url
               ? `<img src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}" loading="lazy">`
-              : `<div class="card-img-placeholder"><span class="material-icons">photo</span></div>`
+              : `<img src="/no-photo.png" alt="Chưa có ảnh" loading="lazy" style="opacity:0.6">`
             }
           </div>
           <div class="card-body">
