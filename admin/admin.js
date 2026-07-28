@@ -61,7 +61,10 @@ function showAdminApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'flex';
   document.getElementById('user-email').textContent = state.user?.email || 'admin';
-  loadDashboard();
+  // Restore tab from URL hash (e.g. #specimens) on F5
+  const validPages = ['dashboard','specimens','groups','sites','import','qrcodes'];
+  const hash = window.location.hash.replace('#', '');
+  navigateTo(validPages.includes(hash) ? hash : 'dashboard');
 }
 
 async function handleLogin(e) {
@@ -96,6 +99,9 @@ async function handleLogout() {
 // ============================================================
 function navigateTo(page) {
   state.currentPage = page;
+
+  // Persist tab in URL hash so F5 restores same tab
+  history.replaceState(null, '', `#${page}`);
 
   // Update nav
   document.querySelectorAll('.nav-item').forEach(item => {
