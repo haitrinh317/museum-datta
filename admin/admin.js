@@ -1141,8 +1141,8 @@ async function loadQRCodes() {
   for (const s of data) {
     const canvas = document.getElementById(`qr-${s.id}`);
     if (canvas) {
-      // QR points to public specimen page
-      const url = `${window.location.origin}/specimen/${s.specimen_code}`;
+      // QR points to public specimen page - must use ?code= query param
+      const url = `${window.location.origin}/specimen/?code=${encodeURIComponent(s.specimen_code)}`;
       try {
         await QRCode.toCanvas(canvas, url, {
           width: 160,
