@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị CSDL - Bảo tàng Hải dương học</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+    <!-- ==================== LOGIN SCREEN ==================== -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-icon">
+                    <span class="material-icons">directions_boat</span>
+                </div>
+                <h1>Bảo tàng Hải dương học</h1>
+                <p>Hệ thống quản trị CSDL mẫu vật</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="admin@museum.vn" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Mật khẩu</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+                    <span class="material-icons">login</span>
+                    Đăng nhập
+                </button>
+                <p id="login-error" class="error-text" style="display:none;"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN ADMIN LAYOUT ==================== -->
+    <div id="admin-app" class="admin-app" style="display:none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="material-icons logo-icon">directions_boat</span>
+                <div class="sidebar-title">
+                    <h2>CSDL Mẫu vật</h2>
+                    <span class="subtitle">Bảo tàng Hải dương học</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="material-icons">dashboard</span>
+                    <span>Tổng quan</span>
+                </a>
+                <a href="#" class="nav-item" data-page="specimens">
+                    <span class="material-icons">pets</span>
+                    <span>Mẫu vật</span>
+                </a>
+                <a href="#" class="nav-item" data-page="groups">
+                    <span class="material-icons">category</span>
+                    <span>Nhóm mẫu</span>
+                </a>
+                <a href="#" class="nav-item" data-page="sites">
+                    <span class="material-icons">pin_drop</span>
+                    <span>Địa điểm</span>
+                </a>
+                <a href="#" class="nav-item" data-page="import">
+                    <span class="material-icons">cloud_upload</span>
+                    <span>Import CSV</span>
+                </a>
+                <a href="#" class="nav-item" data-page="qrcodes">
+                    <span class="material-icons">qr_code</span>
+                    <span>QR Codes</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span class="material-icons">account_circle</span>
+                    <span id="user-email">admin</span>
+                </div>
+                <button class="btn-icon" id="logout-btn" title="Đăng xuất">
+                    <span class="material-icons">logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <button class="btn-icon sidebar-toggle" id="sidebar-toggle">
+                    <span class="material-icons">menu</span>
+                </button>
+                <h1 id="page-title">Tổng quan</h1>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" id="add-specimen-btn" style="display:none;">
+                        <span class="material-icons">add</span>
+                        Thêm mẫu vật
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Dashboard Page -->
+                <section id="page-dashboard" class="page active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="--accent: #3b82f6;">
+                                <span class="material-icons">pets</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="stat-total">0</span>
+                                <span class="stat-label">Tổng mẫu vật</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="--accent: #10b981;">
+                                <span class="material-icons">category</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="stat-groups">0</span>
+                                <span class="stat-label">Nhóm mẫu</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="--accent: #f59e0b;">
+                                <span class="material-icons">pin_drop</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="stat-sites">0</span>
+                                <span class="stat-label">Địa điểm thu</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="--accent: #ef4444;">
+                                <span class="material-icons">warning</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="stat-conservation">0</span>
+                                <span class="stat-label">Cần bảo tồn</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dashboard-charts">
+                        <div class="chart-card">
+                            <h3>Phân bố theo nhóm mẫu</h3>
+                            <div id="chart-groups" class="chart-container"></div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Mẫu vật gần đây</h3>
+                            <div id="recent-specimens" class="recent-list"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Specimens Page -->
+                <section id="page-specimens" class="page">
+                    <div class="page-toolbar">
+                        <div class="search-box">
+                            <span class="material-icons">search</span>
+                            <input type="text" id="search-specimens" placeholder="Tìm theo tên, mã, họ, loài...">
+                        </div>
+                        <div class="filter-group">
+                            <select id="filter-group">
+                                <option value="">Tất cả nhóm</option>
+                            </select>
+                            <select id="filter-site">
+                                <option value="">Tất cả địa điểm</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="specimens-table">
+                            <thead>
+                                <tr>
+                                    <th>TT</th>
+                                    <th>Mã</th>
+                                    <th>Nhóm</th>
+                                    <th>Họ</th>
+                                    <th>Loài</th>
+                                    <th>Tên Việt</th>
+                                    <th>Nơi thu</th>
+                                    <th>Ngày thu</th>
+                                    <th>Bảo tồn</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="specimens-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="specimens-pagination"></div>
+                </section>
+
+                <!-- Specimen Form Modal -->
+                <div id="specimen-modal" class="modal" style="display:none;">
+                    <div class="modal-overlay"></div>
+                    <div class="modal-content modal-large">
+                        <div class="modal-header">
+                            <h2 id="modal-title">Thêm mẫu vật mới</h2>
+                            <button class="btn-icon modal-close">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+                        <form id="specimen-form" class="specimen-form">
+                            <input type="hidden" id="form-id">
+                            <div class="form-grid">
+                                <!-- Column 1: Identification -->
+                                <fieldset>
+                                    <legend>Thông tin định danh</legend>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="form-serial">Số TT</label>
+                                            <input type="number" id="form-serial">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="form-code">Số hiệu *</label>
+                                            <input type="text" id="form-code" required placeholder="E.57259">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-group">Nhóm mẫu *</label>
+                                        <select id="form-group" required>
+                                            <option value="">-- Chọn nhóm --</option>
+                                        </select>
+                                    </div>
+                                </fieldset>
+
+                                <!-- Column 2: Taxonomy -->
+                                <fieldset>
+                                    <legend>Phân loại học</legend>
+                                    <div class="form-group">
+                                        <label for="form-family">Họ (Family)</label>
+                                        <input type="text" id="form-family" placeholder="Ophiocomidae">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-species">Loài (Species) *</label>
+                                        <input type="text" id="form-species" required placeholder="Ophiocoma schoenleinii">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-author">Tác giả mô tả</label>
+                                        <input type="text" id="form-author" placeholder="Müller & Troschel, 1842">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-common-name">Tên Việt</label>
+                                        <input type="text" id="form-common-name" placeholder="Đuôi rắn">
+                                    </div>
+                                </fieldset>
+
+                                <!-- Column 3: Collection -->
+                                <fieldset>
+                                    <legend>Thu mẫu</legend>
+                                    <div class="form-group">
+                                        <label for="form-site">Nơi thu</label>
+                                        <select id="form-site">
+                                            <option value="">-- Chọn địa điểm --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-date">Ngày thu</label>
+                                        <input type="date" id="form-date">
+                                    </div>
+                                </fieldset>
+
+                                <!-- Column 4: Conservation -->
+                                <fieldset>
+                                    <legend>Tình trạng bảo tồn</legend>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="form-cites">
+                                            <span>CITES</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="form-iucn">
+                                            <span>IUCN</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="form-redbook">
+                                            <span>Sách Đỏ VN</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="form-exploited">
+                                            <span>Khai thác</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="form-food">
+                                            <span>Thực phẩm</span>
+                                        </label>
+                                    </div>
+                                </fieldset>
+                            </div>
+
+                            <!-- Full-width description fields -->
+                            <div class="form-descriptions">
+                                <div class="form-group">
+                                    <label for="form-morphology">Đặc điểm hình thái, màu sắc</label>
+                                    <textarea id="form-morphology" rows="4" placeholder="Mô tả đặc điểm hình thái..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-ecology">Sinh học, sinh thái</label>
+                                    <textarea id="form-ecology" rows="3" placeholder="Mô tả sinh thái..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-distribution">Phân bố</label>
+                                    <textarea id="form-distribution" rows="3" placeholder="Mô tả phân bố..."></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="form-toxicity">Độc tố</label>
+                                        <textarea id="form-toxicity" rows="2" placeholder="Nếu có..."></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-application">Ứng dụng</label>
+                                        <textarea id="form-application" rows="2" placeholder="Nếu có..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-notes">Ghi chú</label>
+                                    <textarea id="form-notes" rows="2" placeholder="Ghi chú thêm..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Image upload -->
+                            <fieldset class="form-images">
+                                <legend>Hình ảnh</legend>
+                                <div class="image-upload-area" id="image-upload-area">
+                                    <span class="material-icons">add_a_photo</span>
+                                    <p>Kéo thả ảnh vào đây hoặc <label for="image-input" class="upload-link">chọn file</label></p>
+                                    <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
+                                </div>
+                                <div class="image-preview-grid" id="image-preview-grid"></div>
+                            </fieldset>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary modal-close">Hủy</button>
+                                <button type="submit" class="btn btn-primary" id="form-submit">
+                                    <span class="material-icons">save</span>
+                                    Lưu mẫu vật
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Groups Page -->
+                <section id="page-groups" class="page">
+                    <div class="page-toolbar">
+                        <button class="btn btn-primary" id="add-group-btn">
+                            <span class="material-icons">add</span>
+                            Thêm nhóm mẫu
+                        </button>
+                    </div>
+                    <div class="cards-grid" id="groups-grid"></div>
+                </section>
+
+                <!-- Sites Page -->
+                <section id="page-sites" class="page">
+                    <div class="page-toolbar">
+                        <button class="btn btn-primary" id="add-site-btn">
+                            <span class="material-icons">add</span>
+                            Thêm địa điểm
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="sites-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên</th>
+                                    <th>Khu vực</th>
+                                    <th>Vĩ độ</th>
+                                    <th>Kinh độ</th>
+                                    <th>Số mẫu</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sites-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Import Page -->
+                <section id="page-import" class="page">
+                    <div class="import-container">
+                        <div class="import-header">
+                            <h2>Import dữ liệu từ CSV</h2>
+                            <p>Hỗ trợ định dạng CSV theo cấu trúc bảng QR 2023 của bảo tàng</p>
+                        </div>
+                        <div class="import-dropzone" id="csv-dropzone">
+                            <span class="material-icons">cloud_upload</span>
+                            <h3>Kéo thả file CSV vào đây</h3>
+                            <p>hoặc <label for="csv-input" class="upload-link">chọn file</label></p>
+                            <input type="file" id="csv-input" accept=".csv" style="display:none;">
+                        </div>
+                        <div id="import-preview" class="import-preview" style="display:none;">
+                            <div class="import-stats">
+                                <span id="import-count">0 bản ghi</span>
+                                <span id="import-status" class="badge">Sẵn sàng</span>
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table" id="import-table">
+                                    <thead>
+                                        <tr>
+                                            <th>TT</th>
+                                            <th>Mã</th>
+                                            <th>Nhóm</th>
+                                            <th>Họ</th>
+                                            <th>Loài</th>
+                                            <th>Tên Việt</th>
+                                            <th>Nơi thu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="import-tbody"></tbody>
+                                </table>
+                            </div>
+                            <div class="import-actions">
+                                <button class="btn btn-secondary" id="import-cancel">Hủy</button>
+                                <button class="btn btn-primary" id="import-execute">
+                                    <span class="material-icons">cloud_upload</span>
+                                    Import vào CSDL
+                                </button>
+                            </div>
+                            <div id="import-log" class="import-log" style="display:none;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- QR Codes Page -->
+                <section id="page-qrcodes" class="page">
+                    <div class="page-toolbar">
+                        <button class="btn btn-primary" id="generate-all-qr">
+                            <span class="material-icons">qr_code</span>
+                            Tạo QR cho tất cả
+                        </button>
+                        <button class="btn btn-secondary" id="print-all-qr">
+                            <span class="material-icons">print</span>
+                            In tất cả QR
+                        </button>
+                    </div>
+                    <div class="qr-grid" id="qr-grid"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Group/Site inline modals -->
+    <div id="inline-modal" class="modal" style="display:none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="inline-modal-title">Thêm mới</h2>
+                <button class="btn-icon modal-close">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <form id="inline-modal-form">
+                <div id="inline-modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-close">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="./admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tra cứu mẫu vật — Bảo tàng Hải dương học</title>
+  <meta name="description" content="Tra cứu cơ sở dữ liệu mẫu vật sinh vật biển. Tìm kiếm theo tên loài, họ, địa điểm thu mẫu và tình trạng bảo tồn.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
+  <link rel="stylesheet" href="/src/style.css">
+  <style>
+    .browse-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: var(--sp-8);
+      align-items: start;
+      padding-top: var(--sp-8);
+      padding-bottom: var(--sp-12);
+    }
+    /* SIDEBAR */
+    .filter-sidebar {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--sp-6);
+      position: sticky;
+      top: 72px;
+    }
+    .filter-sidebar h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: var(--sp-4);
+      padding-bottom: var(--sp-3);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .filter-group { margin-bottom: var(--sp-6); }
+    .filter-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--sp-3);
+    }
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: 6px 0;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-secondary);
+      transition: color var(--dur-fast) ease;
+    }
+    .filter-option:hover { color: var(--accent-light); }
+    .filter-option input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--accent-primary);
+      cursor: pointer;
+    }
+    .filter-select {
+      width: 100%;
+      background: var(--bg-mid);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .filter-select:focus { border-color: var(--accent-light); }
+    .btn-reset {
+      width: 100%;
+      background: var(--bg-mid);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      padding: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: var(--sp-4);
+      transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+    }
+    .btn-reset:hover { color: var(--text-primary); border-color: var(--border-strong); }
+
+    /* MAIN */
+    .browse-main {}
+    .browse-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--sp-6);
+      gap: var(--sp-4);
+      flex-wrap: wrap;
+    }
+    .result-count { font-size: 14px; color: var(--text-secondary); }
+    .result-count span { color: var(--text-white); font-weight: 700; }
+    .sort-select {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      background: var(--bg-mid);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: var(--sp-8) 0 var(--sp-6);
+    }
+    .page-header h1 { font-size: var(--text-2xl); margin: var(--sp-1) 0 var(--sp-4); }
+
+    /* Mobile: sidebar as drawer */
+    .mobile-filter-toggle {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 1024px) {
+      .browse-layout { grid-template-columns: 1fr; }
+      .filter-sidebar { display: none; position: fixed; top: 0; left: 0; height: 100vh; z-index: 500; overflow-y: auto; border-radius: 0; }
+      .filter-sidebar.open { display: block; }
+      .mobile-filter-toggle { display: flex; }
+      .filter-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 499; }
+      .filter-backdrop.open { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="navbar-brand">
+        <span class="material-icons">water</span>
+        Bảo tàng Hải dương học
+      </a>
+      <div class="navbar-spacer"></div>
+      <ul class="navbar-links">
+        <li><a href="/">Trang chủ</a></li>
+        <li><a href="/browse/" class="active">Tra cứu</a></li>
+        <li><a href="/map/">Bản đồ</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="container">
+        <span class="eyebrow">Cơ sở dữ liệu</span>
+        <h1>Tra cứu mẫu vật</h1>
+        <div class="search-wrap">
+          <span class="material-icons">search</span>
+          <input type="text" class="search-input" id="searchInput"
+            placeholder="Tìm theo tên loài, họ, tên Việt, địa điểm..."
+            autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-backdrop" id="filterBackdrop" onclick="closeSidebar()"></div>
+    <div class="container">
+      <div class="browse-layout">
+        <!-- SIDEBAR -->
+        <aside class="filter-sidebar" id="filterSidebar">
+          <h3>Bộ lọc</h3>
+
+          <div class="filter-group">
+            <label>Nhóm mẫu</label>
+            <div id="groupFilters">
+              <div class="skeleton" style="height:24px;margin-bottom:8px;border-radius:4px"></div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Địa điểm thu mẫu</label>
+            <div id="siteFilters">
+              <div class="skeleton" style="height:24px;margin-bottom:8px;border-radius:4px"></div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Tình trạng bảo tồn</label>
+            <label class="filter-option">
+              <input type="checkbox" id="filterCites"> CITES
+            </label>
+            <label class="filter-option">
+              <input type="checkbox" id="filterIucn"> IUCN
+            </label>
+            <label class="filter-option">
+              <input type="checkbox" id="filterRedbook"> Sách Đỏ VN
+            </label>
+          </div>
+
+          <button class="btn-reset" onclick="resetFilters()">
+            <span class="material-icons" style="font-size:14px;vertical-align:middle">refresh</span>
+            Xóa bộ lọc
+          </button>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="browse-main">
+          <div class="browse-header">
+            <div style="display:flex;align-items:center;gap:var(--sp-3)">
+              <button class="mobile-filter-toggle" onclick="openSidebar()">
+                <span class="material-icons" style="font-size:18px">filter_list</span>
+                Bộ lọc
+              </button>
+              <p class="result-count">Tìm thấy <span id="resultCount">—</span> kết quả</p>
+            </div>
+            <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+              <option value="created_at_desc">Mới nhất</option>
+              <option value="common_name_vi_asc">Tên A→Z</option>
+              <option value="species_asc">Tên khoa học A→Z</option>
+              <option value="serial_number_asc">Số TT tăng dần</option>
+            </select>
+          </div>
+
+          <div class="grid-3" id="specimenGrid">
+            <div class="card skeleton" style="height:280px"></div>
+            <div class="card skeleton" style="height:280px"></div>
+            <div class="card skeleton" style="height:280px"></div>
+            <div class="card skeleton" style="height:280px"></div>
+            <div class="card skeleton" style="height:280px"></div>
+            <div class="card skeleton" style="height:280px"></div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="container" style="text-align:center">
+        <p style="font-size:12px">© 2026 Bảo tàng Hải dương học — <a href="/">Trang chủ</a> · <a href="/map/">Bản đồ</a></p>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/src/lib/supabase.js';
+
+    let allGroups = [];
+    let allSites = [];
+    let selectedGroups = new Set();
+    let selectedSites = new Set();
+    let searchTimeout;
+
+    // ── Parse URL params ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const initQuery = urlParams.get('q') || '';
+    if (initQuery) {
+      document.getElementById('searchInput').value = initQuery;
+    }
+
+    // ── Load filter options ──
+    async function loadFilters() {
+      const [{ data: groups }, { data: sites }] = await Promise.all([
+        supabase.from('specimen_groups').select('id, name').order('name'),
+        supabase.from('collection_sites').select('id, name, region').order('name'),
+      ]);
+      allGroups = groups || [];
+      allSites = sites || [];
+
+      document.getElementById('groupFilters').innerHTML = allGroups.map(g => `
+        <label class="filter-option">
+          <input type="checkbox" class="filter-group-cb" value="${g.id}" onchange="applyFilters()">
+          ${g.name}
+        </label>
+      `).join('');
+
+      document.getElementById('siteFilters').innerHTML = allSites.map(s => `
+        <label class="filter-option">
+          <input type="checkbox" class="filter-site-cb" value="${s.id}" onchange="applyFilters()">
+          ${s.name}${s.region ? ` <small style="color:var(--text-muted)">(${s.region})</small>` : ''}
+        </label>
+      `).join('');
+    }
+
+    // ── Load specimens ──
+    async function applyFilters() {
+      const q = document.getElementById('searchInput').value.trim();
+      const sortVal = document.getElementById('sortSelect').value;
+      const [sortField, sortDir] = sortVal.split('_asc').length > 1
+        ? [sortVal.replace('_asc',''), 'asc']
+        : [sortVal.replace('_desc',''), 'desc'];
+
+      const groupIds = [...document.querySelectorAll('.filter-group-cb:checked')].map(el => el.value);
+      const siteIds  = [...document.querySelectorAll('.filter-site-cb:checked')].map(el => el.value);
+      const citesOn    = document.getElementById('filterCites').checked;
+      const iucnOn     = document.getElementById('filterIucn').checked;
+      const redbookOn  = document.getElementById('filterRedbook').checked;
+
+      // Show skeleton
+      document.getElementById('specimenGrid').innerHTML = Array(6).fill(
+        '<div class="card skeleton" style="height:280px"></div>'
+      ).join('');
+
+      // Remove Vietnamese accents for search
+      function removeAccents(str) {
+        return str
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/đ/g, 'd')
+          .replace(/Đ/g, 'D');
+      }
+
+      let query = supabase
+        .from('specimens')
+        .select('*, specimen_groups(name), collection_sites(name)')
+        .order(sortField, { ascending: sortDir === 'asc' });
+
+      if (q) {
+        const cleanQ = removeAccents(q.toLowerCase());
+        query = query.ilike('search_text', `%${cleanQ}%`);
+      }
+      if (groupIds.length) query = query.in('group_id', groupIds);
+      if (siteIds.length)  query = query.in('site_id', siteIds);
+      if (citesOn)   query = query.eq('is_cites', true);
+      if (iucnOn)    query = query.not('iucn_status', 'is', null);
+      if (redbookOn) query = query.eq('is_red_book_vn', true);
+
+      const { data } = await query;
+      renderGrid(data || []);
+    }
+
+    function getBadges(s) {
+      const b = [];
+      if (s.is_cites)       b.push('<span class="badge badge-cites">CITES</span>');
+      if (s.iucn_status)    b.push('<span class="badge badge-iucn">IUCN</span>');
+      if (s.is_red_book_vn) b.push('<span class="badge badge-redbook">Sách Đỏ</span>');
+      return b.join('');
+    }
+
+    function renderGrid(data) {
+      document.getElementById('resultCount').textContent = data.length;
+      if (!data.length) {
+        document.getElementById('specimenGrid').innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <span class="material-icons">search_off</span>
+            <p>Không tìm thấy mẫu vật nào</p>
+          </div>`;
+        return;
+      }
+      document.getElementById('specimenGrid').innerHTML = data.map(s => `
+        <a href="/specimen/?code=${s.specimen_code}" class="card card-accent" style="display:block;cursor:pointer;text-decoration:none">
+          <div class="card-img">
+            ${s.primary_image_url
+              ? `<img src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}" loading="lazy">`
+              : `<div class="card-img-placeholder"><span class="material-icons">photo</span></div>`
+            }
+          </div>
+          <div class="card-body">
+            <span class="eyebrow" style="font-size:10px">${s.specimen_groups?.name || ''}</span>
+            <div class="card-title">${s.common_name_vi || '—'}</div>
+            <div class="card-subtitle">${s.species || ''}</div>
+            <div class="card-meta">
+              <span class="material-icons">pin_drop</span>
+              ${s.collection_sites?.name || '—'}
+              <span class="specimen-code" style="margin-left:auto">${s.specimen_code}</span>
+            </div>
+            <div class="card-badges">${getBadges(s)}</div>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    // ── Search debounce ──
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(applyFilters, 350);
+    });
+
+    window.resetFilters = function() {
+      document.querySelectorAll('.filter-group-cb, .filter-site-cb').forEach(el => el.checked = false);
+      ['filterCites','filterIucn','filterRedbook'].forEach(id => document.getElementById(id).checked = false);
+      document.getElementById('searchInput').value = '';
+      applyFilters();
+    };
+    window.openSidebar = () => {
+      document.getElementById('filterSidebar').classList.add('open');
+      document.getElementById('filterBackdrop').classList.add('open');
+    };
+    window.closeSidebar = () => {
+      document.getElementById('filterSidebar').classList.remove('open');
+      document.getElementById('filterBackdrop').classList.remove('open');
+    };
+
+    // Boot
+    await loadFilters();
+    applyFilters();
+  </script>
+</body>
+</html>

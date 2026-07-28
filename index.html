@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảo tàng Hải dương học — Cơ sở dữ liệu mẫu vật sinh vật biển</title>
+  <meta name="description" content="Khám phá bộ sưu tập mẫu vật sinh vật biển tại Bảo tàng Hải dương học Việt Nam. Tra cứu thông tin khoa học, tọa độ thu mẫu và tình trạng bảo tồn.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
+  <link rel="stylesheet" href="/src/style.css">
+  <style>
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: url('/hero_bg.png') center/cover no-repeat;
+      transform: scale(1.05);
+      transition: transform 8s ease-out;
+    }
+    .hero-bg.loaded { transform: scale(1); }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(6,13,26,0.5) 0%,
+        rgba(6,13,26,0.2) 40%,
+        rgba(6,13,26,0.85) 80%,
+        var(--bg-deepest) 100%
+      );
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: var(--sp-24) 0 var(--sp-16);
+    }
+    .hero-content h1 {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 800;
+      color: var(--text-white);
+      line-height: 1.1;
+      margin-bottom: var(--sp-4);
+      text-shadow: 0 2px 24px rgba(0,0,0,0.6);
+    }
+    .hero-content h1 span { color: var(--accent-light); }
+    .hero-tagline {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: rgba(226,232,240,0.8);
+      max-width: 520px;
+      margin: 0 auto var(--sp-8);
+      line-height: 1.6;
+    }
+    .hero-search { margin-bottom: var(--sp-8); }
+    .hero-cta { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
+
+    /* Bubble particles */
+    .bubble { position: absolute; border-radius: 50%; background: rgba(6,182,212,0.12); animation: rise linear infinite; }
+    @keyframes rise {
+      0%   { transform: translateY(0) scale(1);   opacity: 0.4; }
+      100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+    }
+
+    /* ── STATS ── */
+    .stats-section { background: var(--bg-mid); }
+
+    /* ── FEATURED ── */
+    .featured-section { background: var(--bg-deep); }
+
+    /* ── MAP PREVIEW ── */
+    .map-preview-section { background: var(--bg-deepest); }
+    .map-preview-grid {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: var(--sp-6);
+      align-items: start;
+    }
+    #preview-map { height: 320px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-subtle); }
+    .site-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .site-item {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
+    }
+    .site-item:hover { border-color: var(--accent-primary); background: var(--bg-elevated); }
+    .site-item .material-icons { color: var(--accent-light); font-size: 18px; }
+    .site-name { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+    .site-count { font-size: 12px; color: var(--text-secondary); }
+    .site-badge {
+      margin-left: auto;
+      background: rgba(8,145,178,0.2);
+      color: var(--accent-light);
+      padding: 2px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg-deepest);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-4);
+      transition: opacity 0.6s ease;
+    }
+    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    .loader-ring {
+      width: 48px; height: 48px;
+      border: 3px solid var(--border-default);
+      border-top-color: var(--accent-light);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text { color: var(--text-secondary); font-size: 13px; }
+
+    @media (max-width: 768px) {
+      .map-preview-grid { grid-template-columns: 1fr; }
+      #preview-map { height: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading -->
+  <div class="loading-overlay" id="loading">
+    <div class="loader-ring"></div>
+    <span class="loader-text">Đang tải...</span>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="navbar-brand">
+        <span class="material-icons">water</span>
+        Bảo tàng Hải dương học
+      </a>
+      <div class="navbar-spacer"></div>
+      <ul class="navbar-links">
+        <li><a href="/" class="active">Trang chủ</a></li>
+        <li><a href="/browse/">Tra cứu</a></li>
+        <li><a href="/map/">Bản đồ</a></li>
+      </ul>
+      <a href="/admin/" class="btn btn-ghost btn-sm" style="margin-left:8px">
+        <span class="material-icons">admin_panel_settings</span>
+        Admin
+      </a>
+    </div>
+  </nav>
+
+  <div class="page-content">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-bg" id="heroBg"></div>
+      <div class="hero-overlay"></div>
+      <!-- Bubbles -->
+      <div id="bubbles"></div>
+      <div class="container hero-content reveal visible">
+        <span class="eyebrow">Viện Hải dương học Nha Trang</span>
+        <h1>Khám phá <span>Sinh vật biển</span><br>Việt Nam</h1>
+        <p class="hero-tagline">Cơ sở dữ liệu mẫu vật khoa học thu thập từ các vùng biển Việt Nam — từ Trường Sa đến vịnh Bắc Bộ.</p>
+        <div class="hero-search">
+          <div class="search-wrap">
+            <span class="material-icons">search</span>
+            <input type="text" class="search-input" id="heroSearch"
+              placeholder="Tìm mẫu vật: tên loài, họ, địa điểm..."
+              autocomplete="off">
+          </div>
+        </div>
+        <div class="hero-cta">
+          <a href="/browse/" class="btn btn-primary">
+            <span class="material-icons">grid_view</span>
+            Tra cứu mẫu vật
+          </a>
+          <a href="/map/" class="btn btn-ghost">
+            <span class="material-icons">map</span>
+            Xem bản đồ
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="section stats-section">
+      <div class="container">
+        <div class="grid-4" id="statsGrid">
+          <div class="stat-card skeleton" style="height:120px"></div>
+          <div class="stat-card skeleton" style="height:120px"></div>
+          <div class="stat-card skeleton" style="height:120px"></div>
+          <div class="stat-card skeleton" style="height:120px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED -->
+    <section class="section featured-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="eyebrow">Bộ sưu tập</span>
+          <h2>Mẫu vật tiêu biểu</h2>
+          <p>Những loài đại diện trong bộ sưu tập — từ sao biển, hải sâm đến các loài cần bảo tồn.</p>
+        </div>
+        <div class="grid-3" id="featuredGrid">
+          <div class="card skeleton" style="height:300px"></div>
+          <div class="card skeleton" style="height:300px"></div>
+          <div class="card skeleton" style="height:300px"></div>
+        </div>
+        <div style="text-align:center; margin-top:var(--sp-8)">
+          <a href="/browse/" class="btn btn-ghost">
+            <span class="material-icons">grid_view</span>
+            Xem tất cả mẫu vật
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAP PREVIEW -->
+    <section class="section map-preview-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="eyebrow">Địa điểm thu mẫu</span>
+          <h2>Từ Trường Sa đến Vịnh Bắc Bộ</h2>
+          <p>Mẫu vật được thu thập qua nhiều chuyến khảo sát tại các vùng biển xa bờ.</p>
+        </div>
+        <div class="map-preview-grid">
+          <div id="preview-map"></div>
+          <div>
+            <div class="site-list" id="siteList">
+              <div class="skeleton" style="height:60px;border-radius:8px"></div>
+              <div class="skeleton" style="height:60px;border-radius:8px"></div>
+              <div class="skeleton" style="height:60px;border-radius:8px"></div>
+            </div>
+            <a href="/map/" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:var(--sp-4)">
+              <span class="material-icons">open_in_full</span>
+              Xem bản đồ đầy đủ
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+      <div class="container">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:var(--sp-6);margin-bottom:var(--sp-6)">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span class="material-icons" style="color:var(--accent-light)">water</span>
+              <strong style="color:var(--text-primary);font-size:15px">Bảo tàng Hải dương học</strong>
+            </div>
+            <p style="font-size:13px;max-width:320px">Viện Hải dương học Nha Trang — Bộ sưu tập mẫu vật sinh vật biển Việt Nam.</p>
+          </div>
+          <div style="display:flex;gap:var(--sp-8)">
+            <div>
+              <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:var(--text-secondary)">Liên kết</p>
+              <a href="/browse/" style="display:block;margin-bottom:4px">Tra cứu mẫu vật</a>
+              <a href="/map/">Bản đồ thu mẫu</a>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <p style="text-align:center;font-size:12px">© 2026 Bảo tàng Hải dương học. Dữ liệu khoa học thuộc Viện Hải dương học Nha Trang.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <script type="module">
+    import { supabase } from '/src/lib/supabase.js';
+    import L from 'leaflet';
+    import 'leaflet/dist/leaflet.css';
+    // ── Loading ──
+    const loading = document.getElementById('loading');
+    window.addEventListener('load', () => {
+      loading.classList.add('hidden');
+      setTimeout(() => loading.remove(), 700);
+    });
+
+    // ── Hero bg pan ──
+    const heroBg = document.getElementById('heroBg');
+    setTimeout(() => heroBg.classList.add('loaded'), 100);
+
+    // ── Bubbles ──
+    const bubbleContainer = document.getElementById('bubbles');
+    for (let i = 0; i < 12; i++) {
+      const b = document.createElement('div');
+      b.className = 'bubble';
+      const size = Math.random() * 60 + 20;
+      b.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${Math.random()*100}%;
+        bottom:${Math.random()*20}%;
+        animation-duration:${Math.random()*10+8}s;
+        animation-delay:${Math.random()*8}s;
+        opacity:${Math.random()*0.3+0.1};
+      `;
+      bubbleContainer.appendChild(b);
+    }
+
+    // ── Hero search redirect ──
+    document.getElementById('heroSearch').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.target.value.trim()) {
+        window.location.href = `/browse/?q=${encodeURIComponent(e.target.value.trim())}`;
+      }
+    });
+
+    // ── Reveal on scroll ──
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+
+    // ── Stats ──
+    async function loadStats() {
+      const [{ count: specimens }, { count: groups }, { count: sites }, { data: cons }] = await Promise.all([
+        supabase.from('specimens').select('*', { count: 'exact', head: true }),
+        supabase.from('specimen_groups').select('*', { count: 'exact', head: true }),
+        supabase.from('collection_sites').select('*', { count: 'exact', head: true }),
+        supabase.from('specimens').select('is_cites,iucn_status,is_red_book_vn')
+      ]);
+      const conservationCount = (cons || []).filter(s => s.is_cites || s.iucn_status || s.is_red_book_vn).length;
+      const stats = [
+        { icon: 'inventory_2', num: specimens || 0, label: 'Tổng mẫu vật' },
+        { icon: 'category',    num: groups || 0,    label: 'Nhóm mẫu' },
+        { icon: 'pin_drop',    num: sites || 0,     label: 'Địa điểm thu mẫu' },
+        { icon: 'warning',     num: conservationCount, label: 'Cần bảo tồn' },
+      ];
+      document.getElementById('statsGrid').innerHTML = stats.map(s => `
+        <div class="stat-card reveal">
+          <span class="material-icons">${s.icon}</span>
+          <span class="stat-num" data-target="${s.num}">0</span>
+          <span class="stat-label">${s.label}</span>
+        </div>
+      `).join('');
+      // Count-up animation
+      document.querySelectorAll('.stat-num').forEach(el => {
+        const target = parseInt(el.dataset.target);
+        let cur = 0;
+        const step = Math.ceil(target / 30);
+        const timer = setInterval(() => {
+          cur = Math.min(cur + step, target);
+          el.textContent = cur;
+          if (cur >= target) clearInterval(timer);
+        }, 40);
+      });
+      document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+    }
+
+    // ── Featured specimens ──
+    async function loadFeatured() {
+      const { data } = await supabase
+        .from('specimens')
+        .select('*, specimen_groups(name), collection_sites(name)')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (!data?.length) {
+        document.getElementById('featuredGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="material-icons">inventory_2</span><p>Chưa có mẫu vật</p></div>';
+        return;
+      }
+
+      function getBadges(s) {
+        const b = [];
+        if (s.is_cites)       b.push('<span class="badge badge-cites">CITES</span>');
+        if (s.iucn_status)    b.push('<span class="badge badge-iucn">IUCN</span>');
+        if (s.is_red_book_vn) b.push('<span class="badge badge-redbook">Sách Đỏ</span>');
+        return b.join('');
+      }
+
+      document.getElementById('featuredGrid').innerHTML = data.map(s => `
+        <a href="/specimen/?code=${s.specimen_code}" class="card card-accent reveal" style="display:block;cursor:pointer;text-decoration:none">
+          <div class="card-img">
+            ${s.primary_image_url
+              ? `<img src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}" loading="lazy">`
+              : `<div class="card-img-placeholder"><span class="material-icons">photo</span></div>`
+            }
+          </div>
+          <div class="card-body">
+            <span class="eyebrow" style="font-size:10px">${s.specimen_groups?.name || 'Mẫu vật'}</span>
+            <div class="card-title">${s.common_name_vi || '—'}</div>
+            <div class="card-subtitle">${s.species || ''}</div>
+            <div class="card-meta">
+              <span class="material-icons">pin_drop</span>
+              ${s.collection_sites?.name || '—'}
+              <span class="specimen-code" style="margin-left:auto">${s.specimen_code}</span>
+            </div>
+            <div class="card-badges">${getBadges(s)}</div>
+          </div>
+        </a>
+      `).join('');
+      document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+    }
+
+    // ── Map preview ──
+    async function loadMapPreview() {
+      const { data: sites } = await supabase
+        .from('collection_sites')
+        .select('*, specimens(id)');
+
+      if (!sites?.length) return;
+
+      // Leaflet map
+      const L = window.L;
+      const map = L.map('preview-map', { zoomControl: false, scrollWheelZoom: false });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© CartoDB',
+        maxZoom: 18,
+      }).addTo(map);
+
+      const validSites = sites.filter(s => s.latitude && s.longitude);
+      if (!validSites.length) return;
+
+      const bounds = [];
+      validSites.forEach(site => {
+        const count = site.specimens?.length || 0;
+        const marker = L.circleMarker([site.latitude, site.longitude], {
+          radius: 8, fillColor: '#06b6d4', color: '#0891b2',
+          weight: 2, opacity: 1, fillOpacity: 0.8,
+        }).addTo(map);
+        marker.bindPopup(`<b style="color:#06b6d4">${site.name}</b><br><small>${site.region || ''}</small><br>${count} mẫu vật`);
+        bounds.push([site.latitude, site.longitude]);
+      });
+      map.fitBounds(bounds, { padding: [32, 32] });
+
+      // Site list
+      document.getElementById('siteList').innerHTML = validSites.map(site => `
+        <div class="site-item reveal" onclick="document.querySelector('#preview-map').scrollIntoView()">
+          <span class="material-icons">pin_drop</span>
+          <div>
+            <div class="site-name">${site.name}</div>
+            <div class="site-count">${site.region || ''}</div>
+          </div>
+          <span class="site-badge">${site.specimens?.length || 0}</span>
+        </div>
+      `).join('');
+      document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+    }
+
+    // Boot
+    Promise.all([loadStats(), loadFeatured(), loadMapPreview()]);
+  </script>
+</body>
+</html>

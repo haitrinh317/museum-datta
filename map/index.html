@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản đồ thu mẫu — Bảo tàng Hải dương học</title>
+  <meta name="description" content="Bản đồ tương tác các điểm thu mẫu vật tại Biển Đông và các vùng biển Việt Nam.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
+  <link rel="stylesheet" href="/src/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    body { overflow: hidden; }
+    .map-page { position: fixed; inset: 56px 0 0 0; display: flex; }
+
+    /* ── MAP ── */
+    #main-map { flex: 1; z-index: 1; }
+
+    /* ── HEADER OVERLAY ── */
+    .map-header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 400;
+      background: rgba(6,13,26,0.75);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: var(--sp-3) var(--sp-6);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+    }
+    .map-header h2 { font-size: 16px; font-weight: 700; color: var(--text-white); margin: 0; }
+    .map-stats {
+      display: flex;
+      gap: var(--sp-4);
+      margin-left: auto;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .map-stat span { color: var(--text-white); font-weight: 700; }
+    .toggle-panel-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--dur-fast) ease;
+    }
+    .toggle-panel-btn:hover { background: rgba(255,255,255,0.15); }
+
+    /* ── SIDE PANEL ── */
+    .site-panel {
+      width: 300px;
+      background: rgba(10,22,40,0.92);
+      backdrop-filter: blur(16px);
+      border-left: 1px solid var(--border-subtle);
+      overflow-y: auto;
+      z-index: 300;
+      transition: width var(--dur-base) var(--ease-out), opacity var(--dur-base) ease;
+      padding-top: 56px; /* map-header height */
+    }
+    .site-panel.collapsed { width: 0; opacity: 0; overflow: hidden; }
+    .site-panel-inner { padding: var(--sp-4); min-width: 268px; }
+    .panel-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent-light);
+      margin-bottom: var(--sp-4);
+    }
+    .site-panel-item {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-3);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background var(--dur-fast) ease;
+      margin-bottom: var(--sp-2);
+      border: 1px solid transparent;
+    }
+    .site-panel-item:hover { background: rgba(255,255,255,0.07); border-color: var(--border-subtle); }
+    .site-panel-item.active { background: rgba(8,145,178,0.15); border-color: var(--accent-primary); }
+    .site-dot {
+      width: 10px; height: 10px;
+      background: var(--accent-light);
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px var(--accent-glow-strong);
+    }
+    .site-info { flex: 1; }
+    .site-info .name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .site-info .region { font-size: 12px; color: var(--text-secondary); }
+    .site-count-badge {
+      background: rgba(8,145,178,0.2);
+      color: var(--accent-light);
+      padding: 2px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .site-specimens { margin-top: var(--sp-4); }
+    .site-specimens-title {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--sp-3);
+    }
+    .specimen-mini {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-secondary);
+      transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+      text-decoration: none;
+    }
+    .specimen-mini:hover { color: var(--accent-light); background: rgba(8,145,178,0.08); }
+    .specimen-mini .specimen-code { font-size: 11px; margin-left: auto; }
+    .btn-view-all {
+      display: block;
+      text-align: center;
+      margin-top: var(--sp-3);
+      padding: var(--sp-2);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--accent-light);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background var(--dur-fast) ease;
+    }
+    .btn-view-all:hover { background: rgba(8,145,178,0.1); }
+
+    /* Leaflet dark popup */
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-surface) !important;
+      border: 1px solid var(--border-default) !important;
+      border-radius: 8px !important;
+      box-shadow: var(--shadow-md) !important;
+      color: var(--text-primary) !important;
+    }
+    .leaflet-popup-tip { background: var(--bg-surface) !important; }
+    .leaflet-popup-close-button { color: var(--text-secondary) !important; }
+
+    /* Loading */
+    .map-loading {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-deepest);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: var(--sp-4);
+      transition: opacity 0.4s ease;
+    }
+    .map-loading.hidden { opacity: 0; pointer-events: none; }
+
+    @media (max-width: 768px) {
+      .site-panel { position: absolute; right: 0; top: 0; bottom: 0; z-index: 500; padding-top: 56px; }
+      .site-panel.collapsed { width: 0; }
+      .map-stats { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="navbar-brand">
+        <span class="material-icons">water</span>
+        Bảo tàng Hải dương học
+      </a>
+      <div class="navbar-spacer"></div>
+      <ul class="navbar-links">
+        <li><a href="/">Trang chủ</a></li>
+        <li><a href="/browse/">Tra cứu</a></li>
+        <li><a href="/map/" class="active">Bản đồ</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="map-page">
+    <!-- MAP LOADING -->
+    <div class="map-loading" id="mapLoading">
+      <div style="width:40px;height:40px;border:3px solid var(--border-default);border-top-color:var(--accent-light);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+      <p style="color:var(--text-secondary)">Đang tải bản đồ...</p>
+    </div>
+
+    <!-- Map header overlay (outside #main-map so it doesn't interfere with Leaflet) -->
+    <div class="map-header">
+      <span class="material-icons" style="color:var(--accent-light)">map</span>
+      <h2>Bản đồ thu mẫu</h2>
+      <div class="map-stats">
+        <div><span id="headerSites">—</span> địa điểm</div>
+        <div>·</div>
+        <div><span id="headerSpecimens">—</span> mẫu vật</div>
+      </div>
+      <button class="toggle-panel-btn" id="toggleBtn" onclick="togglePanel()">
+        <span class="material-icons" style="font-size:16px">list</span>
+        Danh sách
+      </button>
+    </div>
+
+    <!-- MAP -->
+    <div id="main-map"></div>
+
+    <!-- SITE PANEL -->
+    <aside class="site-panel" id="sitePanel">
+      <div class="site-panel-inner">
+        <p class="panel-title">Địa điểm thu mẫu</p>
+        <div id="siteListPanel">
+          <div class="skeleton" style="height:64px;border-radius:8px;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:64px;border-radius:8px;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:64px;border-radius:8px"></div>
+        </div>
+        <!-- Specimen detail within panel -->
+        <div id="panelDetail" style="display:none;margin-top:var(--sp-6);border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/src/lib/supabase.js';
+    import L from 'leaflet';
+
+    let map, siteLayers = {}, selectedSiteId = null;
+    let panelOpen = true;
+    let allSites = [];
+
+    // ── Init Leaflet map — centered to show both Hoàng Sa & Trường Sa ──
+    map = L.map('main-map', {
+      center: [12.5, 112.5],
+      zoom: 6,
+      zoomControl: false,
+      minZoom: 4,
+    });
+
+    // Esri World Imagery — satellite view, perfect for marine collection sites
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '© Esri, Maxar, Earthstar Geographics',
+      maxZoom: 18,
+    }).addTo(map);
+
+    // Place labels on top of satellite
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 18,
+      pane: 'overlayPane',
+    }).addTo(map);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // ── Quần đảo Hoàng Sa (Paracel Islands) ──
+    L.circle([16.5, 112.0], {
+      radius: 80000,
+      color: '#fbbf24',
+      weight: 1.5,
+      dashArray: '6 4',
+      fillColor: '#fbbf24',
+      fillOpacity: 0.05,
+      interactive: false,
+    }).addTo(map);
+
+    const hsLabel = L.divIcon({
+      className: '',
+      html: `<div style="
+        white-space:nowrap;
+        font-size:13px;
+        font-weight:700;
+        color:#fbbf24;
+        text-shadow:0 1px 4px rgba(0,0,0,0.8);
+        letter-spacing:1px;
+      ">QĐ. HOÀNG SA</div>`,
+      iconAnchor: [60, 10],
+    });
+    L.marker([16.5, 112.0], { icon: hsLabel, interactive: false }).addTo(map);
+
+    // ── Quần đảo Trường Sa (Spratly Islands) ──
+    L.circle([9.5, 113.5], {
+      radius: 160000,
+      color: '#38bdf8',
+      weight: 1.5,
+      dashArray: '6 4',
+      fillColor: '#38bdf8',
+      fillOpacity: 0.05,
+      interactive: false,
+    }).addTo(map);
+
+    const tsLabel = L.divIcon({
+      className: '',
+      html: `<div style="
+        white-space:nowrap;
+        font-size:13px;
+        font-weight:700;
+        color:#38bdf8;
+        text-shadow:0 1px 4px rgba(0,0,0,0.8);
+        letter-spacing:1px;
+      ">QĐ. TRƯỜNG SA</div>`,
+      iconAnchor: [70, 10],
+    });
+    L.marker([9.5, 113.5], { icon: tsLabel, interactive: false }).addTo(map);
+
+    // Remove loading when map tiles load
+    map.on('load', () => {
+      setTimeout(() => {
+        document.getElementById('mapLoading').classList.add('hidden');
+      }, 400);
+    });
+    // Fallback: hide loading after 2s
+    setTimeout(() => document.getElementById('mapLoading').classList.add('hidden'), 2000);
+
+    // ── Load data ──
+    const { data: sites, error: sitesError } = await supabase
+      .from('collection_sites')
+      .select('*, specimens(id, specimen_code, common_name_vi, species, is_cites, iucn_status, is_red_book_vn)');
+
+    if (sitesError) console.warn('Sites query error:', sitesError);
+
+    allSites = (sites || []).filter(s => s.latitude && s.longitude);
+
+    document.getElementById('headerSites').textContent = allSites.length;
+    const totalSpecimens = allSites.reduce((acc, s) => acc + (s.specimens?.length || 0), 0);
+    document.getElementById('headerSpecimens').textContent = totalSpecimens;
+
+    // ── Place markers ──
+    const bounds = [];
+    allSites.forEach(site => {
+      const count = site.specimens?.length || 0;
+
+      // Pulse animation marker
+      const pulseIcon = L.divIcon({
+        className: '',
+        html: `
+          <div style="position:relative;width:20px;height:20px;transform:translate(-50%,-50%)">
+            <div style="position:absolute;inset:0;background:rgba(6,182,212,0.3);border-radius:50%;animation:pulse-ring 2s ease-out infinite"></div>
+            <div style="position:absolute;inset:4px;background:#06b6d4;border-radius:50%;border:2px solid #0891b2;box-shadow:0 0 8px rgba(6,182,212,0.6)"></div>
+          </div>`,
+        iconSize: [20, 20],
+      });
+
+      const marker = L.marker([site.latitude, site.longitude], { icon: pulseIcon }).addTo(map);
+
+      const badgeHtml = site.specimens?.filter(s => s.is_cites || s.iucn_status || s.is_red_book_vn).length > 0
+        ? `<span style="color:#fca5a5;font-size:11px">⚠ Có loài cần bảo tồn</span><br>` : '';
+
+      marker.bindPopup(`
+        <div style="min-width:180px">
+          <strong style="color:#06b6d4;font-size:14px">${site.name}</strong><br>
+          <small style="color:#94a3b8">${site.region || ''}</small><br>
+          ${badgeHtml}
+          <div style="margin-top:8px;font-size:13px;color:#e2e8f0">${count} mẫu vật</div>
+          <a href="/browse/" style="display:inline-block;margin-top:8px;font-size:12px;color:#38bdf8">Xem danh sách →</a>
+        </div>
+      `);
+
+      marker.on('click', () => selectSite(site.id));
+      siteLayers[site.id] = marker;
+      bounds.push([site.latitude, site.longitude]);
+    });
+
+    if (bounds.length) map.fitBounds(bounds, { padding: [60, 60] });
+
+    // ── Render site list ──
+    document.getElementById('siteListPanel').innerHTML = allSites.map(site => `
+      <div class="site-panel-item" id="siteItem_${site.id}" onclick="selectSite('${site.id}')">
+        <div class="site-dot"></div>
+        <div class="site-info">
+          <div class="name">${site.name}</div>
+          <div class="region">${site.region || ''}</div>
+        </div>
+        <span class="site-count-badge">${site.specimens?.length || 0}</span>
+      </div>
+    `).join('');
+
+    // ── Select site ──
+    window.selectSite = function(id) {
+      // Deselect previous
+      if (selectedSiteId) {
+        document.getElementById(`siteItem_${selectedSiteId}`)?.classList.remove('active');
+      }
+      selectedSiteId = id;
+      document.getElementById(`siteItem_${id}`)?.classList.add('active');
+      document.getElementById(`siteItem_${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      const site = allSites.find(s => s.id === id);
+      if (!site) return;
+
+      // Pan map
+      siteLayers[id].openPopup();
+      map.flyTo([site.latitude, site.longitude], 10, { duration: 1.2 });
+
+      // Show specimens in panel
+      const detail = document.getElementById('panelDetail');
+      detail.style.display = 'block';
+      detail.innerHTML = `
+        <p class="site-specimens-title">${site.name} — ${site.specimens?.length || 0} mẫu vật</p>
+        ${(site.specimens || []).map(s => `
+          <a href="/specimen/?code=${s.specimen_code}" class="specimen-mini">
+            <span class="material-icons" style="font-size:14px;color:var(--accent-light)">chevron_right</span>
+            <span>${s.common_name_vi || s.species || '—'}</span>
+            <span class="specimen-code">${s.specimen_code}</span>
+          </a>
+        `).join('')}
+        <a href="/browse/" class="btn-view-all">Xem tất cả →</a>
+      `;
+    };
+
+    // ── Toggle panel ──
+    window.togglePanel = function() {
+      panelOpen = !panelOpen;
+      document.getElementById('sitePanel').classList.toggle('collapsed', !panelOpen);
+      const btn = document.getElementById('toggleBtn');
+      btn.innerHTML = panelOpen
+        ? '<span class="material-icons" style="font-size:16px">list</span> Danh sách'
+        : '<span class="material-icons" style="font-size:16px">map</span> Bản đồ';
+      setTimeout(() => map.invalidateSize(), 350);
+    };
+  </script>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse-ring {
+      0%   { transform: scale(0.6); opacity: 0.8; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+  </style>
+</body>
+</html>
