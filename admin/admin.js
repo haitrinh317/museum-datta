@@ -1375,6 +1375,7 @@ function bindEvents() {
   // Navigation
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
+      if (!item.dataset.page) return; // external links (e.g. Trang chủ) — let browser handle
       e.preventDefault();
       navigateTo(item.dataset.page);
     });
