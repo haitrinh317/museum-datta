@@ -29,14 +29,14 @@
     .specimen-sci  { font-size: clamp(0.95rem, 2vw, 1.2rem); font-style: italic; color: var(--text-accent); }
     .header-meta  { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 
-    /* ── MAIN LAYOUT: image left, info right ── */
+    /* ── MAIN LAYOUT: image | taxonomy (1fr 1fr) ── */
     .specimen-body { background: var(--bg-deep); }
     .specimen-main {
       display: grid;
-      grid-template-columns: minmax(0, 420px) 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: var(--sp-6);
       align-items: start;
-      padding: var(--sp-6) 0;
+      padding: var(--sp-6) 0 0;
     }
 
     /* ── IMAGE PANEL ── */
@@ -58,7 +58,7 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      padding: var(--sp-3);
+      padding: var(--sp-5);
     }
     .specimen-img-no-photo {
       display: flex;
@@ -70,20 +70,38 @@
     }
     .specimen-img-no-photo .material-icons { font-size: 64px; opacity: 0.2; }
     .img-caption {
-      margin-top: var(--sp-2);
+      margin-top: var(--sp-3);
       font-size: 12px;
       color: var(--text-muted);
       text-align: center;
       font-style: italic;
     }
 
-    /* ── INFO PANEL ── */
-    .specimen-info-panel { display: flex; flex-direction: column; gap: var(--sp-4); }
+    /* ── COLLECTION ROW: thu mẫu | bản đồ (full width, 1fr 1fr) ── */
+    .collection-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-6);
+      padding: var(--sp-4) 0 0;
+    }
+    .map-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      min-height: 280px;
+    }
+    #specimen-map {
+      height: 100%;
+      min-height: 280px;
+    }
+
+    /* ── INFO CARDS ── */
     .info-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: var(--sp-5);
+      padding: var(--sp-5) var(--sp-6);
     }
     .info-card h3 {
       font-size: 11px;
@@ -91,8 +109,8 @@
       text-transform: uppercase;
       letter-spacing: 2px;
       color: var(--accent-light);
-      margin-bottom: var(--sp-3);
-      padding-bottom: var(--sp-2);
+      margin-bottom: var(--sp-4);
+      padding-bottom: var(--sp-3);
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
@@ -102,7 +120,7 @@
     .info-row {
       display: flex;
       align-items: baseline;
-      gap: var(--sp-3);
+      gap: var(--sp-4);
       padding: var(--sp-2) 0;
       border-bottom: 1px solid rgba(30,58,95,0.4);
       font-size: 13.5px;
@@ -113,12 +131,12 @@
     .info-value.sci { font-style: italic; color: var(--text-accent); }
 
     /* ── FULL-WIDTH SECTIONS BELOW ── */
-    .specimen-sections { padding-bottom: var(--sp-8); }
+    .specimen-sections { padding: var(--sp-4) 0 var(--sp-8); }
     .desc-section {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: var(--sp-5);
+      padding: var(--sp-5) var(--sp-6);
       margin-bottom: var(--sp-4);
     }
     .desc-section h3 {
@@ -132,15 +150,6 @@
     }
     .desc-section h3 .material-icons { color: var(--accent-light); font-size: 18px; }
     .desc-section p { color: var(--text-secondary); line-height: 1.8; font-size: 14.5px; }
-
-    /* ── MAP ── */
-    #specimen-map {
-      height: 260px;
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
-      margin-top: var(--sp-3);
-    }
 
     /* ── STATUS BADGES ── */
     .status-grid {
@@ -196,13 +205,15 @@
 
     @media (max-width: 900px) {
       .specimen-main { grid-template-columns: 1fr; }
+      .collection-row { grid-template-columns: 1fr; }
       .specimen-img-panel { position: static; }
-      .specimen-img-box { aspect-ratio: 3/2; max-height: 320px; }
+      .specimen-img-box { aspect-ratio: 3/2; max-height: 300px; }
+      .map-card { min-height: 240px; }
+      #specimen-map { min-height: 240px; }
     }
     @media (max-width: 768px) {
       .specimen-header { padding: var(--sp-4) 0; }
       .specimen-name { font-size: 1.5rem; }
-      #specimen-map { height: 200px; }
       .status-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
@@ -342,30 +353,33 @@
                 ${s.primary_image_url ? `<p class="img-caption">${s.common_name_vi || s.species} — ${s.specimen_code}</p>` : ''}
               </div>
 
-              <!-- RIGHT: Info cards -->
-              <div class="specimen-info-panel">
-                <div class="info-card reveal">
-                  <h3><span class="material-icons">account_tree</span>Phân loại khoa học</h3>
-                  <div class="info-row"><span class="info-label">Nhóm mẫu</span><span class="info-value">${s.specimen_groups?.name || '—'}</span></div>
-                  <div class="info-row"><span class="info-label">Họ (Family)</span><span class="info-value">${s.family || '—'}</span></div>
-                  <div class="info-row"><span class="info-label">Loài</span><span class="info-value sci">${s.species || '—'}</span></div>
-                  <div class="info-row"><span class="info-label">Tác giả mô tả</span><span class="info-value">${s.author || '—'}</span></div>
-                  <div class="info-row"><span class="info-label">Tên Việt</span><span class="info-value">${s.common_name_vi || '—'}</span></div>
-                </div>
-
-                <div class="info-card reveal">
-                  <h3><span class="material-icons">explore</span>Thông tin thu mẫu</h3>
-                  ${site ? `
-                    <div class="info-row"><span class="info-label">Địa điểm</span><span class="info-value">${site.name}</span></div>
-                    <div class="info-row"><span class="info-label">Vùng biển</span><span class="info-value">${site.region || '—'}</span></div>
-                    ${hasMap ? `<div class="info-row"><span class="info-label">Tọa độ</span><span class="info-value">${site.latitude.toFixed(4)}°N, ${site.longitude.toFixed(4)}°E</span></div>` : ''}
-                  ` : '<div class="info-row"><span class="info-value">—</span></div>'}
-                  <div class="info-row"><span class="info-label">Ngày thu</span><span class="info-value">${s.collection_date ? new Date(s.collection_date).toLocaleDateString('vi-VN') : '—'}</span></div>
-                  ${hasMap ? `<div id="specimen-map"></div>` : ''}
-                </div>
+              <!-- RIGHT: Taxonomy only -->
+              <div class="info-card reveal" style="align-self:start">
+                <h3><span class="material-icons">account_tree</span>Phân loại khoa học</h3>
+                <div class="info-row"><span class="info-label">Nhóm mẫu</span><span class="info-value">${s.specimen_groups?.name || '—'}</span></div>
+                <div class="info-row"><span class="info-label">Họ (Family)</span><span class="info-value">${s.family || '—'}</span></div>
+                <div class="info-row"><span class="info-label">Loài</span><span class="info-value sci">${s.species || '—'}</span></div>
+                <div class="info-row"><span class="info-label">Tác giả mô tả</span><span class="info-value">${s.author || '—'}</span></div>
+                <div class="info-row"><span class="info-label">Tên Việt</span><span class="info-value">${s.common_name_vi || '—'}</span></div>
               </div>
 
             </div><!-- /specimen-main -->
+
+            <!-- ROW 2: Thu mẫu | Bản đồ -->
+            <div class="collection-row">
+              <div class="info-card reveal">
+                <h3><span class="material-icons">explore</span>Thông tin thu mẫu</h3>
+                ${site ? `
+                  <div class="info-row"><span class="info-label">Địa điểm</span><span class="info-value">${site.name}</span></div>
+                  <div class="info-row"><span class="info-label">Vùng biển</span><span class="info-value">${site.region || '—'}</span></div>
+                  ${hasMap ? `<div class="info-row"><span class="info-label">Tọa độ</span><span class="info-value">${site.latitude.toFixed(4)}°N, ${site.longitude.toFixed(4)}°E</span></div>` : ''}
+                ` : '<div class="info-row"><span class="info-value">—</span></div>'}
+                <div class="info-row"><span class="info-label">Ngày thu</span><span class="info-value">${s.collection_date ? new Date(s.collection_date).toLocaleDateString('vi-VN') : '—'}</span></div>
+              </div>
+              <div class="map-card reveal">
+                ${hasMap ? `<div id="specimen-map"></div>` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;padding:var(--sp-4)">Không có tọa độ</div>'}
+              </div>
+            </div><!-- /collection-row -->
 
             <!-- FULL-WIDTH sections -->
             <div class="specimen-sections">
