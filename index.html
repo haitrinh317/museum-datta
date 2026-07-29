@@ -366,11 +366,23 @@
 
     // ── Featured specimens ──
     async function loadFeatured() {
-      const { data } = await supabase
+      // Fetch 40 specimens có ảnh trước, shuffle client-side → random mỗi lần load
+      const { data: withImg } = await supabase
         .from('specimens')
         .select('*, specimen_groups(name), collection_sites(name)')
-        .order('created_at', { ascending: false })
-        .limit(6);
+        .not('primary_image_url', 'is', null)
+        .limit(40);
+
+      const { data: noImg } = await supabase
+        .from('specimens')
+        .select('*, specimen_groups(name), collection_sites(name)')
+        .is('primary_image_url', null)
+        .limit(20);
+
+      // Shuffle: Fisher-Yates
+      const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+      const pool = shuffle([...(withImg || []), ...(noImg || [])]);
+      const data = pool.slice(0, 6);
 
       if (!data?.length) {
         document.getElementById('featuredGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="material-icons">inventory_2</span><p>Chưa có mẫu vật</p></div>';
