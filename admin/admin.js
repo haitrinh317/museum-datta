@@ -1334,10 +1334,9 @@ async function loadGroupsAndSites() {
     const { data } = await supabase.from('specimen_groups').select('*').order('name');
     state.groups = data || [];
   }
-  if (!state.sites.length) {
-    const { data } = await supabase.from('collection_sites').select('*').order('name');
-    state.sites = data || [];
-  }
+  // Always refresh sites — new sites added via import won't appear otherwise
+  const { data } = await supabase.from('collection_sites').select('*').order('name');
+  state.sites = data || [];
 }
 
 function formatDate(dateStr) {
