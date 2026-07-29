@@ -1170,21 +1170,45 @@ async function executeImport() {
     const rawLng = parseDMS(r.longitude_raw);
     const { lat, lng } = autoFixLatLng(rawLat, rawLng);
 
-    const { data, error } = await supabase
-      .from('collection_sites')
-      .upsert(
-        { name: r.site_name, latitude: lat, longitude: lng },
-        { onConflict: 'name,region' }
-      )
-      .select()
-      .single();
+    // ponytail: SELECT-then-update avoids onConflict:'name,region' with NULL region
+    // PostgreSQL treats NULL≠NULL so the unique constraint never fires → always inserts
+    let siteId = null;
 
-    if (data) {
-      siteMap[r.site_name] = data.id;
-      log(`✓ Địa điểm: ${r.site_name} (${lat?.toFixed(4) || '?'}, ${lng?.toFixed(4) || '?'})`, 'success');
+    const { data: existing } = await supabase
+      .from('collection_sites')
+      .select('id')
+      .eq('name', r.site_name)
+      .is('region', null)
+      .maybeSingle();
+
+    if (existing) {
+      const { data: updated, error: updErr } = await supabase
+        .from('collection_sites')
+        .update({ latitude: lat, longitude: lng })
+        .eq('id', existing.id)
+        .select()
+        .single();
+      if (updated) {
+        siteId = updated.id;
+        log(`✓ Địa điểm (cập nhật): ${r.site_name} (${lat?.toFixed(4) || '?'}, ${lng?.toFixed(4) || '?'})`, 'success');
+      } else {
+        log(`✗ Lỗi cập nhật ${r.site_name}: ${updErr?.message}`, 'error');
+      }
     } else {
-      log(`✗ Lỗi địa điểm ${r.site_name}: ${error?.message}`, 'error');
+      const { data: inserted, error: insErr } = await supabase
+        .from('collection_sites')
+        .insert({ name: r.site_name, latitude: lat, longitude: lng })
+        .select()
+        .single();
+      if (inserted) {
+        siteId = inserted.id;
+        log(`✓ Địa điểm (mới): ${r.site_name} (${lat?.toFixed(4) || '?'}, ${lng?.toFixed(4) || '?'})`, 'success');
+      } else {
+        log(`✗ Lỗi tạo ${r.site_name}: ${insErr?.message}`, 'error');
+      }
     }
+
+    if (siteId) siteMap[r.site_name] = siteId;
   }
 
   // Step 3: Insert specimens
