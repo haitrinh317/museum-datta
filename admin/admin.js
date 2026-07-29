@@ -18,9 +18,15 @@ const state = {
   searchQuery: '',
   filterGroup: '',
   filterSite: '',
+  filterImage: '',
   editingSpecimenId: null,
   pendingImages: [], // Files waiting to upload
 };
+
+// ============================================================
+// SECURITY: XSS prevention — escape all DB data before innerHTML
+// ============================================================
+const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 // ============================================================
 // INIT
@@ -199,7 +205,7 @@ function renderGroupChart(specimens, groups) {
     <div class="hbar-chart">
       ${sorted.map((c, i) => `
         <div class="hbar-row">
-          <span class="hbar-label" title="${c.name}">${c.name}</span>
+          <span class="hbar-label" title="${esc(c.name)}">${esc(c.name)}</span>
           <div class="hbar-track">
             <div class="hbar-fill" data-color="${colors[i % colors.length]}" style="width: ${(c.count / maxCount) * 100}%">
               ${c.count}
@@ -301,7 +307,7 @@ function renderTopSites(specimens, sites) {
     return `
       <div class="site-rank-item">
         <span class="site-rank-num ${rankClass}">${i + 1}</span>
-        <span class="site-rank-name" title="${s.name}">${s.name}</span>
+        <span class="site-rank-name" title="${esc(s.name)}">${esc(s.name)}</span>
         <span class="site-rank-count">${s.count}</span>
         <div class="site-rank-bar">
           <div class="site-rank-bar-fill" style="width: ${(s.count / maxCount) * 100}%"></div>
@@ -326,7 +332,7 @@ function renderRecentSpecimens(specimens) {
     const hasImage = s.primary_image_url;
     const isConserved = s.is_cites || s.iucn_status || s.is_red_book_vn;
     const thumb = hasImage
-      ? `<img class="recent-item-thumb" src="${s.primary_image_url}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      ? `<img class="recent-item-thumb" src="${esc(s.primary_image_url)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
       : '';
     const icon = `<div class="recent-item-icon" ${hasImage ? 'style="display:none"' : ''}>
         <span class="material-icons">pets</span>
@@ -339,8 +345,8 @@ function renderRecentSpecimens(specimens) {
       <div class="recent-item">
         ${thumb}${icon}
         <div class="recent-item-info">
-          <div class="recent-item-name">${s.common_name_vi || s.species || 'N/A'}</div>
-          <div class="recent-item-meta">${s.specimen_code} · ${s.specimen_groups?.name || ''}</div>
+          <div class="recent-item-name">${esc(s.common_name_vi || s.species || 'N/A')}</div>
+          <div class="recent-item-meta">${esc(s.specimen_code)} · ${esc(s.specimen_groups?.name || '')}</div>
         </div>
         ${badge}
       </div>
@@ -372,6 +378,11 @@ async function loadSpecimens() {
   }
   if (state.filterSite) {
     query = query.eq('site_id', state.filterSite);
+  }
+  if (state.filterImage === 'has') {
+    query = query.not('primary_image_url', 'is', null);
+  } else if (state.filterImage === 'no') {
+    query = query.is('primary_image_url', null);
   }
 
   const { data, error, count } = await query
@@ -409,24 +420,24 @@ function renderSpecimensTable() {
   tbody.innerHTML = state.specimens.map(s => {
     const badges = [];
     if (s.is_cites) badges.push('<span class="badge badge-conservation">CITES</span>');
-    if (s.iucn_status) badges.push(`<span class="badge badge-iucn">${s.iucn_status}</span>`);
+    if (s.iucn_status) badges.push(`<span class="badge badge-iucn">${esc(s.iucn_status)}</span>`);
     if (s.is_red_book_vn) badges.push('<span class="badge badge-redbook">SĐ VN</span>');
 
     return `
       <tr data-id="${s.id}">
         <td style="padding:4px 6px">
           ${s.primary_image_url
-            ? `<img src="${s.primary_image_url}" alt="" class="specimen-thumb" onclick="editSpecimen('${s.id}')" title="Có ảnh - click để sửa">`
+            ? `<img src="${esc(s.primary_image_url)}" alt="" class="specimen-thumb" onclick="editSpecimen('${s.id}')" title="Có ảnh - click để sửa">`
             : `<img src="/no-photo.png" alt="Chưa có ảnh" class="specimen-thumb specimen-thumb-nophoto" onclick="editSpecimen('${s.id}')" title="Chưa có ảnh">`
           }
         </td>
         <td>${s.serial_number || ''}</td>
-        <td><a href="/specimen/?code=${s.specimen_code}" target="_blank" title="Xem trang public" style="text-decoration:none"><span class="code-badge" style="cursor:pointer">${s.specimen_code}</span></a></td>
-        <td>${s.specimen_groups?.name || ''}</td>
-        <td>${s.family || ''}</td>
-        <td><span class="species-name">${s.species || ''}</span></td>
-        <td>${s.common_name_vi || ''}</td>
-        <td>${s.collection_sites?.name || ''}</td>
+        <td><a href="/specimen/?code=${encodeURIComponent(s.specimen_code)}" target="_blank" title="Xem trang public" style="text-decoration:none"><span class="code-badge" style="cursor:pointer">${esc(s.specimen_code)}</span></a></td>
+        <td>${esc(s.specimen_groups?.name || '')}</td>
+        <td>${esc(s.family || '')}</td>
+        <td><span class="species-name">${esc(s.species || '')}</span></td>
+        <td>${esc(s.common_name_vi || '')}</td>
+        <td>${esc(s.collection_sites?.name || '')}</td>
         <td>${s.collection_date ? formatDate(s.collection_date) : ''}</td>
         <td>${badges.join(' ') || '—'}</td>
         <td>
@@ -434,7 +445,7 @@ function renderSpecimensTable() {
             <button class="btn-icon" onclick="editSpecimen('${s.id}')" title="Sửa">
               <span class="material-icons">edit</span>
             </button>
-            <button class="btn-icon" onclick="deleteSpecimen('${s.id}', '${s.specimen_code}')" title="Xóa">
+            <button class="btn-icon" onclick="deleteSpecimen('${s.id}', '${esc(s.specimen_code)}')" title="Xóa">
               <span class="material-icons">delete</span>
             </button>
           </div>
@@ -470,11 +481,11 @@ function populateFilters() {
 
   // Populate groups
   groupSelect.innerHTML = '<option value="">Tất cả nhóm</option>' +
-    state.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    state.groups.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
 
   // Populate sites
   siteSelect.innerHTML = '<option value="">Tất cả địa điểm</option>' +
-    state.sites.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    state.sites.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
 
   groupSelect.value = currentGroup;
   siteSelect.value = currentSite;
@@ -491,10 +502,10 @@ function openSpecimenModal(specimen = null) {
   const formSite = document.getElementById('form-site');
 
   formGroup.innerHTML = '<option value="">-- Chọn nhóm --</option>' +
-    state.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    state.groups.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
 
   formSite.innerHTML = '<option value="">-- Chọn địa điểm --</option>' +
-    state.sites.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    state.sites.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
 
   if (specimen) {
     // Edit mode
@@ -749,15 +760,15 @@ function renderGroupCards() {
     return `
       <div class="group-card">
         <div class="group-card-header">
-          <span class="group-card-name">${g.name}</span>
+          <span class="group-card-name">${esc(g.name)}</span>
         </div>
         <div class="group-card-count">${count} mẫu vật</div>
-        ${g.description ? `<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">${g.description}</p>` : ''}
+        ${g.description ? `<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">${esc(g.description)}</p>` : ''}
         <div class="group-card-actions">
           <button class="btn btn-sm btn-secondary" onclick="editGroup('${g.id}')">
             <span class="material-icons" style="font-size:14px;">edit</span> Sửa
           </button>
-          <button class="btn btn-sm btn-danger" onclick="deleteGroup('${g.id}', '${g.name}')">
+          <button class="btn btn-sm btn-danger" onclick="deleteGroup('${g.id}', '${esc(g.name)}')">
             <span class="material-icons" style="font-size:14px;">delete</span>
           </button>
         </div>
@@ -857,8 +868,8 @@ function renderSitesTable() {
 
   tbody.innerHTML = state.sites.map(s => `
     <tr>
-      <td><strong>${s.name}</strong></td>
-      <td>${s.region || '—'}</td>
+      <td><strong>${esc(s.name)}</strong></td>
+      <td>${esc(s.region || '—')}</td>
       <td>${s.latitude != null ? s.latitude.toFixed(4) : '—'}</td>
       <td>${s.longitude != null ? s.longitude.toFixed(4) : '—'}</td>
       <td>${s.specimens?.[0]?.count || 0}</td>
@@ -867,7 +878,7 @@ function renderSitesTable() {
           <button class="btn-icon" onclick="editSite('${s.id}')" title="Sửa">
             <span class="material-icons">edit</span>
           </button>
-          <button class="btn-icon" onclick="deleteSite('${s.id}', '${s.name}')" title="Xóa">
+          <button class="btn-icon" onclick="deleteSite('${s.id}', '${esc(s.name)}')" title="Xóa">
             <span class="material-icons">delete</span>
           </button>
         </div>
@@ -1143,12 +1154,12 @@ function renderImportPreview() {
   tbody.innerHTML = parsedCSVData.map(r => `
     <tr>
       <td>${r.serial_number || ''}</td>
-      <td><span class="code-badge">${r.specimen_code}</span></td>
-      <td>${r.group_name}</td>
-      <td>${r.family}</td>
-      <td><span class="species-name">${r.species}</span></td>
-      <td>${r.common_name_vi}</td>
-      <td>${r.site_name}</td>
+      <td><span class="code-badge">${esc(r.specimen_code)}</span></td>
+      <td>${esc(r.group_name)}</td>
+      <td>${esc(r.family)}</td>
+      <td><span class="species-name">${esc(r.species)}</span></td>
+      <td>${esc(r.common_name_vi)}</td>
+      <td>${esc(r.site_name)}</td>
     </tr>
   `).join('');
 }
@@ -1309,14 +1320,14 @@ async function loadQRCodes() {
   }
 
   grid.innerHTML = data.map(s => `
-    <div class="qr-card" data-id="${s.id}" data-code="${s.specimen_code}">
+    <div class="qr-card" data-id="${s.id}" data-code="${esc(s.specimen_code)}">
       <canvas id="qr-${s.id}"></canvas>
       <div class="qr-card-info">
-        <div class="qr-card-code">${s.specimen_code}</div>
-        <div class="qr-card-name">${s.species || s.common_name_vi || ''}</div>
+        <div class="qr-card-code">${esc(s.specimen_code)}</div>
+        <div class="qr-card-name">${esc(s.species || s.common_name_vi || '')}</div>
       </div>
       <div class="qr-card-actions">
-        <button class="btn btn-sm btn-secondary" onclick="downloadQR('${s.id}', '${s.specimen_code}')">
+        <button class="btn btn-sm btn-secondary" onclick="downloadQR('${s.id}', '${esc(s.specimen_code)}')">
           <span class="material-icons" style="font-size:14px;">download</span>
         </button>
       </div>
@@ -1387,7 +1398,7 @@ function showToast(message, type = 'info') {
     <span class="material-icons" style="font-size:18px;">
       ${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}
     </span>
-    <span>${message}</span>
+    <span>${esc(message)}</span>
   `;
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
@@ -1457,6 +1468,12 @@ function bindEvents() {
 
   document.getElementById('filter-site').addEventListener('change', (e) => {
     state.filterSite = e.target.value;
+    state.pagination.page = 1;
+    loadSpecimens();
+  });
+
+  document.getElementById('filter-image').addEventListener('change', (e) => {
+    state.filterImage = e.target.value;
     state.pagination.page = 1;
     loadSpecimens();
   });

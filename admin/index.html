@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="./admin.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co;">
 </head>
 <body>
     <!-- ==================== LOGIN SCREEN ==================== -->
@@ -225,6 +226,11 @@
                             </select>
                             <select id="filter-site">
                                 <option value="">Tất cả địa điểm</option>
+                            </select>
+                            <select id="filter-image">
+                                <option value="">Tất cả</option>
+                                <option value="has">Có ảnh</option>
+                                <option value="no">Chưa có ảnh</option>
                             </select>
                         </div>
                     </div>
