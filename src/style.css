@@ -167,6 +167,7 @@ body::before {
   transition: color var(--dur-fast) ease;
 }
 .navbar-search-btn:hover { color: var(--accent-light); }
+.navbar-toggle { display: none; } /* shown on mobile via media query */
 .page-content { padding-top: 56px; } /* offset for fixed navbar */
 
 /* ─── TYPOGRAPHY ─── */
@@ -292,6 +293,31 @@ code, .specimen-code {
   .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; }
   h1 { font-size: var(--text-3xl); }
   .container { padding: 0 var(--sp-4); }
+
+  /* Navbar: hamburger toggle */
+  .navbar-toggle {
+    display: flex;
+    background: none; border: none;
+    color: var(--text-secondary);
+    padding: 6px;
+    cursor: pointer;
+    font-size: 24px;
+  }
+  .navbar .container { gap: var(--sp-2); }
+  .navbar-brand { font-size: 13px; }
+  .navbar-links {
+    display: none;
+    position: absolute;
+    top: 56px; left: 0; right: 0;
+    background: rgba(6,13,26,0.95);
+    backdrop-filter: blur(16px);
+    flex-direction: column;
+    padding: var(--sp-3);
+    border-bottom: 1px solid var(--border-subtle);
+    gap: 0;
+  }
+  .navbar-links.open { display: flex; }
+  .navbar-links a { padding: 12px 16px; width: 100%; border-radius: var(--radius-sm); }
 }
 
 /* ─── STAT CARD ─── */

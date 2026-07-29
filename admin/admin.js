@@ -1382,13 +1382,23 @@ function bindEvents() {
       if (!item.dataset.page) return; // external links (e.g. Trang chủ) — let browser handle
       e.preventDefault();
       navigateTo(item.dataset.page);
+      // Auto-close sidebar on mobile
+      closeSidebar();
     });
   });
 
-  // Sidebar toggle (mobile)
+  // Sidebar toggle (mobile) with overlay
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  }
   document.getElementById('sidebar-toggle').addEventListener('click', () => {
-    document.querySelector('.sidebar').classList.toggle('open');
+    const isOpen = sidebar.classList.toggle('open');
+    overlay.classList.toggle('active', isOpen);
   });
+  overlay.addEventListener('click', closeSidebar);
 
   // Add specimen
   document.getElementById('add-specimen-btn').addEventListener('click', () => {

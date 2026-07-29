@@ -167,9 +167,29 @@
     .map-loading.hidden { opacity: 0; pointer-events: none; }
 
     @media (max-width: 768px) {
-      .site-panel { position: absolute; right: 0; top: 0; bottom: 0; z-index: 500; padding-top: 56px; }
-      .site-panel.collapsed { width: 0; }
+      .map-page { inset: 56px 0 0 0; flex-direction: column; }
+      .map-header {
+        padding: var(--sp-2) var(--sp-3);
+        gap: var(--sp-2);
+      }
+      .map-header h2 { font-size: 14px; }
       .map-stats { display: none; }
+      .toggle-panel-btn { padding: 4px 8px; font-size: 12px; }
+      /* Panel: slide up from bottom */
+      .site-panel {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        width: 100% !important;
+        max-height: 50vh;
+        border-left: none;
+        border-top: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        padding-top: 12px;
+        z-index: 500;
+        transition: max-height var(--dur-base) var(--ease-out), opacity var(--dur-base) ease;
+      }
+      .site-panel.collapsed { max-height: 0; opacity: 0; overflow: hidden; }
+      .site-panel-inner { min-width: unset; padding: var(--sp-3); }
     }
   </style>
 </head>
@@ -180,6 +200,7 @@
         <img src="/logo.png" alt="Logo" class="navbar-logo">
         Bảo tàng Hải dương học
       </a>
+      <button class="navbar-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">☰</button>
       <div class="navbar-spacer"></div>
       <ul class="navbar-links">
         <li><a href="/">Trang chủ</a></li>

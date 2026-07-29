@@ -1440,11 +1440,24 @@ fieldset legend {
 }
 
 @media (max-width: 768px) {
+    /* Sidebar: overlay with backdrop */
     .sidebar {
         transform: translateX(-100%);
+        z-index: 200;
     }
     .sidebar.open {
         transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+    }
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 199;
+    }
+    .sidebar-overlay.active {
+        display: block;
     }
     .main-content {
         margin-left: 0;
@@ -1452,6 +1465,48 @@ fieldset legend {
     .sidebar-toggle {
         display: flex;
     }
+    .topbar {
+        padding: 0 12px;
+    }
+    .topbar h1 {
+        font-size: 1rem;
+    }
+
+    /* Table: hide non-essential columns on mobile */
+    /* col 1=Ảnh, 2=TT, 4=Nhóm, 5=Họ, 8=Nơi thu, 9=Ngày thu */
+    .data-table th:nth-child(1),
+    .data-table td:nth-child(1),
+    .data-table th:nth-child(2),
+    .data-table td:nth-child(2),
+    .data-table th:nth-child(5),
+    .data-table td:nth-child(5),
+    .data-table th:nth-child(8),
+    .data-table td:nth-child(8),
+    .data-table th:nth-child(9),
+    .data-table td:nth-child(9) {
+        display: none;
+    }
+    .data-table th, .data-table td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+    }
+
+    /* Filters: stack vertically */
+    .filters-bar {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .filters-bar input,
+    .filters-bar select {
+        width: 100%;
+    }
+
+    /* Page content padding */
+    .page-content {
+        padding: 12px;
+    }
+
+    /* Dashboard */
     .dash-hero {
         flex-direction: column;
         text-align: center;
@@ -1482,7 +1537,8 @@ fieldset legend {
         align-items: center;
     }
     .modal-content {
-        margin: 12px;
+        margin: 8px;
+        max-height: 95vh;
     }
 }
 
