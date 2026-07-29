@@ -417,7 +417,7 @@ function renderSpecimensTable() {
           }
         </td>
         <td>${s.serial_number || ''}</td>
-        <td><span class="code-badge">${s.specimen_code}</span></td>
+        <td><a href="/specimen/?code=${s.specimen_code}" target="_blank" title="Xem trang public" style="text-decoration:none"><span class="code-badge" style="cursor:pointer">${s.specimen_code}</span></a></td>
         <td>${s.specimen_groups?.name || ''}</td>
         <td>${s.family || ''}</td>
         <td><span class="species-name">${s.species || ''}</span></td>
