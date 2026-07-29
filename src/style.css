@@ -290,7 +290,8 @@ code, .specimen-code {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
-  .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; }
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
   h1 { font-size: var(--text-3xl); }
   .container { padding: 0 var(--sp-4); }
 
