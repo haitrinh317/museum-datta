@@ -1,6 +1,6 @@
 # MEMORY — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-28 (Session 4 — Import Rắn biển + Dashboard Redesign)
+> Cập nhật lần cuối: 2026-07-29 (Session 5 — UI Polish: specimen layout, map Esri, admin image delete, random featured)
 
 ## 1. TỔNG QUAN DỰ ÁN
 

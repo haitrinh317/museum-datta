@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-28 (Session 3)
+> Cập nhật lần cuối: 2026-07-29 (Session 5)
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
@@ -97,6 +97,19 @@
 - [x] Thumbnail ảnh mẫu vật + no-photo.png placeholder
 - [x] Tạo skill `csv-converter` (convert CSV bất kỳ format → chuẩn 18 cột)
 - [x] Convert thành công `ran-bien-QR2023.csv` → `ran-bien-chuan.csv` (21 records)
+
+### Đã sửa (2026-07-29 Session 5 — UI Polish)
+- [x] Specimen page: redesign layout 2 hàng (ảnh+taxonomy | thu mẫu+bản đồ)
+- [x] Fix padding cards: `--sp-5` undefined → thêm vào spacing scale
+- [x] Trang chủ: bản đồ Esri + overlay Hoàng Sa/Trường Sa
+- [x] Admin edit modal: hiển thị ảnh hiện tại + nút xóa ảnh
+- [x] Trang chủ: mẫu tiêu biểu random (Fisher-Yates shuffle)
+- [x] Mobile: hamburger Material Icons, stat cards 2 cột, sidebar auto-hide
+- [x] Admin: ẩn link Admin từ public navbar
+
+### Next Session Starting Point
+- [ ] Re-import `ca-bien-chuan.csv` (update site_id cho 109 mẫu cá)
+- [ ] Import nhóm mới: Thân mềm, Giun nhiều tơ
 
 ### Dữ liệu chờ import
 - `Data/ran-bien-chuan.csv` — 21 mẫu Rắn biển, đã convert, chờ import thủ công
