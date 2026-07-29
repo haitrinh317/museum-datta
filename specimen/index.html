@@ -7,6 +7,7 @@
   <meta name="description" content="Thông tin khoa học chi tiết về mẫu vật sinh vật biển: phân loại, hình thái, sinh thái, phân bố và tình trạng bảo tồn.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
   <link rel="stylesheet" href="/src/style.css">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://*.supabase.co;">
   <style>
     /* ── SPECIMEN HEADER ── */
     .specimen-header {
@@ -249,6 +250,9 @@
     import L from 'leaflet';
     import 'leaflet/dist/leaflet.css';
 
+    // Security: escape DB data before innerHTML
+    const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
     const code = new URLSearchParams(window.location.search).get('code');
 
     if (!code) {
@@ -273,19 +277,19 @@
         document.getElementById('pageContent').innerHTML = `
           <div class="empty-state" style="min-height:60vh">
             <span class="material-icons">search_off</span>
-            <p>Không tìm thấy mẫu vật: <strong>${code}</strong></p>
+            <p>Không tìm thấy mẫu vật: <strong>${esc(code)}</strong></p>
             <a href="/browse/" class="btn btn-ghost" style="margin-top:16px">← Về tra cứu</a>
           </div>`;
         return;
       }
 
       // Update page title
-      document.title = `${s.common_name_vi || s.species} — Bảo tàng Hải dương học`;
+      document.title = `${esc(s.common_name_vi || s.species)} — Bảo tàng Hải dương học`;
 
       function badges(s) {
         const b = [];
         if (s.is_cites)       b.push('<span class="badge badge-cites"><span class="material-icons" style="font-size:10px">warning</span>CITES</span>');
-        if (s.iucn_status)    b.push(`<span class="badge badge-iucn"><span class="material-icons" style="font-size:10px">warning</span>IUCN: ${s.iucn_status}</span>`);
+        if (s.iucn_status)    b.push(`<span class="badge badge-iucn"><span class="material-icons" style="font-size:10px">warning</span>IUCN: ${esc(s.iucn_status)}</span>`);
         if (s.is_red_book_vn) b.push('<span class="badge badge-redbook"><span class="material-icons" style="font-size:10px">menu_book</span>Sách Đỏ VN</span>');
         return b.join('');
       }
@@ -294,8 +298,8 @@
         if (!content) return '';
         return `
           <div class="desc-section reveal">
-            <h3><span class="material-icons">${icon}</span>${title}</h3>
-            <p>${content.replace(/\n/g, '<br>')}</p>
+            <h3><span class="material-icons">${esc(icon)}</span>${esc(title)}</h3>
+            <p>${esc(content).replace(/\n/g, '<br>')}</p>
           </div>`;
       }
 
@@ -322,13 +326,13 @@
               <span class="material-icons">chevron_right</span>
               <a href="/browse/?group=${encodeURIComponent(s.specimen_groups?.name||'')}">${s.specimen_groups?.name || 'Mẫu vật'}</a>
               <span class="material-icons">chevron_right</span>
-              <span>${s.specimen_code}</span>
+              <span>${esc(s.specimen_code)}</span>
             </div>
-            <h1 class="specimen-name">${s.common_name_vi || s.species || 'Mẫu vật'}</h1>
-            <p class="specimen-sci">${s.species || ''}${s.author ? ` <small style="color:var(--text-muted);font-style:normal">${s.author}</small>` : ''}</p>
+            <h1 class="specimen-name">${esc(s.common_name_vi || s.species || 'Mẫu vật')}</h1>
+            <p class="specimen-sci">${esc(s.species || '')}${s.author ? ` <small style="color:var(--text-muted);font-style:normal">${esc(s.author)}</small>` : ''}</p>
             <div class="header-meta">
               ${badges(s)}
-              <span class="specimen-code">${s.specimen_code}</span>
+              <span class="specimen-code">${esc(s.specimen_code)}</span>
               ${s.serial_number ? `<span style="color:var(--text-muted);font-size:13px">TT: ${s.serial_number}</span>` : ''}
             </div>
           </div>
@@ -343,24 +347,24 @@
               <div class="specimen-img-panel">
                 <div class="specimen-img-box reveal">
                   ${s.primary_image_url
-                    ? `<img src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}">`
+                    ? `<img src="${esc(s.primary_image_url)}" alt="${esc(s.common_name_vi || s.species)}">`
                     : `<div class="specimen-img-no-photo">
                         <span class="material-icons">hide_image</span>
                         <span>Chưa có ảnh</span>
                        </div>`
                   }
                 </div>
-                ${s.primary_image_url ? `<p class="img-caption">${s.common_name_vi || s.species} — ${s.specimen_code}</p>` : ''}
+                ${s.primary_image_url ? `<p class="img-caption">${esc(s.common_name_vi || s.species)} — ${esc(s.specimen_code)}</p>` : ''}
               </div>
 
               <!-- RIGHT: Taxonomy only -->
               <div class="info-card reveal" style="align-self:start">
                 <h3><span class="material-icons">account_tree</span>Phân loại khoa học</h3>
-                <div class="info-row"><span class="info-label">Nhóm mẫu</span><span class="info-value">${s.specimen_groups?.name || '—'}</span></div>
-                <div class="info-row"><span class="info-label">Họ (Family)</span><span class="info-value">${s.family || '—'}</span></div>
-                <div class="info-row"><span class="info-label">Loài</span><span class="info-value sci">${s.species || '—'}</span></div>
-                <div class="info-row"><span class="info-label">Tác giả mô tả</span><span class="info-value">${s.author || '—'}</span></div>
-                <div class="info-row"><span class="info-label">Tên Việt</span><span class="info-value">${s.common_name_vi || '—'}</span></div>
+                <div class="info-row"><span class="info-label">Nhóm mẫu</span><span class="info-value">${esc(s.specimen_groups?.name || '—')}</span></div>
+                <div class="info-row"><span class="info-label">Họ (Family)</span><span class="info-value">${esc(s.family || '—')}</span></div>
+                <div class="info-row"><span class="info-label">Loài</span><span class="info-value sci">${esc(s.species || '—')}</span></div>
+                <div class="info-row"><span class="info-label">Tác giả mô tả</span><span class="info-value">${esc(s.author || '—')}</span></div>
+                <div class="info-row"><span class="info-label">Tên Việt</span><span class="info-value">${esc(s.common_name_vi || '—')}</span></div>
               </div>
 
             </div><!-- /specimen-main -->
@@ -370,11 +374,12 @@
               <div class="info-card reveal">
                 <h3><span class="material-icons">explore</span>Thông tin thu mẫu</h3>
                 ${site ? `
-                  <div class="info-row"><span class="info-label">Địa điểm</span><span class="info-value">${site.name}</span></div>
-                  <div class="info-row"><span class="info-label">Vùng biển</span><span class="info-value">${site.region || '—'}</span></div>
+                  <div class="info-row"><span class="info-label">Địa điểm</span><span class="info-value">${esc(site.name)}</span></div>
+                  <div class="info-row"><span class="info-label">Vùng biển</span><span class="info-value">${esc(site.region || '—')}</span></div>
                   ${hasMap ? `<div class="info-row"><span class="info-label">Tọa độ</span><span class="info-value">${site.latitude.toFixed(4)}°N, ${site.longitude.toFixed(4)}°E</span></div>` : ''}
                 ` : '<div class="info-row"><span class="info-value">—</span></div>'}
                 <div class="info-row"><span class="info-label">Ngày thu</span><span class="info-value">${s.collection_date ? new Date(s.collection_date).toLocaleDateString('vi-VN') : '—'}</span></div>
+                ${s.display_area ? `<div class="info-row"><span class="info-label"><span class="material-icons" style="font-size:14px;vertical-align:middle;margin-right:2px">museum</span>Khu trưng bày</span><span class="info-value" style="color:var(--accent-light);font-weight:600">${esc(s.display_area)}</span></div>` : ''}
               </div>
               <div class="map-card reveal">
                 ${hasMap ? `<div id="specimen-map"></div>` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;padding:var(--sp-4)">Không có tọa độ</div>'}
