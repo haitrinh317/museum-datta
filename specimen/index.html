@@ -8,45 +8,11 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
   <link rel="stylesheet" href="/src/style.css">
   <style>
-    /* ── SPECIMEN HERO ── */
-    .specimen-hero {
-      position: relative;
-      min-height: 420px;
-      display: flex;
-      align-items: flex-end;
-      background: var(--bg-deepest);
-      overflow: hidden;
-    }
-    .specimen-hero-img {
-      position: absolute;
-      inset: 0;
-      object-fit: cover;
-      width: 100%;
-      height: 100%;
-      opacity: 0.5;
-    }
-    .specimen-hero-placeholder {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, var(--bg-deepest), var(--bg-mid));
-    }
-    .specimen-hero-placeholder .material-icons {
-      font-size: 120px;
-      color: rgba(8,145,178,0.15);
-    }
-    .specimen-hero-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(0deg, rgba(6,13,26,0.98) 0%, rgba(6,13,26,0.4) 60%, transparent 100%);
-    }
-    .specimen-hero-content {
-      position: relative;
-      z-index: 2;
-      padding: var(--sp-8) 0;
-      width: 100%;
+    /* ── SPECIMEN HEADER ── */
+    .specimen-header {
+      background: linear-gradient(180deg, var(--bg-deepest) 0%, var(--bg-deep) 100%);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: var(--sp-6) 0 var(--sp-5);
     }
     .breadcrumb {
       display: flex;
@@ -59,97 +25,127 @@
     .breadcrumb a { color: var(--text-secondary); transition: color var(--dur-fast) ease; }
     .breadcrumb a:hover { color: var(--accent-light); }
     .breadcrumb .material-icons { font-size: 14px; }
-    .specimen-name { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; margin-bottom: var(--sp-2); }
-    .specimen-sci  { font-size: clamp(1rem, 2.5vw, 1.4rem); font-style: italic; color: var(--text-accent); }
-    .hero-badges { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
-    .hero-code { margin-top: var(--sp-3); }
+    .specimen-name { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 800; margin-bottom: var(--sp-2); line-height: 1.2; }
+    .specimen-sci  { font-size: clamp(0.95rem, 2vw, 1.2rem); font-style: italic; color: var(--text-accent); }
+    .header-meta  { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
 
-    /* ── CONTENT LAYOUT ── */
-    .specimen-body {
-      position: relative;
-      z-index: 1;
-    }
-    .info-grid {
+    /* ── MAIN LAYOUT: image left, info right ── */
+    .specimen-body { background: var(--bg-deep); }
+    .specimen-main {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 420px) 1fr;
       gap: var(--sp-6);
-      margin-bottom: var(--sp-6);
+      align-items: start;
+      padding: var(--sp-6) 0;
     }
+
+    /* ── IMAGE PANEL ── */
+    .specimen-img-panel {
+      position: sticky;
+      top: 72px;
+    }
+    .specimen-img-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .specimen-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: var(--sp-3);
+    }
+    .specimen-img-no-photo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-3);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .specimen-img-no-photo .material-icons { font-size: 64px; opacity: 0.2; }
+    .img-caption {
+      margin-top: var(--sp-2);
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* ── INFO PANEL ── */
+    .specimen-info-panel { display: flex; flex-direction: column; gap: var(--sp-4); }
     .info-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: var(--sp-6);
+      padding: var(--sp-5);
     }
     .info-card h3 {
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
+      letter-spacing: 2px;
       color: var(--accent-light);
-      margin-bottom: var(--sp-4);
-      padding-bottom: var(--sp-3);
+      margin-bottom: var(--sp-3);
+      padding-bottom: var(--sp-2);
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       gap: var(--sp-2);
     }
-    .info-card h3 .material-icons { font-size: 16px; }
+    .info-card h3 .material-icons { font-size: 15px; }
     .info-row {
       display: flex;
       align-items: baseline;
       gap: var(--sp-3);
       padding: var(--sp-2) 0;
-      border-bottom: 1px solid rgba(30,58,95,0.5);
-      font-size: 14px;
+      border-bottom: 1px solid rgba(30,58,95,0.4);
+      font-size: 13.5px;
     }
     .info-row:last-child { border-bottom: none; }
-    .info-label { color: var(--text-muted); min-width: 120px; flex-shrink: 0; }
+    .info-label { color: var(--text-muted); min-width: 110px; flex-shrink: 0; }
     .info-value { color: var(--text-primary); font-weight: 500; }
     .info-value.sci { font-style: italic; color: var(--text-accent); }
 
-    /* ── DESCRIPTION SECTIONS ── */
+    /* ── FULL-WIDTH SECTIONS BELOW ── */
+    .specimen-sections { padding-bottom: var(--sp-8); }
     .desc-section {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: var(--sp-6);
-      margin-bottom: var(--sp-6);
+      padding: var(--sp-5);
+      margin-bottom: var(--sp-4);
     }
     .desc-section h3 {
       display: flex;
       align-items: center;
       gap: var(--sp-3);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--text-white);
       margin-bottom: var(--sp-4);
     }
-    .desc-section h3 .material-icons { color: var(--accent-light); }
-    .desc-section p {
-      color: var(--text-secondary);
-      line-height: 1.8;
-      font-size: 15px;
-    }
+    .desc-section h3 .material-icons { color: var(--accent-light); font-size: 18px; }
+    .desc-section p { color: var(--text-secondary); line-height: 1.8; font-size: 14.5px; }
 
-    /* ── MAP SECTION ── */
-    .location-card {
-      display: grid;
-      grid-template-columns: 1fr 280px;
-      gap: var(--sp-6);
-      align-items: start;
-    }
+    /* ── MAP ── */
     #specimen-map {
-      height: 220px;
+      height: 260px;
       border-radius: var(--radius-md);
       overflow: hidden;
       border: 1px solid var(--border-subtle);
+      margin-top: var(--sp-3);
     }
 
     /* ── STATUS BADGES ── */
     .status-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
       gap: var(--sp-3);
     }
     .status-item {
@@ -160,14 +156,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: var(--sp-2);
+      gap: var(--sp-1);
       text-align: center;
     }
-    .status-item .material-icons { font-size: 24px; }
-    .status-item .status-label { font-size: 12px; color: var(--text-muted); }
-    .status-item .status-val { font-size: 13px; font-weight: 700; }
+    .status-item .material-icons { font-size: 22px; }
+    .status-item .status-label { font-size: 11px; color: var(--text-muted); }
+    .status-item .status-val { font-size: 12px; font-weight: 700; }
     .status-active .material-icons { color: var(--accent-light); }
-    .status-inactive .material-icons { color: var(--text-muted); opacity: 0.4; }
+    .status-inactive .material-icons { color: var(--text-muted); opacity: 0.3; }
     .status-inactive .status-val { color: var(--text-muted); }
 
     /* ── BOTTOM NAV ── */
@@ -179,7 +175,7 @@
       border-top: 1px solid var(--border-subtle);
       padding: var(--sp-3) 0;
       z-index: 100;
-      margin-top: var(--sp-8);
+      margin-top: var(--sp-4);
     }
     .specimen-nav .container {
       display: flex;
@@ -198,11 +194,16 @@
       gap: var(--sp-4);
     }
 
+    @media (max-width: 900px) {
+      .specimen-main { grid-template-columns: 1fr; }
+      .specimen-img-panel { position: static; }
+      .specimen-img-box { aspect-ratio: 3/2; max-height: 320px; }
+    }
     @media (max-width: 768px) {
-      .info-grid { grid-template-columns: 1fr; }
-      .location-card { grid-template-columns: 1fr; }
+      .specimen-header { padding: var(--sp-4) 0; }
+      .specimen-name { font-size: 1.5rem; }
       #specimen-map { height: 200px; }
-      .specimen-hero { min-height: 320px; }
+      .status-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
@@ -300,14 +301,9 @@
       const hasMap = site?.latitude && site?.longitude;
 
       document.getElementById('pageContent').innerHTML = `
-        <!-- HERO -->
-        <section class="specimen-hero">
-          ${s.primary_image_url
-            ? `<img class="specimen-hero-img" src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}">`
-            : `<img class="specimen-hero-img" src="/no-photo.png" alt="Chưa có ảnh" style="opacity:0.5;filter:saturate(0.6)">`
-          }
-          <div class="specimen-hero-overlay"></div>
-          <div class="container specimen-hero-content">
+        <!-- HEADER -->
+        <section class="specimen-header">
+          <div class="container">
             <div class="breadcrumb">
               <a href="/">Trang chủ</a>
               <span class="material-icons">chevron_right</span>
@@ -319,21 +315,35 @@
             </div>
             <h1 class="specimen-name">${s.common_name_vi || s.species || 'Mẫu vật'}</h1>
             <p class="specimen-sci">${s.species || ''}${s.author ? ` <small style="color:var(--text-muted);font-style:normal">${s.author}</small>` : ''}</p>
-            <div class="hero-badges">${badges(s)}</div>
-            <div class="hero-code">
+            <div class="header-meta">
+              ${badges(s)}
               <span class="specimen-code">${s.specimen_code}</span>
-              ${s.serial_number ? `<span style="color:var(--text-muted);font-size:13px;margin-left:8px">TT: ${s.serial_number}</span>` : ''}
+              ${s.serial_number ? `<span style="color:var(--text-muted);font-size:13px">TT: ${s.serial_number}</span>` : ''}
             </div>
           </div>
         </section>
 
-        <!-- BODY -->
+        <!-- MAIN: Image + Info 2 col -->
         <div class="specimen-body">
-          <div class="section" style="background:var(--bg-deep)">
-            <div class="container">
+          <div class="container">
+            <div class="specimen-main">
 
-              <!-- Taxonomy + Collection -->
-              <div class="info-grid">
+              <!-- LEFT: Image -->
+              <div class="specimen-img-panel">
+                <div class="specimen-img-box reveal">
+                  ${s.primary_image_url
+                    ? `<img src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}">`
+                    : `<div class="specimen-img-no-photo">
+                        <span class="material-icons">hide_image</span>
+                        <span>Chưa có ảnh</span>
+                       </div>`
+                  }
+                </div>
+                ${s.primary_image_url ? `<p class="img-caption">${s.common_name_vi || s.species} — ${s.specimen_code}</p>` : ''}
+              </div>
+
+              <!-- RIGHT: Info cards -->
+              <div class="specimen-info-panel">
                 <div class="info-card reveal">
                   <h3><span class="material-icons">account_tree</span>Phân loại khoa học</h3>
                   <div class="info-row"><span class="info-label">Nhóm mẫu</span><span class="info-value">${s.specimen_groups?.name || '—'}</span></div>
@@ -342,6 +352,7 @@
                   <div class="info-row"><span class="info-label">Tác giả mô tả</span><span class="info-value">${s.author || '—'}</span></div>
                   <div class="info-row"><span class="info-label">Tên Việt</span><span class="info-value">${s.common_name_vi || '—'}</span></div>
                 </div>
+
                 <div class="info-card reveal">
                   <h3><span class="material-icons">explore</span>Thông tin thu mẫu</h3>
                   ${site ? `
@@ -350,14 +361,16 @@
                     ${hasMap ? `<div class="info-row"><span class="info-label">Tọa độ</span><span class="info-value">${site.latitude.toFixed(4)}°N, ${site.longitude.toFixed(4)}°E</span></div>` : ''}
                   ` : '<div class="info-row"><span class="info-value">—</span></div>'}
                   <div class="info-row"><span class="info-label">Ngày thu</span><span class="info-value">${s.collection_date ? new Date(s.collection_date).toLocaleDateString('vi-VN') : '—'}</span></div>
-                  ${hasMap ? `
-                    <div id="specimen-map" style="margin-top:var(--sp-4)"></div>
-                  ` : ''}
+                  ${hasMap ? `<div id="specimen-map"></div>` : ''}
                 </div>
               </div>
 
+            </div><!-- /specimen-main -->
+
+            <!-- FULL-WIDTH sections -->
+            <div class="specimen-sections">
               <!-- Conservation status -->
-              <div class="info-card reveal" style="margin-bottom:var(--sp-6)">
+              <div class="info-card reveal" style="margin-bottom:var(--sp-4)">
                 <h3><span class="material-icons">shield</span>Tình trạng bảo tồn & Giá trị</h3>
                 <div class="status-grid">
                   ${statusItem('warning', 'CITES', s.is_cites ? 'Có trong danh sách' : 'Không', s.is_cites)}
@@ -368,17 +381,16 @@
                 </div>
               </div>
 
-              <!-- Description sections -->
               ${infoSection('Đặc điểm hình thái, màu sắc', 'visibility', s.morphology)}
               ${infoSection('Sinh học & Sinh thái', 'eco', s.ecology)}
               ${infoSection('Phân bố', 'public', s.distribution)}
               ${infoSection('Độc tố', 'science', s.toxicity)}
               ${infoSection('Ứng dụng', 'lightbulb', s.application)}
               ${s.notes ? infoSection('Ghi chú', 'notes', s.notes) : ''}
-
             </div>
-          </div>
-        </div>
+
+          </div><!-- /container -->
+        </div><!-- /specimen-body -->
 
         <!-- BOTTOM NAV -->
         <nav class="specimen-nav">
