@@ -7,6 +7,7 @@
   <meta name="description" content="Khám phá bộ sưu tập mẫu vật sinh vật biển tại Bảo tàng Hải dương học Việt Nam. Tra cứu thông tin khoa học, tọa độ thu mẫu và tình trạng bảo tồn.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
   <link rel="stylesheet" href="/src/style.css">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co https://*.tile.openstreetmap.org; connect-src 'self' https://*.supabase.co;">
   <style>
     /* ── HERO ── */
     .hero {
@@ -288,6 +289,9 @@
     import { supabase } from '/src/lib/supabase.js';
     import L from 'leaflet';
     import 'leaflet/dist/leaflet.css';
+
+    // Security: escape DB data before innerHTML
+    const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     // ── Loading ──
     const loading = document.getElementById('loading');
     window.addEventListener('load', () => {
@@ -345,9 +349,9 @@
       ];
       document.getElementById('statsGrid').innerHTML = stats.map(s => `
         <div class="stat-card reveal">
-          <span class="material-icons">${s.icon}</span>
+          <span class="material-icons">${esc(s.icon)}</span>
           <span class="stat-num" data-target="${s.num}">0</span>
-          <span class="stat-label">${s.label}</span>
+          <span class="stat-label">${esc(s.label)}</span>
         </div>
       `).join('');
       // Count-up animation
@@ -366,23 +370,16 @@
 
     // ── Featured specimens ──
     async function loadFeatured() {
-      // Fetch 40 specimens có ảnh trước, shuffle client-side → random mỗi lần load
+      // Chỉ hiển thị loài có ảnh, shuffle → random mỗi lần load
       const { data: withImg } = await supabase
         .from('specimens')
         .select('*, specimen_groups(name), collection_sites(name)')
         .not('primary_image_url', 'is', null)
         .limit(40);
 
-      const { data: noImg } = await supabase
-        .from('specimens')
-        .select('*, specimen_groups(name), collection_sites(name)')
-        .is('primary_image_url', null)
-        .limit(20);
-
       // Shuffle: Fisher-Yates
       const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
-      const pool = shuffle([...(withImg || []), ...(noImg || [])]);
-      const data = pool.slice(0, 6);
+      const data = shuffle(withImg || []).slice(0, 6);
 
       if (!data?.length) {
         document.getElementById('featuredGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="material-icons">inventory_2</span><p>Chưa có mẫu vật</p></div>';
@@ -398,21 +395,21 @@
       }
 
       document.getElementById('featuredGrid').innerHTML = data.map(s => `
-        <a href="/specimen/?code=${s.specimen_code}" class="card card-accent reveal" style="display:block;cursor:pointer;text-decoration:none">
+        <a href="/specimen/?code=${encodeURIComponent(s.specimen_code)}" class="card card-accent reveal" style="display:block;cursor:pointer;text-decoration:none">
           <div class="card-img">
             ${s.primary_image_url
-              ? `<img src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}" loading="lazy">`
+              ? `<img src="${esc(s.primary_image_url)}" alt="${esc(s.common_name_vi || s.species)}" loading="lazy">`
               : `<div class="card-img-placeholder"><span class="material-icons">photo</span></div>`
             }
           </div>
           <div class="card-body">
-            <span class="eyebrow" style="font-size:10px">${s.specimen_groups?.name || 'Mẫu vật'}</span>
-            <div class="card-title">${s.common_name_vi || '—'}</div>
-            <div class="card-subtitle">${s.species || ''}</div>
+            <span class="eyebrow" style="font-size:10px">${esc(s.specimen_groups?.name || 'Mẫu vật')}</span>
+            <div class="card-title">${esc(s.common_name_vi || '—')}</div>
+            <div class="card-subtitle">${esc(s.species || '')}</div>
             <div class="card-meta">
               <span class="material-icons">pin_drop</span>
-              ${s.collection_sites?.name || '—'}
-              <span class="specimen-code" style="margin-left:auto">${s.specimen_code}</span>
+              ${esc(s.collection_sites?.name || '—')}
+              <span class="specimen-code" style="margin-left:auto">${esc(s.specimen_code)}</span>
             </div>
             <div class="card-badges">${getBadges(s)}</div>
           </div>
@@ -477,8 +474,8 @@
         <div class="site-item reveal" onclick="document.querySelector('#preview-map').scrollIntoView()">
           <span class="material-icons">pin_drop</span>
           <div>
-            <div class="site-name">${site.name}</div>
-            <div class="site-count">${site.region || ''}</div>
+            <div class="site-name">${esc(site.name)}</div>
+            <div class="site-count">${esc(site.region || '')}</div>
           </div>
           <span class="site-badge">${site.specimens?.length || 0}</span>
         </div>

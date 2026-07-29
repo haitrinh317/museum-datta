@@ -7,6 +7,7 @@
   <meta name="description" content="Tra cứu cơ sở dữ liệu mẫu vật sinh vật biển. Tìm kiếm theo tên loài, họ, địa điểm thu mẫu và tình trạng bảo tồn.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
   <link rel="stylesheet" href="/src/style.css">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co;">
   <style>
     .browse-layout {
       display: grid;
@@ -208,6 +209,15 @@
             </label>
           </div>
 
+          <div class="filter-group">
+            <label>Hình ảnh</label>
+            <select class="filter-select" id="filterImage" onchange="applyFilters()">
+              <option value="all">Tất cả</option>
+              <option value="has" selected>Có ảnh</option>
+              <option value="no">Chưa có ảnh</option>
+            </select>
+          </div>
+
           <button class="btn-reset" onclick="resetFilters()">
             <span class="material-icons" style="font-size:14px;vertical-align:middle">refresh</span>
             Xóa bộ lọc
@@ -254,6 +264,9 @@
   <script type="module">
     import { supabase } from '/src/lib/supabase.js';
 
+    // Security: escape DB data before innerHTML
+    const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
     let allGroups = [];
     let allSites = [];
     let selectedGroups = new Set();
@@ -279,14 +292,14 @@
       document.getElementById('groupFilters').innerHTML = allGroups.map(g => `
         <label class="filter-option">
           <input type="checkbox" class="filter-group-cb" value="${g.id}" onchange="applyFilters()">
-          ${g.name}
+          ${esc(g.name)}
         </label>
       `).join('');
 
       document.getElementById('siteFilters').innerHTML = allSites.map(s => `
         <label class="filter-option">
           <input type="checkbox" class="filter-site-cb" value="${s.id}" onchange="applyFilters()">
-          ${s.name}${s.region ? ` <small style="color:var(--text-muted)">(${s.region})</small>` : ''}
+          ${esc(s.name)}${s.region ? ` <small style="color:var(--text-muted)">(${esc(s.region)})</small>` : ''}
         </label>
       `).join('');
     }
@@ -335,6 +348,10 @@
       if (iucnOn)    query = query.not('iucn_status', 'is', null);
       if (redbookOn) query = query.eq('is_red_book_vn', true);
 
+      const imgFilter = document.getElementById('filterImage').value;
+      if (imgFilter === 'has') query = query.not('primary_image_url', 'is', null);
+      else if (imgFilter === 'no') query = query.is('primary_image_url', null);
+
       const { data, error } = await query;
       if (error) console.error('Filter query error:', error.message);
       renderGrid(data || []);
@@ -359,21 +376,21 @@
         return;
       }
       document.getElementById('specimenGrid').innerHTML = data.map(s => `
-        <a href="/specimen/?code=${s.specimen_code}" class="card card-accent" style="display:block;cursor:pointer;text-decoration:none">
+        <a href="/specimen/?code=${encodeURIComponent(s.specimen_code)}" class="card card-accent" style="display:block;cursor:pointer;text-decoration:none">
           <div class="card-img">
             ${s.primary_image_url
-              ? `<img src="${s.primary_image_url}" alt="${s.common_name_vi || s.species}" loading="lazy">`
+              ? `<img src="${esc(s.primary_image_url)}" alt="${esc(s.common_name_vi || s.species)}" loading="lazy">`
               : `<img src="/no-photo.png" alt="Chưa có ảnh" loading="lazy" style="opacity:0.6">`
             }
           </div>
           <div class="card-body">
-            <span class="eyebrow" style="font-size:10px">${s.specimen_groups?.name || ''}</span>
-            <div class="card-title">${s.common_name_vi || '—'}</div>
-            <div class="card-subtitle">${s.species || ''}</div>
+            <span class="eyebrow" style="font-size:10px">${esc(s.specimen_groups?.name || '')}</span>
+            <div class="card-title">${esc(s.common_name_vi || '—')}</div>
+            <div class="card-subtitle">${esc(s.species || '')}</div>
             <div class="card-meta">
               <span class="material-icons">pin_drop</span>
-              ${s.collection_sites?.name || '—'}
-              <span class="specimen-code" style="margin-left:auto">${s.specimen_code}</span>
+              ${esc(s.collection_sites?.name || '—')}
+              <span class="specimen-code" style="margin-left:auto">${esc(s.specimen_code)}</span>
             </div>
             <div class="card-badges">${getBadges(s)}</div>
           </div>
@@ -392,6 +409,7 @@
     window.resetFilters = function() {
       document.querySelectorAll('.filter-group-cb, .filter-site-cb').forEach(el => el.checked = false);
       ['filterCites','filterIucn','filterRedbook'].forEach(id => document.getElementById(id).checked = false);
+      document.getElementById('filterImage').value = 'has';
       document.getElementById('searchInput').value = '';
       applyFilters();
     };
