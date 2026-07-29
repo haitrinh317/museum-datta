@@ -47,6 +47,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   bindEvents();
+
+  // Expose to window for inline onclick handlers in HTML (ES module scope is not global)
+  window.navigateTo = navigateTo;
+  window.openAddSpecimenForm = () => { navigateTo('specimens'); openSpecimenModal(); };
 });
 
 // ============================================================
@@ -405,8 +409,8 @@ function renderSpecimensTable() {
   tbody.innerHTML = state.specimens.map(s => {
     const badges = [];
     if (s.is_cites) badges.push('<span class="badge badge-conservation">CITES</span>');
-    if (s.iucn_status) badges.push('<span class="badge badge-iucn">IUCN</span>');
-    if (s.is_red_book_vn) badges.push('<span class="badge badge-conservation">SĐ VN</span>');
+    if (s.iucn_status) badges.push(`<span class="badge badge-iucn">${s.iucn_status}</span>`);
+    if (s.is_red_book_vn) badges.push('<span class="badge badge-redbook">SĐ VN</span>');
 
     return `
       <tr data-id="${s.id}">

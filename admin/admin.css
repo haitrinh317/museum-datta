@@ -1032,6 +1032,11 @@ fieldset legend {
     color: var(--accent-amber);
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
+.badge-redbook {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
 .badge-success {
     background: rgba(16, 185, 129, 0.12);
     color: var(--accent-green);
