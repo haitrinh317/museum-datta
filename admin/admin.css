@@ -1167,21 +1167,34 @@ fieldset legend {
     height: 100%;
     object-fit: cover;
 }
+.image-preview-item.current-image {
+    border-color: var(--warning);
+}
+.current-image-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.65);
+    color: #fbbf24;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    padding: 3px 4px;
+    letter-spacing: 0.5px;
+}
 .image-preview-item .remove-image {
     position: absolute;
     top: 4px;
     right: 4px;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(220, 38, 38, 0.85);
     border: none;
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
     opacity: 0;
     transition: opacity var(--transition-fast);
 }

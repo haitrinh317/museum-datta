@@ -531,10 +531,40 @@ function openSpecimenModal(specimen = null) {
   }
 
   state.pendingImages = [];
-  document.getElementById('image-preview-grid').innerHTML = '';
+  const grid = document.getElementById('image-preview-grid');
+  grid.innerHTML = '';
+
+  // Edit mode: show current image with delete button
+  if (specimen?.primary_image_url) {
+    const existing = document.createElement('div');
+    existing.className = 'image-preview-item primary current-image';
+    existing.id = 'current-image-preview';
+    existing.innerHTML = `
+      <img src="${specimen.primary_image_url}" alt="Ảnh hiện tại">
+      <div class="current-image-label">Ảnh hiện tại</div>
+      <button class="remove-image" type="button" title="Xóa ảnh này"
+        onclick="clearSpecimenImage('${specimen.id}', this.closest('.image-preview-item'))">
+        <span class="material-icons" style="font-size:14px">delete</span>
+      </button>
+    `;
+    grid.appendChild(existing);
+  }
 
   modal.style.display = 'flex';
 }
+
+window.clearSpecimenImage = async function(specimenId, el) {
+  if (!confirm('Xóa ảnh này khỏi mẫu vật?')) return;
+  const { error } = await supabase.from('specimens')
+    .update({ primary_image_url: null })
+    .eq('id', specimenId);
+  if (error) { showToast('Lỗi xóa ảnh: ' + error.message, 'error'); return; }
+  el.remove();
+  showToast('Đã xóa ảnh', 'success');
+  // Update local cache
+  const s = state.specimens.find(s => s.id === specimenId);
+  if (s) s.primary_image_url = null;
+};
 
 async function handleSpecimenSubmit(e) {
   e.preventDefault();
