@@ -420,25 +420,45 @@
       // Leaflet map
       const L = window.L;
       const map = L.map('preview-map', { zoomControl: false, scrollWheelZoom: false });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© CartoDB',
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
         maxZoom: 18,
+      }).addTo(map);
+
+      // ── Overlay: Quần đảo Hoàng Sa ──
+      L.circle([16.5, 112.0], {
+        radius: 80000, color: '#fbbf24', weight: 1.5, dashArray: '6 4',
+        fillColor: '#fbbf24', fillOpacity: 0.08, interactive: false,
+      }).addTo(map);
+      L.marker([16.5, 112.0], {
+        icon: L.divIcon({ className: '', html: '<div style="white-space:nowrap;font-size:11px;font-weight:700;color:#fbbf24;text-shadow:0 1px 4px rgba(0,0,0,0.9)">QĐ. HOÀNG SA</div>', iconAnchor: [52, 10] }),
+        interactive: false,
+      }).addTo(map);
+
+      // ── Overlay: Quần đảo Trường Sa ──
+      L.circle([9.5, 113.5], {
+        radius: 160000, color: '#38bdf8', weight: 1.5, dashArray: '6 4',
+        fillColor: '#38bdf8', fillOpacity: 0.08, interactive: false,
+      }).addTo(map);
+      L.marker([9.5, 113.5], {
+        icon: L.divIcon({ className: '', html: '<div style="white-space:nowrap;font-size:11px;font-weight:700;color:#38bdf8;text-shadow:0 1px 4px rgba(0,0,0,0.9)">QĐ. TRƯỜNG SA</div>', iconAnchor: [58, 10] }),
+        interactive: false,
       }).addTo(map);
 
       const validSites = sites.filter(s => s.latitude && s.longitude);
       if (!validSites.length) return;
 
-      const bounds = [];
       validSites.forEach(site => {
         const count = site.specimens?.length || 0;
         const marker = L.circleMarker([site.latitude, site.longitude], {
-          radius: 8, fillColor: '#06b6d4', color: '#0891b2',
-          weight: 2, opacity: 1, fillOpacity: 0.8,
+          radius: 9, fillColor: '#06b6d4', color: '#fff',
+          weight: 2, opacity: 1, fillOpacity: 0.9,
         }).addTo(map);
         marker.bindPopup(`<b style="color:#06b6d4">${site.name}</b><br><small>${site.region || ''}</small><br>${count} mẫu vật`);
-        bounds.push([site.latitude, site.longitude]);
       });
-      map.fitBounds(bounds, { padding: [32, 32] });
+
+      // View cố định để thấy Biển Đông + 2 quần đảo
+      map.setView([12.5, 113.0], 5);
 
       // Site list
       document.getElementById('siteList').innerHTML = validSites.map(site => `
