@@ -297,11 +297,12 @@ code, .specimen-code {
   /* Navbar: hamburger toggle */
   .navbar-toggle {
     display: flex;
+    align-items: center;
+    justify-content: center;
     background: none; border: none;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     padding: 6px;
     cursor: pointer;
-    font-size: 24px;
   }
   .navbar .container { gap: var(--sp-2); }
   .navbar-brand { font-size: 13px; }
