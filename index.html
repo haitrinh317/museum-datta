@@ -297,6 +297,8 @@
           <div class="card skeleton" style="min-height:280px"></div>
           <div class="card skeleton" style="height:200px"></div>
           <div class="card skeleton" style="height:200px"></div>
+          <div class="card skeleton" style="height:200px"></div>
+          <div class="card skeleton" style="height:200px"></div>
         </div>
         <div style="text-align:center; margin-top:var(--sp-8)">
           <a href="/browse/" class="btn btn-ghost">
@@ -516,7 +518,7 @@
 
       // Shuffle: Fisher-Yates
       const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
-      const data = shuffle(withImg || []).slice(0, 6);
+      const data = shuffle(withImg || []).slice(0, 5);
 
       if (!data?.length) {
         document.getElementById('featuredGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="material-icons">inventory_2</span><p>Chưa có mẫu vật</p></div>';
