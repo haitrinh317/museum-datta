@@ -138,14 +138,26 @@
     .info-card h3 .material-icons { font-size: 15px; }
     .info-row {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: var(--sp-4);
       padding: var(--sp-2) 0;
       border-bottom: 1px solid rgba(30,58,95,0.4);
       font-size: 13.5px;
     }
     .info-row:last-child { border-bottom: none; }
-    .info-label { color: var(--text-muted); min-width: 110px; flex-shrink: 0; }
+    .info-label {
+      color: var(--text-muted);
+      min-width: 120px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-label .material-icons {
+      font-size: 15px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
     .info-value { color: var(--text-primary); font-weight: 500; }
     .info-value.sci { font-style: italic; color: var(--text-accent); }
 
@@ -392,12 +404,12 @@
               <div class="info-card reveal">
                 <h3><span class="material-icons">explore</span>Thông tin thu mẫu</h3>
                 ${site ? `
-                  <div class="info-row"><span class="info-label">Địa điểm</span><span class="info-value">${esc(site.name)}</span></div>
-                  <div class="info-row"><span class="info-label">Vùng biển</span><span class="info-value">${esc(site.region || '—')}</span></div>
-                  ${hasMap ? `<div class="info-row"><span class="info-label">Tọa độ</span><span class="info-value">${site.latitude.toFixed(4)}°N, ${site.longitude.toFixed(4)}°E</span></div>` : ''}
+                  <div class="info-row"><span class="info-label"><span class="material-icons">pin_drop</span>Địa điểm</span><span class="info-value">${esc(site.name)}</span></div>
+                  <div class="info-row"><span class="info-label"><span class="material-icons">waves</span>Vùng biển</span><span class="info-value">${esc(site.region || '—')}</span></div>
+                  ${hasMap ? `<div class="info-row"><span class="info-label"><span class="material-icons">my_location</span>Tọa độ</span><span class="info-value">${site.latitude.toFixed(4)}°N, ${site.longitude.toFixed(4)}°E</span></div>` : ''}
                 ` : '<div class="info-row"><span class="info-value">—</span></div>'}
-                <div class="info-row"><span class="info-label">Ngày thu</span><span class="info-value">${s.collection_date ? new Date(s.collection_date).toLocaleDateString('vi-VN') : '—'}</span></div>
-                ${s.display_area ? `<div class="info-row"><span class="info-label"><span class="material-icons" style="font-size:14px;vertical-align:middle;margin-right:2px">museum</span>Khu trưng bày</span><span class="info-value" style="color:var(--accent-light);font-weight:600">${esc(s.display_area)}</span></div>` : ''}
+                <div class="info-row"><span class="info-label"><span class="material-icons">calendar_today</span>Ngày thu</span><span class="info-value">${s.collection_date ? new Date(s.collection_date).toLocaleDateString('vi-VN') : '—'}</span></div>
+                ${s.display_area ? `<div class="info-row"><span class="info-label"><span class="material-icons">museum</span>Khu trưng bày</span><span class="info-value" style="color:var(--accent-light);font-weight:600">${esc(s.display_area)}</span></div>` : ''}
               </div>
               <div class="map-card reveal">
                 ${hasMap ? `<div id="specimen-map"></div>` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;padding:var(--sp-4)">Không có tọa độ</div>'}
