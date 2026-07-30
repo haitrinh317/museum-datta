@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-29 (Session 5)
+> Cập nhật lần cuối: 2026-07-29 (Session 7 — Upload ảnh, Filter hình ảnh, SEO OG)
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
@@ -59,10 +59,46 @@
 - [x] GitHub repo setup (`haitrinh317/museum-datta`)
 - [x] Vercel deployment (https://museum-datta.vercel.app/)
 - [ ] Custom domain (nếu bảo tàng cung cấp)
-- [ ] SEO: meta tags, structured data (Schema.org Dataset)
-- [ ] PWA: offline support cho public site
+- [x] SEO: OG meta tags + Twitter Card + og-image.png
+- [ ] SEO: Schema.org structured data (Dataset)
+- [x] PWA: offline support cho public site
 - [ ] Analytics: page views, QR scan tracking
 - [ ] Print view: in thẻ QR batch (A4, 3x4 grid)
+
+## 🔲 PHASE 4 — PWA (Progressive Web App)
+
+> **Mục tiêu:** Khách tham quan scan QR → cài app lên điện thoại → xem offline không cần mạng.
+> Ưu tiên trang `/specimen/` (QR landing) và `/browse/` (tra cứu).
+
+### 4.1 Web App Manifest
+- [x] Tạo `public/manifest.json` — name, short_name, icons, theme_color, display: standalone
+- [x] Icon set: 192×192, 512×512 từ logo.png (dùng sharp để resize)
+- [x] Thêm `<link rel="manifest">` vào tất cả trang public
+- [x] Thêm `<meta name="theme-color">` + Apple touch icon
+
+### 4.2 Service Worker
+- [x] Tạo `public/sw.js` — đăng ký trong `index.html`, `browse/`, `specimen/`
+- [x] **Cache strategy:**
+  - App Shell (HTML/CSS/JS): Cache First
+  - Ảnh mẫu vật (Supabase Storage): Cache First, stale-while-revalidate
+  - API calls Supabase: Network First, fallback cache
+- [x] Cache tên: `museum-v1` — version bump khi deploy lớn
+- [x] Offline fallback page (`/offline.html`) khi mất mạng hoàn toàn
+
+### 4.3 Install Prompt
+- [x] Bắt sự kiện `beforeinstallprompt` → hiện banner "Cài ứng dụng" trên trang chủ
+- [x] Nút "Cài đặt" + "Để sau" — lưu choice vào localStorage
+- [x] Không hiện lại nếu đã cài hoặc đã từ chối
+
+### 4.4 Offline UX
+- [x] Specimen page: nếu offline, show dữ liệu từ cache (Cache API)
+- [x] Browse page: hiện kết quả cache lần browse cuối + badge "Dữ liệu offline"
+- [x] Toast thông báo khi mất/có lại kết nối mạng
+
+### 4.5 Test & Validate
+- [ ] Lighthouse PWA audit ≥ 90 điểm
+- [ ] Test install trên Android Chrome + iOS Safari (Add to Home Screen)
+- [ ] Test offline: tắt mạng → mở app → xem specimen page
 
 ## 🔲 BACKLOG — Tính năng mở rộng
 
@@ -108,11 +144,20 @@
 - [x] Admin: ẩn link Admin từ public navbar
 
 ### Next Session Starting Point
-- [ ] Re-import `ca-bien-chuan.csv` (update site_id cho 109 mẫu cá)
-- [ ] Import nhóm mới: Thân mềm, Giun nhiều tơ
+- [ ] Upload ảnh 14 no-match thủ công qua Admin (filter "Chưa có ảnh")
+- [ ] Upload ảnh folders còn lại (kiểm tra folder nào chưa xử lý)
+- [ ] Schema.org Dataset structured data
+- [ ] PWA offline support
+- [ ] Custom domain setup (nếu bảo tàng cung cấp)
+
+### Đã hoàn thành Session 7 (2026-07-29)
+- [x] Auto upload script `upload_images.mjs` — 72 ảnh WebP upload thành công
+- [x] Filter hình ảnh: trang chủ, browse, admin
+- [x] SEO: OG + Twitter Card meta tags + og-image.png
+- [x] Fix RLS upsert: delete-before-upload
 
 ### Dữ liệu chờ import
 - `Data/ran-bien-chuan.csv` — 21 mẫu Rắn biển, đã convert, chờ import thủ công
-- `Data/ca bien.docx` — 109 loài cá, format .docx (chưa có số hiệu mẫu + họ)
-- Bảo tàng có thể cung cấp thêm CSV cho nhóm: Thân mềm, San hô...
-- Ảnh mẫu vật: chưa có — cần bảo tàng cung cấp hoặc chụp bổ sung
+- `Data/ca-bien-chuan.csv` — 113 mẫu cá biển ✅ đã import, đang upload ảnh
+- Tất cả 147 mẫu đợt 2 (Thực vật, Cá dữ, Thân mềm, Giun nhiều tơ) ✅ đã push xong
+- Ảnh mẫu vật cá biển: đang bổ sung — cần upload đủ cho 113 loài

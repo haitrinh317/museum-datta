@@ -1,6 +1,6 @@
 # MEMORY — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-29 (Session 5 — UI Polish: specimen layout, map Esri, admin image delete, random featured)
+> Cập nhật lần cuối: 2026-07-30 (Session 8 — PWA: manifest, Service Worker, install prompt, offline support)
 
 ## 1. TỔNG QUAN DỰ ÁN
 
@@ -21,6 +21,7 @@
 | Font | Inter (Google Fonts) | |
 | QR | qrcode npm package | Client-side generation |
 | Map | Leaflet.js | Esri World Imagery tiles (CartoDB blocked ở VN) |
+| PWA | vite-plugin-pwa (Workbox) | Auto-generate SW, precache, runtime cache |
 
 ## 3. CẤU TRÚC THƯ MỤC
 
@@ -55,6 +56,21 @@ CSDL-Museum/
 ├── Memory.md                   ← FILE NÀY
 ├── todo.md                     ← Roadmap + task tracking
 └── README.md
+```
+
+### PWA Files (mới thêm Session 8)
+```
+public/
+├── manifest.webmanifest        # Auto-generated bởi vite-plugin-pwa
+├── offline.html                # Fallback khi mất mạng
+├── icons/
+│   ├── icon-192x192.png
+│   ├── icon-512x512.png
+│   ├── icon-maskable-192x192.png
+│   ├── icon-maskable-512x512.png
+│   └── apple-touch-icon.png
+src/
+└── pwa-ui.js                   # Install prompt + online/offline toast
 ```
 
 ## 4. DATABASE SCHEMA (Supabase/PostgreSQL)
@@ -159,23 +175,46 @@ Parser trong `admin.js` (`parseThongTin()`) tách bằng regex theo keyword head
 - Admin: `admin/index.html`
 - Config: `vite.config.js` với `rollupOptions.input`
 
-## 8. DỮ LIỆU HIỆN CÓ
+## 8. DỮ LIỆU HIỆN CÓ (cập nhật 2026-07-29)
 
-| Nhóm mẫu | Số mẫu vật | Ảnh | Địa điểm | Trạng thái |
-|---|---|---|---|---|
-| Da gai (Echinodermata) | 16 | 0 | 5 (Trường Sa) | ✅ Imported |
-| Giáp xác (Crustacea) | 7 | 0 | Trường Sa | ✅ Imported |
-| Rắn biển (Hydrophiidae) | 21 | 18 | 6 (Biển Đông) | ✅ Imported + ảnh |
-| Cá biển | 109 | 0 | Trường Sa | ❌ .docx, thiếu số hiệu mẫu |
-| Thân mềm | ? | 0 | ? | ❌ Chờ convert CSV |
-| Giun nhiều tơ | ? | 0 | ? | ❌ Chờ convert CSV |
+**Tổng: 304 mẫu vật — 8 nhóm**
 
-**Tổng: 44 mẫu vật, 18 có ảnh, 8 cần bảo tồn (CITES/IUCN/Sách Đỏ VN)**
+| Nhóm mẫu | Số mẫu | Ảnh | Ghi chú |
+|---|---|---|---|
+| Động vật Da gai | 16 | 0 | TS Trường Sa |
+| Giáp xác | 7 | 0 | Trường Sa |
+| Rắn biển | 21 | 18 | 6 địa điểm Biển Đông |
+| Cá biển | 113 | 4 (cá mập) | 113 đã import, 4 ảnh cá mập, còn lại chưa có ảnh |
+| Thực vật biển | 71 | 0 | Đã import |
+| Thân mềm | 62 | 62 | ✅ Upload ảnh xong (WebP) |
+| Giun nhiều tơ | 6 | 6 | ✅ Upload ảnh xong (WebP) |
+| Cá dữ | 8 | 0 | Đã import |
+| **Tổng** | **304** | **90** | 14 no-match chưa xử lý |
 
-### Image Upload Script
-- **Workaround Storage RLS:** Delete file trước → upload mới (bypass UPDATE policy)
-- **Matching:** tên file → tên khoa học (direct) + manual mapping tên Việt
-- **Path format:** `ran-bien/{specimen_code}.jpg`
+**display_area:** 233/304 mẫu có thông tin khu trưng bày (→ "Đa dạng sinh học biển")
+**Bảo tồn:** CITES, IUCN, Sách Đỏ VN
+
+### Script Upload Ảnh — `upload_images.mjs`
+
+**Vị trí:** `E:\2026\_Antigravity\CSDL-Museum\upload_images.mjs` (root dự án)
+
+**Cách dùng:**
+```bash
+node upload_images.mjs 123456 "E:\2026\_Antigravity\CSDL-Museum\Data\<ten-folder-anh>"
+```
+
+**Logic matching (theo thứ tự):**
+1. Tên file bắt đầu bằng số TT (`201. Cá mập...`) → match qua `serial_number`
+2. Tên file match với `species` (tên khoa học)
+3. Tên file match với `common_name_vi` (tên Việt)
+
+**Đặc điểm kỹ thuật:**
+- Convert sang WebP (quality 80, max width 1200px) bằng `sharp`
+- Tiết kiệm 83–95% dung lượng so với PNG gốc
+- **Fix RLS:** delete file cũ trước khi upload mới (bypass UPDATE policy Supabase Storage)
+- Storage path: `{specimen_code}/{index}.webp` (ASCII-safe, tránh lỗi tiếng Việt)
+- Cập nhật `specimens.primary_image_url` sau khi upload
+- Báo cáo rõ: ✅ uploaded / ⚠️ no-match / ❌ error
 
 ## 9. QUYẾT ĐỊNH KIẾN TRÚC ĐÃ THỐNG NHẤT
 
@@ -188,6 +227,9 @@ Parser trong `admin.js` (`parseThongTin()`) tách bằng regex theo keyword head
 | 5 | Vanilla JS, không framework | YAGNI — app không cần SPA routing phức tạp |
 | 6 | Deploy Vercel | Auto-deploy từ GitHub main branch |
 | 7 | URL hash cho admin tab | F5 giữ nguyên tab thay vì về dashboard |
+| 8 | PWA chỉ public (không admin) | Admin cần Supabase online để CRUD, offline vô dụng |
+| 9 | vite-plugin-pwa (Workbox) | Auto SW generation, cache versioning, ít boilerplate hơn tự viết |
+| 10 | Cache API only (không IndexedDB) | Public site chỉ đọc, Cache API đủ sức |
 
 ## 10. DEPLOY
 

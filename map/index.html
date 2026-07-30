@@ -6,8 +6,12 @@
   <title>Bản đồ thu mẫu — Bảo tàng Hải dương học</title>
   <meta name="description" content="Bản đồ tương tác các điểm thu mẫu vật tại Biển Đông và các vùng biển Việt Nam.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0a1628">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/src/style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://*.supabase.co;">
   <style>
     body { overflow: hidden; }
     .map-page { position: fixed; inset: 56px 0 0 0; display: flex; }
@@ -260,6 +264,9 @@
     let panelOpen = true;
     let allSites = [];
 
+    // Security: escape DB data before innerHTML
+    const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
     // ── Init Leaflet map — centered to show both Hoàng Sa & Trường Sa ──
     map = L.map('main-map', {
       center: [12.5, 112.5],
@@ -377,8 +384,8 @@
 
       marker.bindPopup(`
         <div style="min-width:180px">
-          <strong style="color:#06b6d4;font-size:14px">${site.name}</strong><br>
-          <small style="color:#94a3b8">${site.region || ''}</small><br>
+          <strong style="color:#06b6d4;font-size:14px">${esc(site.name)}</strong><br>
+          <small style="color:#94a3b8">${esc(site.region || '')}</small><br>
           ${badgeHtml}
           <div style="margin-top:8px;font-size:13px;color:#e2e8f0">${count} mẫu vật</div>
           <a href="/browse/" style="display:inline-block;margin-top:8px;font-size:12px;color:#38bdf8">Xem danh sách →</a>
@@ -397,8 +404,8 @@
       <div class="site-panel-item" id="siteItem_${site.id}" onclick="selectSite('${site.id}')">
         <div class="site-dot"></div>
         <div class="site-info">
-          <div class="name">${site.name}</div>
-          <div class="region">${site.region || ''}</div>
+          <div class="name">${esc(site.name)}</div>
+          <div class="region">${esc(site.region || '')}</div>
         </div>
         <span class="site-count-badge">${site.specimens?.length || 0}</span>
       </div>
@@ -425,12 +432,12 @@
       const detail = document.getElementById('panelDetail');
       detail.style.display = 'block';
       detail.innerHTML = `
-        <p class="site-specimens-title">${site.name} — ${site.specimens?.length || 0} mẫu vật</p>
+        <p class="site-specimens-title">${esc(site.name)} — ${site.specimens?.length || 0} mẫu vật</p>
         ${(site.specimens || []).map(s => `
-          <a href="/specimen/?code=${s.specimen_code}" class="specimen-mini">
+          <a href="/specimen/?code=${encodeURIComponent(s.specimen_code)}" class="specimen-mini">
             <span class="material-icons" style="font-size:14px;color:var(--accent-light)">chevron_right</span>
-            <span>${s.common_name_vi || s.species || '—'}</span>
-            <span class="specimen-code">${s.specimen_code}</span>
+            <span>${esc(s.common_name_vi || s.species || '—')}</span>
+            <span class="specimen-code">${esc(s.specimen_code)}</span>
           </a>
         `).join('')}
         <a href="/browse/" class="btn-view-all">Xem tất cả →</a>
@@ -455,5 +462,6 @@
       100% { transform: scale(2.5); opacity: 0; }
     }
   </style>
+  <script type="module" src="/src/pwa-ui.js"></script>
 </body>
 </html>

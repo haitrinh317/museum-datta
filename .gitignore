@@ -7,3 +7,13 @@ dist
 # Agent config (internal, not for repo)
 .agents/
 .backups/
+
+# Raw data images (too large for git, already uploaded to Supabase Storage)
+Data/anh-*/
+Data/giun-nhieu-to/
+Data/RAW/
+Data/*.docx
+
+# Scratch scripts (one-off, not production)
+scratch_xlsx/
+logs/

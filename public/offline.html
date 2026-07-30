@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline — Bảo tàng Hải dương học</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a1628;
+      color: #c8d6e5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    .offline-container { max-width: 420px; }
+    .offline-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: .7;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #f5f6fa;
+      margin-bottom: .75rem;
+    }
+    p {
+      font-size: .95rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      color: #8395a7;
+    }
+    .btn {
+      display: inline-block;
+      padding: .75rem 1.5rem;
+      background: linear-gradient(135deg, #0abde3, #00d2d3);
+      color: #0a1628;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(10,189,227,.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-icon">🌊</div>
+    <h1>Không có kết nối mạng</h1>
+    <p>Các trang bạn đã xem trước đó vẫn có thể truy cập được từ bộ nhớ đệm. Hãy thử quay lại trang chủ hoặc kết nối mạng rồi tải lại.</p>
+    <a href="/" class="btn">Về trang chủ</a>
+  </div>
+</body>
+</html>
