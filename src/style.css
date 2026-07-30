@@ -46,7 +46,7 @@ button { cursor: pointer; font-family: inherit; }
   --badge-cites:   #dc2626;
   --badge-iucn:    #ea580c;
   --badge-redbook: #ca8a04;
-  --badge-exploit: #7c3aed;
+  --badge-exploit: #d97706;  /* amber — was AI-purple, changed by taste-skill audit */
   --badge-food:    #059669;
 
   /* Text */
@@ -79,9 +79,9 @@ button { cursor: pointer; font-family: inherit; }
   --dur-base: 0.4s;
 
   /* Shadow */
-  --shadow-sm:  0 2px 8px rgba(0,0,0,0.35);
-  --shadow-md:  0 4px 20px rgba(0,0,0,0.45);
-  --shadow-lg:  0 8px 40px rgba(0,0,0,0.55);
+  --shadow-sm:  0 2px 8px rgba(6,13,26,0.6);
+  --shadow-md:  0 4px 20px rgba(6,13,26,0.7);
+  --shadow-lg:  0 8px 40px rgba(6,13,26,0.85);
 }
 
 /* ─── DOT GRID BACKGROUND (Bản vẽ kỹ thuật) ─── */
@@ -447,4 +447,120 @@ code, .specimen-code {
   height: 1px;
   background: var(--border-subtle);
   margin: var(--sp-8) 0;
+}
+
+/* ─── FOOTER LAYOUT ─── */
+.footer-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin-bottom: var(--sp-6);
+}
+.footer-brand-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.footer-brand-name strong { color: var(--text-primary); font-size: 15px; }
+.footer-brand-name .material-icons { color: var(--accent-light); }
+.footer-desc { font-size: 13px; max-width: 320px; }
+.footer-credit { font-size: 12px; margin-top: 4px; color: var(--text-secondary); }
+.footer-links { display: flex; gap: var(--sp-8); }
+.footer-links-group a { display: block; margin-bottom: 4px; }
+.footer-links-label {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+.footer-copyright { text-align: center; font-size: 12px; }
+
+/* ─── ASYMMETRIC FEATURED GRID ─── */
+/* ponytail: CSS-only asymmetry via :first-child, no JS template change needed */
+.featured-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-6);
+}
+.featured-grid .card:first-child {
+  grid-column: 1 / 3;          /* card 1: chiếm 2/3 width */
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* ảnh bên trái, text bên phải */
+}
+.featured-grid .card:first-child .card-img {
+  aspect-ratio: auto;           /* override 4/3 default */
+  min-height: 280px;
+}
+.featured-grid .card:first-child .card-body {
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;    /* push content xuống dưới */
+}
+.featured-grid .card:first-child .card-title { font-size: 20px; }
+
+@media (max-width: 1024px) {
+  .featured-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .featured-grid .card:first-child {
+    grid-column: 1 / 3;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 768px) {
+  .featured-grid {
+    grid-template-columns: 1fr;
+  }
+  .featured-grid .card:first-child {
+    grid-column: auto;
+    grid-template-columns: 1fr; /* stack ảnh trên text trên mobile */
+  }
+  .featured-grid .card:first-child .card-img {
+    min-height: 220px;
+  }
+}
+
+
+/* ─── PRINT STYLES ─── */
+@media print {
+  .navbar,
+  .hero-bg,
+  .hero-overlay,
+  #bubbles,
+  .loading-overlay,
+  .site-footer,
+  .btn,
+  .filter-sidebar,
+  .skeleton { display: none !important; }
+
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4 { color: #111111 !important; }
+  p, .text-secondary { color: #333333 !important; }
+
+  .card {
+    border: 1px solid #cccccc !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    background: #ffffff !important;
+  }
+
+  .card-title { color: #111111 !important; }
+  .card-subtitle { color: #555555 !important; }
+
+  .container { max-width: 100%; padding: 0; }
+  .section { padding: 1rem 0; }
+  .page-content { padding-top: 0; }
+
+  a[href]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #666; }
 }

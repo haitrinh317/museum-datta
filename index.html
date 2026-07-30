@@ -30,7 +30,7 @@
     /* ── HERO ── */
     .hero {
       position: relative;
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       overflow: hidden;
@@ -293,10 +293,10 @@
           <h2>Mẫu vật tiêu biểu</h2>
           <p>Những loài đại diện trong bộ sưu tập — từ sao biển, hải sâm đến các loài cần bảo tồn.</p>
         </div>
-        <div class="grid-3" id="featuredGrid">
-          <div class="card skeleton" style="height:300px"></div>
-          <div class="card skeleton" style="height:300px"></div>
-          <div class="card skeleton" style="height:300px"></div>
+        <div class="featured-grid" id="featuredGrid">
+          <div class="card skeleton" style="min-height:280px"></div>
+          <div class="card skeleton" style="height:200px"></div>
+          <div class="card skeleton" style="height:200px"></div>
         </div>
         <div style="text-align:center; margin-top:var(--sp-8)">
           <a href="/browse/" class="btn btn-ghost">
@@ -311,7 +311,6 @@
     <section class="section map-preview-section">
       <div class="container">
         <div class="section-header">
-          <span class="eyebrow">Địa điểm thu mẫu</span>
           <h2>Từ Trường Sa đến Vịnh Bắc Bộ</h2>
           <p>Mẫu vật được thu thập qua nhiều chuyến khảo sát tại các vùng biển xa bờ.</p>
         </div>
@@ -336,7 +335,6 @@
     <section class="section pwa-guide-section" id="pwaGuide" style="display:none">
       <div class="container">
         <div class="section-header">
-          <span class="eyebrow">Trải nghiệm tốt hơn</span>
           <h2>Cài ứng dụng trên điện thoại</h2>
           <p>Truy cập nhanh hơn, xem offline không cần mạng — như một ứng dụng thật.</p>
         </div>
@@ -398,25 +396,25 @@
     <!-- FOOTER -->
     <footer class="site-footer">
       <div class="container">
-        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:var(--sp-6);margin-bottom:var(--sp-6)">
+        <div class="footer-body">
           <div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-              <span class="material-icons" style="color:var(--accent-light)">water</span>
-              <strong style="color:var(--text-primary);font-size:15px">Viện Hải dương học</strong>
+            <div class="footer-brand-name">
+              <span class="material-icons">water</span>
+              <strong>Viện Hải dương học</strong>
             </div>
-            <p style="font-size:13px;max-width:320px">Tra cứu thông tin mẫu vật trưng bày</p>
-            <p style="font-size:12px;margin-top:4px;color:var(--text-secondary)">Phát triển bởi: Phòng Thông tin - Truyền thông</p>
+            <p class="footer-desc">Tra cứu thông tin mẫu vật trưng bày</p>
+            <p class="footer-credit">Phát triển bởi: Phòng Thông tin - Truyền thông</p>
           </div>
-          <div style="display:flex;gap:var(--sp-8)">
-            <div>
-              <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:var(--text-secondary)">Liên kết</p>
-              <a href="/browse/" style="display:block;margin-bottom:4px">Tra cứu mẫu vật</a>
+          <div class="footer-links">
+            <div class="footer-links-group">
+              <p class="footer-links-label">Liên kết</p>
+              <a href="/browse/">Tra cứu mẫu vật</a>
               <a href="/map/">Bản đồ thu mẫu</a>
             </div>
           </div>
         </div>
         <div class="divider"></div>
-        <p style="text-align:center;font-size:12px">© 2026 Viện Hải dương học — Phòng Thông tin - Truyền thông.</p>
+        <p class="footer-copyright">© 2026 Viện Hải dương học — Phòng Thông tin - Truyền thông.</p>
       </div>
     </footer>
   </div>
