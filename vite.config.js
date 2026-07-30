@@ -16,6 +16,8 @@ export default defineConfig({
         // Offline navigation fallback
         navigateFallback: '/offline.html',
         navigateFallbackDenylist: [/^\/admin/],
+        // ponytail: MPA with query params (?code=XXX) — strip ALL params when matching precache
+        ignoreURLParametersMatching: [/./],
         // Runtime cache strategies
         runtimeCaching: [
           {
