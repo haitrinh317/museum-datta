@@ -150,9 +150,67 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .loader-text { color: var(--text-secondary); font-size: 13px; }
 
+    /* ── PWA INSTALL GUIDE ── */
+    .pwa-guide-section { background: var(--bg-mid); }
+    .pwa-guide-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--sp-6);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .pwa-guide-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-6);
+      text-align: center;
+      transition: border-color .2s, transform .2s;
+    }
+    .pwa-guide-card:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+    .pwa-guide-card.highlight {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 20px rgba(6,182,212,.15);
+    }
+    .pwa-guide-icon { margin-bottom: var(--sp-3); }
+    .pwa-guide-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--sp-4);
+    }
+    .pwa-steps {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+    }
+    .pwa-steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-3);
+      padding: var(--sp-2) 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .pwa-steps li + li { border-top: 1px solid var(--border-subtle); }
+    .step-num {
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(6,182,212,.15);
+      color: var(--accent-light);
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+    .pwa-steps strong { color: var(--text-primary); }
+
     @media (max-width: 768px) {
       .map-preview-grid { grid-template-columns: 1fr; }
       #preview-map { height: 240px; }
+      .pwa-guide-cards { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -269,6 +327,69 @@
               <span class="material-icons">open_in_full</span>
               Xem bản đồ đầy đủ
             </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PWA INSTALL GUIDE -->
+    <section class="section pwa-guide-section" id="pwaGuide" style="display:none">
+      <div class="container">
+        <div class="section-header">
+          <span class="eyebrow">Trải nghiệm tốt hơn</span>
+          <h2>Cài ứng dụng trên điện thoại</h2>
+          <p>Truy cập nhanh hơn, xem offline không cần mạng — như một ứng dụng thật.</p>
+        </div>
+        <div class="pwa-guide-cards">
+          <!-- iOS Guide -->
+          <div class="pwa-guide-card" id="pwaGuideIOS">
+            <div class="pwa-guide-icon">
+              <span class="material-icons" style="font-size:36px;color:var(--accent-light)">phone_iphone</span>
+            </div>
+            <h3>iPhone / iPad</h3>
+            <ol class="pwa-steps">
+              <li>
+                <span class="step-num">1</span>
+                <div>Mở trang này bằng <strong>Safari</strong></div>
+              </li>
+              <li>
+                <span class="step-num">2</span>
+                <div>Bấm nút <strong>Chia sẻ</strong> <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin:0 2px"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> ở thanh dưới</div>
+              </li>
+              <li>
+                <span class="step-num">3</span>
+                <div>Chọn <strong>"Thêm vào MH chính"</strong></div>
+              </li>
+              <li>
+                <span class="step-num">4</span>
+                <div>Bấm <strong>"Thêm"</strong> ở góc phải</div>
+              </li>
+            </ol>
+          </div>
+          <!-- Android Guide -->
+          <div class="pwa-guide-card" id="pwaGuideAndroid">
+            <div class="pwa-guide-icon">
+              <span class="material-icons" style="font-size:36px;color:#a4e866">phone_android</span>
+            </div>
+            <h3>Android</h3>
+            <ol class="pwa-steps">
+              <li>
+                <span class="step-num">1</span>
+                <div>Mở trang này bằng <strong>Chrome</strong></div>
+              </li>
+              <li>
+                <span class="step-num">2</span>
+                <div>Bấm nút <strong>⋮</strong> (menu) ở góc phải trên</div>
+              </li>
+              <li>
+                <span class="step-num">3</span>
+                <div>Chọn <strong>"Cài đặt ứng dụng"</strong> hoặc <strong>"Thêm vào MH chính"</strong></div>
+              </li>
+              <li>
+                <span class="step-num">4</span>
+                <div>Bấm <strong>"Cài đặt"</strong> để xác nhận</div>
+              </li>
+            </ol>
           </div>
         </div>
       </div>
@@ -500,6 +621,26 @@
       `).join('');
       document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
     }
+
+    // ── PWA Guide: detect platform + show section ──
+    (() => {
+      // Already installed as standalone → hide
+      if (window.matchMedia('(display-mode: standalone)').matches) return;
+      const guide = document.getElementById('pwaGuide');
+      const iosCard = document.getElementById('pwaGuideIOS');
+      const androidCard = document.getElementById('pwaGuideAndroid');
+      const ua = navigator.userAgent;
+      const isIOS = /iPhone|iPad|iPod/.test(ua);
+      const isAndroid = /Android/.test(ua);
+      // Show section
+      guide.style.display = '';
+      // Highlight the relevant card
+      if (isIOS) iosCard.classList.add('highlight');
+      else if (isAndroid) androidCard.classList.add('highlight');
+      // On mobile, show only the relevant card
+      if (isIOS) androidCard.style.display = 'none';
+      else if (isAndroid) iosCard.style.display = 'none';
+    })();
 
     // Boot
     Promise.all([loadStats(), loadFeatured(), loadMapPreview()]);
