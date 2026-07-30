@@ -480,36 +480,33 @@ code, .specimen-code {
 .footer-copyright { text-align: center; font-size: 12px; }
 
 /* ─── ASYMMETRIC FEATURED GRID ─── */
-/* ponytail: CSS-only asymmetry via :first-child, no JS template change needed */
+/* ponytail: first card wider (2/3) + taller image = visual hierarchy.
+   No internal layout change — JS template has inline display:block which
+   would override display:grid, so we only control grid placement + image height. */
 .featured-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: var(--sp-6);
 }
 .featured-grid .card:first-child {
-  grid-column: 1 / 3;          /* card 1: chiếm 2/3 width */
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* ảnh bên trái, text bên phải */
+  grid-column: 1 / 3;           /* chiếm 2/3 width */
 }
 .featured-grid .card:first-child .card-img {
-  aspect-ratio: auto;           /* override 4/3 default */
-  min-height: 280px;
+  aspect-ratio: 16 / 9;         /* panoramic — wider card gets wider image */
 }
-.featured-grid .card:first-child .card-body {
-  padding: var(--sp-6);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;    /* push content xuống dưới */
+.featured-grid .card:first-child .card-title {
+  font-size: 18px;
 }
-.featured-grid .card:first-child .card-title { font-size: 20px; }
 
 @media (max-width: 1024px) {
   .featured-grid {
     grid-template-columns: 1fr 1fr;
   }
   .featured-grid .card:first-child {
-    grid-column: 1 / 3;
-    grid-template-columns: 1fr 1fr;
+    grid-column: 1 / 3;         /* vẫn full width ở tablet */
+  }
+  .featured-grid .card:first-child .card-img {
+    aspect-ratio: 16 / 7;
   }
 }
 @media (max-width: 768px) {
@@ -517,11 +514,10 @@ code, .specimen-code {
     grid-template-columns: 1fr;
   }
   .featured-grid .card:first-child {
-    grid-column: auto;
-    grid-template-columns: 1fr; /* stack ảnh trên text trên mobile */
+    grid-column: auto;          /* stack bình thường trên mobile */
   }
   .featured-grid .card:first-child .card-img {
-    min-height: 220px;
+    aspect-ratio: 4 / 3;        /* trả về ratio gốc */
   }
 }
 
