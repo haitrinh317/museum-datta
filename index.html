@@ -626,6 +626,8 @@
     (() => {
       // Already installed as standalone → hide
       if (window.matchMedia('(display-mode: standalone)').matches) return;
+      // Desktop (pointer: fine = mouse) → hide
+      if (window.matchMedia('(pointer: fine)').matches) return;
       const guide = document.getElementById('pwaGuide');
       const iosCard = document.getElementById('pwaGuideIOS');
       const androidCard = document.getElementById('pwaGuideAndroid');
