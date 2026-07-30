@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-29 (Session 7 — Upload ảnh, Filter hình ảnh, SEO OG)
+> Cập nhật lần cuối: 2026-07-30 (Session 9 — taste-skill UI Audit, Skills install, PWA guide fix)
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
@@ -144,11 +144,23 @@
 - [x] Admin: ẩn link Admin từ public navbar
 
 ### Next Session Starting Point
-- [ ] Upload ảnh 14 no-match thủ công qua Admin (filter "Chưa có ảnh")
+- [ ] Upload 14 ảnh no-match thủ công qua Admin (filter "Chưa có ảnh")
 - [ ] Upload ảnh folders còn lại (kiểm tra folder nào chưa xử lý)
 - [ ] Schema.org Dataset structured data
-- [ ] PWA offline support
+- [ ] Lighthouse PWA audit ≥ 90
 - [ ] Custom domain setup (nếu bảo tàng cung cấp)
+- [ ] Analytics: page views, QR scan tracking
+
+### Đã hoàn thành Session 8 (2026-07-30)
+- [x] PWA: manifest + icons (192, 512, maskable, apple-touch)
+- [x] PWA: Service Worker (vite-plugin-pwa/Workbox) — 29 precache entries
+- [x] PWA: Runtime cache (Supabase images CacheFirst, API NetworkFirst, fonts, tiles)
+- [x] PWA: Offline fallback page (`/offline.html`)
+- [x] PWA: Install prompt banner (beforeinstallprompt + localStorage dismiss)
+- [x] PWA: Online/Offline toast (tất cả trang public)
+- [x] PWA: Install guide section trang chủ (auto-detect iOS/Android)
+- [x] Fix: Workbox query param matching (`ignoreURLParametersMatching: [/./]`)
+- [x] Gitignore cleanup: exclude raw images, scratch scripts
 
 ### Đã hoàn thành Session 7 (2026-07-29)
 - [x] Auto upload script `upload_images.mjs` — 72 ảnh WebP upload thành công
@@ -161,3 +173,12 @@
 - `Data/ca-bien-chuan.csv` — 113 mẫu cá biển ✅ đã import, đang upload ảnh
 - Tất cả 147 mẫu đợt 2 (Thực vật, Cá dữ, Thân mềm, Giun nhiều tơ) ✅ đã push xong
 - Ảnh mẫu vật cá biển: đang bổ sung — cần upload đủ cho 113 loài
+
+### Đã hoàn thành Session 9 (2026-07-30 chiều)
+- [x] Cài redesign-skill + output-skill từ Leonxlnx/taste-skill (GitHub)
+- [x] Update taste-skill v1 → v2.0.0-adapted
+- [x] taste-skill audit 7 fixes: 100dvh, badge-exploit amber, navy shadows, eyebrow density, @media print, footer CSS classes, asymmetric featured grid
+- [x] Specimen info-row: align-items center + icon nhất quán 5 rows (pin_drop, waves, my_location, calendar_today, museum)
+- [x] Fix featured-grid bug: inline display:block vs CSS display:grid → dùng aspect-ratio:16/9 thay vì internal grid
+- [x] Featured count: 6 → 5 (clean asymmetric layout: row1=wide+1, row2=3)
+- [x] PWA guide: ẩn trên desktop (pointer:fine media query check)
