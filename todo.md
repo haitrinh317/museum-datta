@@ -60,7 +60,7 @@
 - [x] Vercel deployment (https://museum-datta.vercel.app/)
 - [ ] Custom domain (nếu bảo tàng cung cấp)
 - [x] SEO: OG meta tags + Twitter Card + og-image.png
-- [ ] SEO: Schema.org structured data (Dataset)
+- [x] SEO: Schema.org structured data (Dataset)
 - [x] PWA: offline support cho public site
 - [ ] Analytics: page views, QR scan tracking
 - [ ] Print view: in thẻ QR batch (A4, 3x4 grid)
@@ -146,7 +146,7 @@
 ### Next Session Starting Point
 - [ ] Upload 14 ảnh no-match thủ công qua Admin (filter "Chưa có ảnh")
 - [ ] Upload ảnh folders còn lại (kiểm tra folder nào chưa xử lý)
-- [ ] Schema.org Dataset structured data
+- [x] Schema.org Dataset structured data
 - [ ] Lighthouse PWA audit ≥ 90
 - [ ] Custom domain setup (nếu bảo tàng cung cấp)
 - [ ] Analytics: page views, QR scan tracking

@@ -316,6 +316,25 @@
       // Update page title
       document.title = `${esc(s.common_name_vi || s.species)} — Bảo tàng Hải dương học`;
 
+      // Schema.org Structured Data
+      const ldJson = {
+        "@context": "https://schema.org",
+        "@type": "Taxon",
+        "name": s.common_name_vi || s.species,
+        "alternateName": s.species,
+        "taxonomicRange": s.family,
+        "description": s.morphology || \`Mẫu vật \${s.specimen_code} thuộc nhóm \${s.specimen_groups?.name || 'mẫu vật biển'}.\`,
+        "url": window.location.href,
+        "image": s.primary_image_url || "https://museum-datta.vercel.app/og-image.png"
+      };
+      let schemaScript = document.getElementById('schema-taxon');
+      if (schemaScript) schemaScript.remove();
+      schemaScript = document.createElement('script');
+      schemaScript.id = 'schema-taxon';
+      schemaScript.type = 'application/ld+json';
+      schemaScript.text = JSON.stringify(ldJson);
+      document.head.appendChild(schemaScript);
+
       function badges(s) {
         const b = [];
         if (s.is_cites)       b.push('<span class="badge badge-cites"><span class="material-icons" style="font-size:10px">warning</span>CITES</span>');
