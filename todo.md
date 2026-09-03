@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-30 (Session 9 — taste-skill UI Audit, Skills install, PWA guide fix)
+> Cập nhật lần cuối: 2026-09-02 (Security hardening production + Supabase CLI audit)
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
@@ -117,7 +117,8 @@
 ### Cần sửa/cải thiện
 - Material Icons hoạt động trong browser thật nhưng headless browser (Playwright) không load Google Fonts
 - CSV parser: test thêm với dữ liệu các nhóm mẫu khác (có thể format khác Da gai)
-- RLS policy hiện dùng `auth.role() = 'authenticated'` — tất cả user đăng nhập đều là admin
+- [ ] Baseline migration history production trước khi dùng `supabase db push`; RBAC hardening đã được áp dụng thủ công ngày 2026-09-02, vì vậy không chạy lại migration qua CLI khi history chưa được reconcile.
+- [ ] Bật Supabase Auth leaked-password protection trong Dashboard (không thuộc SQL migration).
 
 ### Đã sửa (2026-07-28 Session 2+3)
 - [x] Image upload: `uploadSpecimenImages` giờ update `specimens.primary_image_url` trực tiếp
@@ -144,14 +145,15 @@
 - [x] Admin: ẩn link Admin từ public navbar
 
 ### Next Session Starting Point
-- [ ] Upload 14 ảnh no-match thủ công qua Admin (filter "Chưa có ảnh")
-- [ ] Upload ảnh folders còn lại (kiểm tra folder nào chưa xử lý)
-- [x] Schema.org Dataset structured data
-- [ ] Lighthouse PWA audit ≥ 90
-- [ ] Custom domain setup (nếu bảo tàng cung cấp)
-- [ ] Analytics: page views, QR scan tracking
+- [ ] Baseline migration history trên production bằng `npx supabase migration repair --linked --status applied 001` sau khi Database password hoạt động; không chạy `supabase db push` trước đó.
+- [ ] Bật Supabase Auth leaked-password protection trong Dashboard.
+- [ ] Upload 14 ảnh no-match thủ công qua Admin (filter "Chưa có ảnh").
+- [ ] Tiếp tục backlog: image lightbox, bulk edit, export và analytics.
 
-### Đã hoàn thành Session 8 (2026-07-30)
+### Đã hoàn thành Session 10 (2026-08-03)
+- [x] SEO: Schema.org Dataset structured data (trang chủ)
+- [x] SEO: Schema.org Taxon structured data (trang chi tiết mẫu vật)
+- [x] Push code & Deploy Vercel thành công
 - [x] PWA: manifest + icons (192, 512, maskable, apple-touch)
 - [x] PWA: Service Worker (vite-plugin-pwa/Workbox) — 29 precache entries
 - [x] PWA: Runtime cache (Supabase images CacheFirst, API NetworkFirst, fonts, tiles)

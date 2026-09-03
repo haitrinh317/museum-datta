@@ -323,7 +323,7 @@
         "name": s.common_name_vi || s.species,
         "alternateName": s.species,
         "taxonomicRange": s.family,
-        "description": s.morphology || \`Mẫu vật \${s.specimen_code} thuộc nhóm \${s.specimen_groups?.name || 'mẫu vật biển'}.\`,
+        "description": s.morphology || `Mẫu vật ${s.specimen_code} thuộc nhóm ${s.specimen_groups?.name || 'mẫu vật biển'}.`,
         "url": window.location.href,
         "image": s.primary_image_url || "https://museum-datta.vercel.app/og-image.png"
       };

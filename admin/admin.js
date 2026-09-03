@@ -35,7 +35,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check auth state
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    state.user = session.user;
+    // Refresh once so a newly assigned app_metadata role is reflected in the JWT.
+    const { data: refreshed } = await supabase.auth.refreshSession();
+    state.user = refreshed.session?.user || session.user;
     showAdminApp();
   } else {
     showLoginScreen();
@@ -67,7 +69,28 @@ function showLoginScreen() {
   document.getElementById('admin-app').style.display = 'none';
 }
 
+function isMuseumAdmin(user) {
+  return user?.app_metadata?.museum_role === 'museum_admin';
+}
+
+function denyAdminAccess() {
+  state.user = null;
+  showLoginScreen();
+
+  const errorEl = document.getElementById('login-error');
+  errorEl.textContent = 'Tài khoản này không có quyền quản trị.';
+  errorEl.style.display = 'block';
+
+  // Keep an unauthorized browser session from being reused by the admin UI.
+  supabase.auth.signOut({ scope: 'local' });
+}
+
 function showAdminApp() {
+  if (!isMuseumAdmin(state.user)) {
+    denyAdminAccess();
+    return;
+  }
+
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'flex';
   document.getElementById('user-email').textContent = state.user?.email || 'admin';

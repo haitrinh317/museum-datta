@@ -1,6 +1,6 @@
 # MEMORY — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-07-30 (Session 8 — PWA: manifest, Service Worker, install prompt, offline support)
+> Cập nhật lần cuối: 2026-09-02 (Security hardening đã áp dụng production; baseline migration pending)
 
 ## 1. TỔNG QUAN DỰ ÁN
 
@@ -112,10 +112,10 @@ specimen_images          # Gallery ảnh
 ```
 
 **RLS Policies:**
-- Public: SELECT tất cả bảng (khách đọc)
-- Admin: INSERT/UPDATE/DELETE khi `auth.role() = 'authenticated'`
+- Public SELECT vẫn được giữ cho các bảng tra cứu. Policy ghi cũ `auth.role() = 'authenticated'` đã được thay thế trên production bằng role `museum_admin` trong `app_metadata`.
+- Migration `20260902072445_rbac_storage_rpc_hardening.sql` đã được áp dụng thủ công trên production ngày 2026-09-02 và xác minh: 1 admin role, 9 policy `Museum admins`, giới hạn upload ảnh 10 MB. Không chạy `supabase db push` cho đến khi baseline migration history.
 
-**Storage:** Bucket `specimen-images` (public read, auth write)
+**Storage:** Bucket `specimen-images` public read; production giới hạn JPEG/PNG/WebP, 10 MB và chỉ `museum_admin` được ghi.
 
 **Computed Column:** `search_text(specimens)` — `unaccent()` concat species + common_name_vi + family + specimen_code. Dùng cho tìm kiếm không dấu.
 
@@ -124,7 +124,7 @@ specimen_images          # Gallery ảnh
 - **URL:** `https://wwkrpbxtvkaxfbewhdor.supabase.co`
 - **Dashboard:** `https://supabase.com/dashboard/project/wwkrpbxtvkaxfbewhdor`
 - **Project ID:** `wwkrpbxtvkaxfbewhdor`
-- **Admin email:** `haitrinhnt@gmail.com` / password: `123456`
+- **Thông tin admin:** lưu cục bộ trong `.env.admin.local` (Git bỏ qua). Không lưu mật khẩu trong tài liệu hoặc mã nguồn.
 
 ## 6. CSV IMPORT PARSER — LOGIC QUAN TRỌNG
 
@@ -200,7 +200,7 @@ Parser trong `admin.js` (`parseThongTin()`) tách bằng regex theo keyword head
 
 **Cách dùng:**
 ```bash
-node upload_images.mjs 123456 "E:\2026\_Antigravity\CSDL-Museum\Data\<ten-folder-anh>"
+node upload_images.mjs <password> "E:\2026\_Antigravity\CSDL-Museum\Data\<ten-folder-anh>"
 ```
 
 **Logic matching (theo thứ tự):**
@@ -230,6 +230,7 @@ node upload_images.mjs 123456 "E:\2026\_Antigravity\CSDL-Museum\Data\<ten-folder
 | 8 | PWA chỉ public (không admin) | Admin cần Supabase online để CRUD, offline vô dụng |
 | 9 | vite-plugin-pwa (Workbox) | Auto SW generation, cache versioning, ít boilerplate hơn tự viết |
 | 10 | Cache API only (không IndexedDB) | Public site chỉ đọc, Cache API đủ sức |
+| 11 | Không tự tạo thủ công migration history trên production | Chỉ dùng `supabase migration repair` sau khi xác thực được Database password; tránh lịch sử migration sai lệch |
 
 ## 10. DEPLOY
 
