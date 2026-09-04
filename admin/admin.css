@@ -45,7 +45,7 @@
     --sidebar-width: 260px;
     --topbar-height: 64px;
 
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
 
     --transition-fast: 0.15s ease;
     --transition-normal: 0.25s ease;
@@ -71,6 +71,23 @@ body {
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+    outline: 3px solid var(--accent-cyan);
+    outline-offset: 3px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 ::selection {
@@ -155,8 +172,8 @@ h3 { font-size: 1.1rem; font-weight: 600; }
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
@@ -369,8 +386,7 @@ fieldset legend {
 /* ---- Sidebar ---- */
 .sidebar {
     width: var(--sidebar-width);
-    background: var(--bg-glass);
-    backdrop-filter: blur(20px);
+    background: var(--bg-secondary);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -1065,7 +1081,6 @@ fieldset legend {
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
 }
 .modal-content {
     position: relative;
@@ -1419,8 +1434,8 @@ fieldset legend {
     margin-top: 16px;
 }
 .pagination button {
-    width: 32px;
-    height: 32px;
+    min-width: 40px;
+    height: 40px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
@@ -1555,6 +1570,16 @@ fieldset legend {
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 /* ---- Loading spinner ---- */
 .spinner {
     width: 20px;
@@ -1613,6 +1638,14 @@ fieldset legend {
 }
 
 /* Specimen thumbnail in table */
+.specimen-thumb-button {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
 .specimen-thumb {
   width: 40px;
   height: 40px;

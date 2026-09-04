@@ -100,6 +100,8 @@ CREATE INDEX IF NOT EXISTS idx_specimens_common_name ON specimens(common_name_vi
 CREATE INDEX IF NOT EXISTS idx_specimens_group ON specimens(group_id);
 CREATE INDEX IF NOT EXISTS idx_specimens_site ON specimens(site_id);
 CREATE INDEX IF NOT EXISTS idx_specimen_images_specimen ON specimen_images(specimen_id);
+-- Required by upload_images.mjs upsert(onConflict: 'image_url').
+CREATE UNIQUE INDEX IF NOT EXISTS idx_specimen_images_image_url_unique ON specimen_images(image_url);
 
 -- Full-text search index (Vietnamese + unaccented)
 CREATE INDEX IF NOT EXISTS idx_specimens_fts ON specimens 

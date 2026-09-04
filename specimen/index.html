@@ -25,7 +25,7 @@
   <meta name="theme-color" content="#0a1628">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/src/style.css">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://*.supabase.co;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline https://*.supabase.co; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
   <style>
     /* ── SPECIMEN HEADER ── */
     .specimen-header {
@@ -47,6 +47,19 @@
     .specimen-name { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 800; margin-bottom: var(--sp-2); line-height: 1.2; }
     .specimen-sci  { font-size: clamp(0.95rem, 2vw, 1.2rem); font-style: italic; color: var(--text-accent); }
     .header-meta  { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-3); }
+    .offline-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: var(--sp-3);
+      padding: 6px 10px;
+      border: 1px solid rgba(251,191,36,0.35);
+      border-radius: 999px;
+      color: #fbbf24;
+      background: rgba(120,75,0,0.16);
+      font-size: 12px;
+      font-weight: 600;
+    }
 
     /* ── MAIN LAYOUT: image | taxonomy (1fr 1fr) ── */
     .specimen-body { background: var(--bg-deep); }
@@ -257,12 +270,12 @@
         Bảo tàng Hải dương học
       </a>
       <div class="navbar-spacer"></div>
-      <ul class="navbar-links">
+      <ul class="navbar-links" id="primary-navigation">
         <li><a href="/">Trang chủ</a></li>
         <li><a href="/browse/">Tra cứu</a></li>
         <li><a href="/map/">Bản đồ</a></li>
       </ul>
-      <button class="navbar-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">
+      <button class="navbar-toggle" id="navbarToggle" type="button" aria-label="Mở menu điều hướng" aria-controls="primary-navigation" aria-expanded="false">
         <span class="material-icons">menu</span>
       </button>
     </div>
@@ -277,11 +290,49 @@
 
   <script type="module">
     import { supabase } from '/src/lib/supabase.js';
-    import L from 'leaflet';
-    import 'leaflet/dist/leaflet.css';
 
     // Security: escape DB data before innerHTML
     const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const safeImageUrl = value => {
+      try {
+        const url = new URL(String(value), window.location.origin);
+        return url.origin === window.location.origin ||
+          (url.protocol === 'https:' && url.hostname.endsWith('.supabase.co'))
+          ? url.href : '/no-photo.png';
+      } catch { return '/no-photo.png'; }
+    };
+
+    const SPECIMEN_CACHE_KEY = 'museum:specimen:last-v1';
+    const SPECIMEN_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+    function saveCachedSpecimen(code, data) {
+      try {
+        localStorage.setItem(SPECIMEN_CACHE_KEY, JSON.stringify({
+          savedAt: Date.now(),
+          code,
+          data
+        }));
+      } catch {
+        // Storage may be unavailable or full; the online path remains unaffected.
+      }
+    }
+
+    function readCachedSpecimen(code) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(SPECIMEN_CACHE_KEY) || 'null');
+        return cached && cached.code === code && Date.now() - cached.savedAt < SPECIMEN_CACHE_TTL
+          ? cached
+          : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function isOfflineRequest(error) {
+      if (!navigator.onLine) return true;
+      const message = String(error?.message || '').toLowerCase();
+      return Number(error?.status) === 0 || /failed to fetch|network|offline|load failed/.test(message);
+    }
 
     const code = new URLSearchParams(window.location.search).get('code');
 
@@ -297,13 +348,23 @@
     }
 
     async function loadSpecimen(code) {
-      const { data: s, error } = await supabase
+      const { data, error } = await supabase
         .from('specimens')
-        .select('*, specimen_groups(name), collection_sites(*)')
+        .select('id, serial_number, specimen_code, group_id, family, species, author, common_name_vi, site_id, collection_date, is_cites, iucn_status, is_red_book_vn, is_exploited, is_food_use, morphology, ecology, distribution, toxicity, application, notes, display_area, primary_image_url, specimen_groups(name), collection_sites(id, name, region, latitude, longitude)')
         .eq('specimen_code', code)
         .single();
 
-      if (error || !s) {
+      let s = data;
+      let offline = false;
+      if (!s && isOfflineRequest(error)) {
+        const cached = readCachedSpecimen(code);
+        if (cached) {
+          s = cached.data;
+          offline = true;
+        }
+      }
+
+      if (!s) {
         document.getElementById('pageContent').innerHTML = `
           <div class="empty-state" style="min-height:60vh">
             <span class="material-icons">search_off</span>
@@ -312,6 +373,8 @@
           </div>`;
         return;
       }
+
+      if (!offline) saveCachedSpecimen(code, s);
 
       // Update page title
       document.title = `${esc(s.common_name_vi || s.species)} — Bảo tàng Hải dương học`;
@@ -325,7 +388,7 @@
         "taxonomicRange": s.family,
         "description": s.morphology || `Mẫu vật ${s.specimen_code} thuộc nhóm ${s.specimen_groups?.name || 'mẫu vật biển'}.`,
         "url": window.location.href,
-        "image": s.primary_image_url || "https://museum-datta.vercel.app/og-image.png"
+        "image": s.primary_image_url ? safeImageUrl(s.primary_image_url) : "https://museum-datta.vercel.app/og-image.png"
       };
       let schemaScript = document.getElementById('schema-taxon');
       if (schemaScript) schemaScript.remove();
@@ -355,9 +418,9 @@
       function statusItem(icon, label, val, active) {
         return `
           <div class="status-item ${active ? 'status-active' : 'status-inactive'}">
-            <span class="material-icons">${icon}</span>
-            <span class="status-val">${val || '—'}</span>
-            <span class="status-label">${label}</span>
+            <span class="material-icons">${esc(icon)}</span>
+            <span class="status-val">${esc(val || '—')}</span>
+            <span class="status-label">${esc(label)}</span>
           </div>`;
       }
 
@@ -373,12 +436,13 @@
               <span class="material-icons">chevron_right</span>
               <a href="/browse/">Tra cứu</a>
               <span class="material-icons">chevron_right</span>
-              <a href="/browse/?group=${encodeURIComponent(s.specimen_groups?.name||'')}">${s.specimen_groups?.name || 'Mẫu vật'}</a>
+              <a href="/browse/?group=${encodeURIComponent(s.specimen_groups?.name||'')}">${esc(s.specimen_groups?.name || 'Mẫu vật')}</a>
               <span class="material-icons">chevron_right</span>
               <span>${esc(s.specimen_code)}</span>
             </div>
             <h1 class="specimen-name">${esc(s.common_name_vi || s.species || 'Mẫu vật')}</h1>
             <p class="specimen-sci">${esc(s.species || '')}${s.author ? ` <small style="color:var(--text-muted);font-style:normal">${esc(s.author)}</small>` : ''}</p>
+            ${offline ? '<div class="offline-banner" role="status" aria-live="polite"><span class="material-icons" style="font-size:14px">cloud_off</span>Đang xem bản lưu offline — dữ liệu có thể chưa mới nhất.</div>' : ''}
             <div class="header-meta">
               ${badges(s)}
               <span class="specimen-code">${esc(s.specimen_code)}</span>
@@ -396,7 +460,7 @@
               <div class="specimen-img-panel">
                 <div class="specimen-img-box reveal">
                   ${s.primary_image_url
-                    ? `<img src="${esc(s.primary_image_url)}" alt="${esc(s.common_name_vi || s.species)}">`
+                    ? `<img src="${esc(safeImageUrl(s.primary_image_url))}" alt="${esc(s.common_name_vi || s.species)}" decoding="async">`
                     : `<div class="specimen-img-no-photo">
                         <span class="material-icons">hide_image</span>
                         <span>Chưa có ảnh</span>
@@ -467,7 +531,7 @@
               <span class="material-icons">arrow_back</span>
               Danh sách
             </a>
-            <button class="btn btn-ghost btn-sm" onclick="shareSpecimen()">
+            <button class="btn btn-ghost btn-sm" id="shareSpecimenBtn" type="button" aria-label="Chia sẻ thông tin mẫu vật">
               <span class="material-icons">share</span>
               Chia sẻ
             </button>
@@ -483,6 +547,8 @@
 
       // Leaflet mini map (L already imported via npm)
       if (hasMap) {
+        const { default: L } = await import('leaflet');
+        await import('leaflet/dist/leaflet.css');
         const miniMap = L.map('specimen-map', { zoomControl: true, scrollWheelZoom: true });
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
           attribution: 'Tiles &copy; Esri', maxZoom: 18,
@@ -513,21 +579,30 @@
           radius: 10, fillColor: '#06b6d4', color: '#fff',
           weight: 3, opacity: 1, fillOpacity: 0.9,
         }).addTo(miniMap);
-        marker.bindPopup(`<b>${site.name}</b>`).openPopup();
+        marker.bindPopup(`<b>${esc(site.name)}</b>`).openPopup();
 
         // Zoom 5 để thấy cả Biển Đông + 2 quần đảo
         miniMap.setView([12.5, 113.0], 5);
       }
     }
 
-    window.shareSpecimen = function() {
+    function shareSpecimen() {
       if (navigator.share) {
         navigator.share({ title: document.title, url: window.location.href });
       } else {
         navigator.clipboard.writeText(window.location.href);
         alert('Đã sao chép đường dẫn!');
       }
-    };
+    }
+    document.getElementById('navbarToggle')?.addEventListener('click', () => {
+      const links = document.querySelector('.navbar-links');
+      const toggle = document.getElementById('navbarToggle');
+      const isOpen = links?.classList.toggle('open') ?? false;
+      toggle?.setAttribute('aria-expanded', String(isOpen));
+    });
+    document.getElementById('pageContent').addEventListener('click', event => {
+      if (event.target.closest('#shareSpecimenBtn')) shareSpecimen();
+    });
   </script>
   <style>
     @keyframes spin { to { transform: rotate(360deg); } }

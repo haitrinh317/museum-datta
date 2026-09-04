@@ -25,7 +25,7 @@
   <meta name="theme-color" content="#0a1628">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/src/style.css">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
   <style>
     .browse-layout {
       display: grid;
@@ -116,6 +116,7 @@
     }
     .result-count { font-size: 14px; color: var(--text-secondary); }
     .result-count span { color: var(--text-white); font-weight: 700; }
+    .offline-status { color: #fbbf24 !important; font-size: 12px; font-weight: 600; }
     .sort-select {
       background: var(--bg-surface);
       border: 1px solid var(--border-default);
@@ -148,6 +149,38 @@
       font-size: 14px;
       cursor: pointer;
     }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin: var(--sp-8) 0 var(--sp-4);
+    }
+    .page-btn {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font: inherit;
+      cursor: pointer;
+    }
+    .page-btn:hover { border-color: var(--accent-primary); color: var(--text-white); }
+    .page-btn[aria-current="page"] { background: var(--accent-primary); color: var(--text-white); border-color: var(--accent-light); }
+    .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
 
     @media (max-width: 1024px) {
       .browse-layout { grid-template-columns: 1fr; }
@@ -167,12 +200,12 @@
         Bảo tàng Hải dương học
       </a>
       <div class="navbar-spacer"></div>
-      <ul class="navbar-links">
+      <ul class="navbar-links" id="primary-navigation">
         <li><a href="/">Trang chủ</a></li>
-        <li><a href="/browse/" class="active">Tra cứu</a></li>
+        <li><a href="/browse/" class="active" aria-current="page">Tra cứu</a></li>
         <li><a href="/map/">Bản đồ</a></li>
       </ul>
-      <button class="navbar-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">
+      <button class="navbar-toggle" id="navbarToggle" type="button" aria-label="Mở menu điều hướng" aria-controls="primary-navigation" aria-expanded="false">
         <span class="material-icons">menu</span>
       </button>
     </div>
@@ -186,14 +219,15 @@
         <h1>Tra cứu mẫu vật</h1>
         <div class="search-wrap">
           <span class="material-icons">search</span>
-          <input type="text" class="search-input" id="searchInput"
+      <label class="sr-only" for="searchInput">Tìm kiếm mẫu vật</label>
+      <input type="text" class="search-input" id="searchInput"
             placeholder="Tìm theo tên loài, họ, tên Việt, địa điểm..."
             autocomplete="off">
         </div>
       </div>
     </div>
 
-    <div class="filter-backdrop" id="filterBackdrop" onclick="closeSidebar()"></div>
+    <div class="filter-backdrop" id="filterBackdrop"></div>
     <div class="container">
       <div class="browse-layout">
         <!-- SIDEBAR -->
@@ -217,26 +251,27 @@
           <div class="filter-group">
             <label>Tình trạng bảo tồn</label>
             <label class="filter-option">
-              <input type="checkbox" id="filterCites" onchange="applyFilters()"> CITES
+              <input type="checkbox" id="filterCites"> CITES
             </label>
             <label class="filter-option">
-              <input type="checkbox" id="filterIucn" onchange="applyFilters()"> IUCN
+              <input type="checkbox" id="filterIucn"> IUCN
             </label>
             <label class="filter-option">
-              <input type="checkbox" id="filterRedbook" onchange="applyFilters()"> Sách Đỏ VN
+              <input type="checkbox" id="filterRedbook"> Sách Đỏ VN
             </label>
           </div>
 
           <div class="filter-group">
             <label>Hình ảnh</label>
-            <select class="filter-select" id="filterImage" onchange="applyFilters()">
+              <label class="sr-only" for="filterImage">Lọc theo ảnh</label>
+              <select class="filter-select" id="filterImage">
               <option value="all">Tất cả</option>
               <option value="has" selected>Có ảnh</option>
               <option value="no">Chưa có ảnh</option>
             </select>
           </div>
 
-          <button class="btn-reset" onclick="resetFilters()">
+          <button class="btn-reset" id="resetFiltersBtn">
             <span class="material-icons" style="font-size:14px;vertical-align:middle">refresh</span>
             Xóa bộ lọc
           </button>
@@ -246,13 +281,14 @@
         <main class="browse-main">
           <div class="browse-header">
             <div style="display:flex;align-items:center;gap:var(--sp-3)">
-              <button class="mobile-filter-toggle" onclick="openSidebar()">
+              <button class="mobile-filter-toggle" id="openSidebarBtn" type="button" aria-controls="filterSidebar" aria-expanded="false">
                 <span class="material-icons" style="font-size:18px">filter_list</span>
                 Bộ lọc
               </button>
-              <p class="result-count">Tìm thấy <span id="resultCount">—</span> kết quả</p>
+              <p class="result-count" aria-live="polite">Tìm thấy <span id="resultCount">—</span> kết quả <span id="offlineStatus" class="offline-status" hidden>(offline)</span></p>
             </div>
-            <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+              <label class="sr-only" for="sortSelect">Sắp xếp kết quả</label>
+              <select class="sort-select" id="sortSelect">
               <option value="created_at_desc">Mới nhất</option>
               <option value="common_name_vi_asc">Tên A→Z</option>
               <option value="species_asc">Tên khoa học A→Z</option>
@@ -268,6 +304,7 @@
             <div class="card skeleton" style="height:280px"></div>
             <div class="card skeleton" style="height:280px"></div>
           </div>
+          <nav class="pagination" id="pagination" aria-label="Phân trang kết quả" hidden></nav>
         </main>
       </div>
     </div>
@@ -284,12 +321,46 @@
 
     // Security: escape DB data before innerHTML
     const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const safeImageUrl = value => {
+      try {
+        const url = new URL(String(value), window.location.origin);
+        return url.origin === window.location.origin ||
+          (url.protocol === 'https:' && url.hostname.endsWith('.supabase.co'))
+          ? url.href : '/no-photo.png';
+      } catch { return '/no-photo.png'; }
+    };
 
     let allGroups = [];
     let allSites = [];
     let selectedGroups = new Set();
     let selectedSites = new Set();
     let searchTimeout;
+    let currentPage = 1;
+    let totalResults = 0;
+    let latestRequestId = 0;
+    let activeRequestController = null;
+    const PAGE_SIZE = 24;
+    const OFFLINE_CACHE_KEY = 'museum:browse:last-v1';
+    const OFFLINE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+    function saveOfflineResults(data, count) {
+      try {
+        localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), page: currentPage, data, count }));
+      } catch { /* Storage may be unavailable or full; online path remains unaffected. */ }
+    }
+
+    function readOfflineResults() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(OFFLINE_CACHE_KEY) || 'null');
+        return cached && Date.now() - cached.savedAt < OFFLINE_CACHE_TTL ? cached : null;
+      } catch { return null; }
+    }
+
+    function isOfflineRequest(error) {
+      if (!navigator.onLine) return true;
+      const message = String(error?.message || '').toLowerCase();
+      return Number(error?.status) === 0 || /failed to fetch|network|offline|load failed/.test(message);
+    }
 
     // ── Parse URL params ──
     const urlParams = new URLSearchParams(window.location.search);
@@ -309,21 +380,26 @@
 
       document.getElementById('groupFilters').innerHTML = allGroups.map(g => `
         <label class="filter-option">
-          <input type="checkbox" class="filter-group-cb" value="${g.id}" onchange="applyFilters()">
+          <input type="checkbox" class="filter-group-cb" value="${esc(g.id)}">
           ${esc(g.name)}
         </label>
       `).join('');
 
       document.getElementById('siteFilters').innerHTML = allSites.map(s => `
         <label class="filter-option">
-          <input type="checkbox" class="filter-site-cb" value="${s.id}" onchange="applyFilters()">
+          <input type="checkbox" class="filter-site-cb" value="${esc(s.id)}">
           ${esc(s.name)}${s.region ? ` <small style="color:var(--text-muted)">(${esc(s.region)})</small>` : ''}
         </label>
       `).join('');
     }
 
     // ── Load specimens ──
-    async function applyFilters() {
+    async function applyFilters({ resetPage = false } = {}) {
+      if (resetPage) currentPage = 1;
+      const requestId = ++latestRequestId;
+      activeRequestController?.abort();
+      const requestController = new AbortController();
+      activeRequestController = requestController;
       const q = document.getElementById('searchInput').value.trim();
       const sortVal = document.getElementById('sortSelect').value;
 
@@ -353,8 +429,9 @@
 
       let query = supabase
         .from('specimens')
-        .select('*, specimen_groups(name), collection_sites(name)')
-        .order(sortField, { ascending: sortDir === 'asc' });
+        .select('specimen_code, common_name_vi, species, primary_image_url, is_cites, iucn_status, is_red_book_vn, specimen_groups(name), collection_sites(name)', { count: 'exact' })
+        .order(sortField, { ascending: sortDir === 'asc' })
+        .abortSignal(requestController.signal);
 
       if (q) {
         const cleanQ = removeAccents(q.toLowerCase());
@@ -370,9 +447,35 @@
       if (imgFilter === 'has') query = query.not('primary_image_url', 'is', null);
       else if (imgFilter === 'no') query = query.is('primary_image_url', null);
 
-      const { data, error } = await query;
-      if (error) console.error('Filter query error:', error.message);
+      const from = (currentPage - 1) * PAGE_SIZE;
+      let result;
+      try {
+        result = await query.range(from, from + PAGE_SIZE - 1);
+      } catch (requestError) {
+        if (requestId !== latestRequestId || requestController.signal.aborted) return;
+        console.error('Filter request failed:', requestError.message);
+        return;
+      }
+      const { data, error, count } = result;
+      if (requestId !== latestRequestId) return;
+      const offlineStatus = document.getElementById('offlineStatus');
+      if (error) {
+        console.error('Filter query error:', error.message);
+        const cached = isOfflineRequest(error) ? readOfflineResults() : null;
+        if (cached) {
+          currentPage = cached.page || 1;
+          totalResults = cached.count || cached.data?.length || 0;
+          offlineStatus.hidden = false;
+          renderGrid(cached.data || []);
+          renderPagination();
+          return;
+        }
+      }
+      offlineStatus.hidden = true;
+      totalResults = count || 0;
+      saveOfflineResults(data || [], totalResults);
       renderGrid(data || []);
+      renderPagination();
     }
 
     function getBadges(s) {
@@ -384,7 +487,7 @@
     }
 
     function renderGrid(data) {
-      document.getElementById('resultCount').textContent = data.length;
+      document.getElementById('resultCount').textContent = totalResults;
       if (!data.length) {
         document.getElementById('specimenGrid').innerHTML = `
           <div class="empty-state" style="grid-column:1/-1">
@@ -397,8 +500,8 @@
         <a href="/specimen/?code=${encodeURIComponent(s.specimen_code)}" class="card card-accent" style="display:block;cursor:pointer;text-decoration:none">
           <div class="card-img">
             ${s.primary_image_url
-              ? `<img src="${esc(s.primary_image_url)}" alt="${esc(s.common_name_vi || s.species)}" loading="lazy">`
-              : `<img src="/no-photo.png" alt="Chưa có ảnh" loading="lazy" style="opacity:0.6">`
+              ? `<img src="${esc(safeImageUrl(s.primary_image_url))}" alt="${esc(s.common_name_vi || s.species)}" loading="lazy" decoding="async">`
+              : `<img src="/no-photo.png" alt="Chưa có ảnh" loading="lazy" decoding="async" style="opacity:0.6">`
             }
           </div>
           <div class="card-body">
@@ -416,33 +519,77 @@
       `).join('');
     }
 
+    function renderPagination() {
+      const pagination = document.getElementById('pagination');
+      const totalPages = Math.ceil(totalResults / PAGE_SIZE);
+      if (totalPages <= 1) {
+        pagination.hidden = true;
+        pagination.innerHTML = '';
+        return;
+      }
+
+      const start = Math.max(1, currentPage - 2);
+      const end = Math.min(totalPages, currentPage + 2);
+      const pages = [];
+      for (let page = start; page <= end; page++) pages.push(page);
+      pagination.hidden = false;
+      pagination.innerHTML = `
+        <button type="button" class="page-btn" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''} aria-label="Trang trước">‹</button>
+        ${pages.map(page => `<button type="button" class="page-btn" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ''}>${page}</button>`).join('')}
+        <button type="button" class="page-btn" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''} aria-label="Trang sau">›</button>`;
+    }
+
     // ── Search debounce ──
     document.getElementById('searchInput').addEventListener('input', () => {
       clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(applyFilters, 350);
+      searchTimeout = setTimeout(() => applyFilters({ resetPage: true }), 350);
     });
 
-    window.applyFilters = applyFilters;
-
-    window.resetFilters = function() {
+    function resetFilters() {
       document.querySelectorAll('.filter-group-cb, .filter-site-cb').forEach(el => el.checked = false);
       ['filterCites','filterIucn','filterRedbook'].forEach(id => document.getElementById(id).checked = false);
       document.getElementById('filterImage').value = 'has';
       document.getElementById('searchInput').value = '';
-      applyFilters();
-    };
-    window.openSidebar = () => {
+      applyFilters({ resetPage: true });
+    }
+    const openSidebar = () => {
       document.getElementById('filterSidebar').classList.add('open');
       document.getElementById('filterBackdrop').classList.add('open');
     };
-    window.closeSidebar = () => {
+    const closeSidebar = () => {
       document.getElementById('filterSidebar').classList.remove('open');
       document.getElementById('filterBackdrop').classList.remove('open');
+      document.getElementById('openSidebarBtn').setAttribute('aria-expanded', 'false');
     };
+
+    document.getElementById('navbarToggle')?.addEventListener('click', () => {
+      const links = document.querySelector('.navbar-links');
+      const toggle = document.getElementById('navbarToggle');
+      const open = links?.classList.toggle('open');
+      toggle?.setAttribute('aria-expanded', String(Boolean(open)));
+    });
+    document.getElementById('filterBackdrop').addEventListener('click', closeSidebar);
+    document.getElementById('openSidebarBtn').addEventListener('click', () => {
+      openSidebar();
+      document.getElementById('openSidebarBtn').setAttribute('aria-expanded', 'true');
+    });
+    document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+    ['filterCites', 'filterIucn', 'filterRedbook', 'filterImage', 'sortSelect'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => applyFilters({ resetPage: true }));
+    });
+    document.getElementById('groupFilters').addEventListener('change', () => applyFilters({ resetPage: true }));
+    document.getElementById('siteFilters').addEventListener('change', () => applyFilters({ resetPage: true }));
+    document.getElementById('pagination').addEventListener('click', event => {
+      const button = event.target.closest('[data-page]');
+      if (!button || button.disabled) return;
+      currentPage = Number(button.dataset.page);
+      applyFilters();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     // Boot
     await loadFilters();
-    applyFilters();
+    applyFilters({ resetPage: true });
   </script>
   <script type="module" src="/src/pwa-ui.js"></script>
 </body>

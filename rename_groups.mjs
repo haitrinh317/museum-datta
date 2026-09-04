@@ -1,11 +1,12 @@
 // Rename groups in Supabase: specimens_groups table
 import { createClient } from '@supabase/supabase-js';
+import { readAdminPassword } from './scripts/read-password.mjs';
 
 const SUPABASE_URL = 'https://wwkrpbxtvkaxfbewhdor.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3a3JwYnh0dmtheGZiZXdoZG9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxOTgzNTQsImV4cCI6MjEwMDc3NDM1NH0.YwbHnNsMEvqDtPD7nJQ0nWlyCbiSgEOO6XQRrNdQvug';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const password = process.argv[2];
+const password = await readAdminPassword();
 const { error: authError } = await supabase.auth.signInWithPassword({
     email: 'haitrinhnt@gmail.com', password
 });

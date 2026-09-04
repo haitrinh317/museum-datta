@@ -1,6 +1,6 @@
 # MEMORY — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-09-02 (Security hardening đã áp dụng production; baseline migration pending)
+> Cập nhật lần cuối: 2026-09-04 (Performance + UI/accessibility hardening; baseline migration pending)
 
 ## 1. TỔNG QUAN DỰ ÁN
 
@@ -41,6 +41,8 @@ CSDL-Museum/
 ├── supabase/
 │   └── migrations/
 │       └── 001_create_schema.sql  # Full schema + RLS + indexes
+├── scripts/
+│   └── read-password.mjs       # Prompt mật khẩu admin ẩn cho script one-off
 ├── Data/                       # CSV gốc + đã convert
 │   ├── danh sach da gai - QR 2023.xlsx - Sheet1.csv
 │   ├── giap-xac-QR2023.csv
@@ -200,8 +202,11 @@ Parser trong `admin.js` (`parseThongTin()`) tách bằng regex theo keyword head
 
 **Cách dùng:**
 ```bash
-node upload_images.mjs <password> "E:\2026\_Antigravity\CSDL-Museum\Data\<ten-folder-anh>"
+node upload_images.mjs "E:\2026\_Antigravity\CSDL-Museum\Data\<ten-folder-anh>"
 ```
+
+Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có thể đặt
+`MUSEUM_ADMIN_PASSWORD` trong phiên terminal rồi xóa biến sau khi xong.
 
 **Logic matching (theo thứ tự):**
 1. Tên file bắt đầu bằng số TT (`201. Cá mập...`) → match qua `serial_number`
@@ -229,16 +234,32 @@ node upload_images.mjs <password> "E:\2026\_Antigravity\CSDL-Museum\Data\<ten-fo
 | 7 | URL hash cho admin tab | F5 giữ nguyên tab thay vì về dashboard |
 | 8 | PWA chỉ public (không admin) | Admin cần Supabase online để CRUD, offline vô dụng |
 | 9 | vite-plugin-pwa (Workbox) | Auto SW generation, cache versioning, ít boilerplate hơn tự viết |
-| 10 | Cache API only (không IndexedDB) | Public site chỉ đọc, Cache API đủ sức |
+| 10 | Cache API + localStorage snapshot (không IndexedDB) | Public site chỉ đọc; app shell/ảnh dùng Workbox, dữ liệu cuối dùng snapshot TTL để fallback offline |
 | 11 | Không tự tạo thủ công migration history trên production | Chỉ dùng `supabase migration repair` sau khi xác thực được Database password; tránh lịch sử migration sai lệch |
+| 12 | CSP chặn inline script; UI dùng event delegation | Giảm bề mặt Stored XSS, giữ tương thích Vanilla JS |
+| 13 | Chỉ một ảnh đại diện/mẫu vật cho đến khi có gallery table | Tránh upload nhiều file nhưng DB chỉ lưu một URL, gây ảnh mồ côi |
 
-## 10. DEPLOY
+## 10. PERFORMANCE + UI HARDENING (2026-09-04)
+
+- Browse dùng phân trang server-side 24 bản ghi/trang, payload cột tối thiểu và loại bỏ response cũ khi search nhanh.
+- Dashboard tách dữ liệu biểu đồ khỏi 8 mẫu gần đây; CSV import gom batch nhóm/địa điểm/mẫu vật.
+- `push_to_db.mjs` cũng dùng batch resolve/upsert, tránh `select('*')` và N+1 request khi nạp lại dữ liệu.
+- `specimen_images.image_url` có unique index trong schema/migration để khớp `upsert(onConflict: 'image_url')` của script upload.
+- Homepage lazy-load Leaflet; map page chỉ lấy tên mẫu vật khi chọn địa điểm.
+- Service Worker không cache Supabase REST để tránh dữ liệu CRUD cũ; chỉ giữ cache ảnh/tile/font.
+- Browse/specimen lưu kết quả cuối ở localStorage với TTL 7 ngày, có nhãn cảnh báo khi dùng dữ liệu offline.
+- Public/admin có focus-visible, reduced-motion, nhãn/ARIA, vùng chạm tối thiểu và modal khôi phục focus.
+- Migration chờ apply: `supabase/migrations/20260904083659_search_text_and_perf.sql` (cần reconcile history + database password).
+
+## 11. DEPLOY
 
 - **GitHub:** `haitrinh317/museum-datta` (main branch)
 - **Vercel:** https://museum-datta.vercel.app/
 - **Auto-deploy:** Push to main → Vercel auto build
+- **Deploy 2026-09-03:** commit `db7ef06` đã có trên `main`; production trả HTTP 200 sau deploy.
+- **Security patch 2026-09-04:** đã hoàn tất cục bộ (XSS/CSP/headers/Storage/dependency audit), chưa commit hoặc deploy.
 
-## 11. SKILLS
+## 12. SKILLS
 
 | Skill | Mục đích |
 |---|---|

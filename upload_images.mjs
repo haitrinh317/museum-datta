@@ -1,12 +1,13 @@
 // Auto upload images → Supabase Storage (with WebP conversion)
 // Match: TT number in filename → serial_number, or name → common_name_vi/species
-// Usage: node upload_images.mjs <password> <folder_path> [--dry-run]
+// Usage: node upload_images.mjs <folder_path> [--dry-run]
 
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readAdminPassword } from './scripts/read-password.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,18 +17,21 @@ const BUCKET            = 'specimen-images';
 const WEBP_QUALITY      = 80;     // 0-100, 80 is a good balance
 const MAX_WIDTH         = 1200;   // max width px, keeps aspect ratio
 
-const password  = process.argv[2];
-const imgFolder = process.argv[3];
+const positionalArgs = process.argv.slice(2).filter(arg => !arg.startsWith('--'));
+const imgFolder = positionalArgs[0];
 const dryRun    = process.argv.includes('--dry-run');
 
-if (!password || !imgFolder) {
-    console.error('Usage: node upload_images.mjs <password> <folder_path> [--dry-run]');
+if (!imgFolder || positionalArgs.length > 1) {
+    console.error('Usage: node upload_images.mjs <folder_path> [--dry-run]');
+    console.error('Mật khẩu đọc từ prompt ẩn hoặc biến MUSEUM_ADMIN_PASSWORD.');
     process.exit(1);
 }
 if (!fs.existsSync(imgFolder)) {
     console.error('Folder not found:', imgFolder);
     process.exit(1);
 }
+
+const password = await readAdminPassword();
 
 const IMG_EXTS = new Set(['.jpg', '.jpeg', '.png', '.jfif', '.webp']);
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -63,12 +67,13 @@ async function run() {
     const { error: authError } = await supabase.auth.signInWithPassword({
         email: 'haitrinhnt@gmail.com', password
     });
-    if (authError) { console.error('Login fail:', authError.message); process.exit(1); }
+    if (authError) throw new Error(`Login fail: ${authError.message}`);
     console.log('✅ Logged in\n');
 
-    const { data: specimens } = await supabase
+    const { data: specimens, error: specimenReadError } = await supabase
         .from('specimens')
         .select('id, specimen_code, serial_number, species, common_name_vi, primary_image_url');
+    if (specimenReadError) throw new Error(`Không đọc được danh sách mẫu vật: ${specimenReadError.message}`);
     console.log(`📦 ${specimens.length} specimens loaded from DB`);
 
     const byTT      = new Map();
@@ -88,7 +93,7 @@ async function run() {
     let uploaded = 0, skipped = 0, noMatch = 0;
     const noMatchList = [];
 
-    for (const filename of files) {
+    for (const [fileOrdinal, filename] of files.entries()) {
         const { tt, namePart, index } = parseFilename(filename);
 
         // --- Match ---
@@ -110,7 +115,7 @@ async function run() {
         }
 
         // Storage path: ASCII-safe only (no Vietnamese, no spaces)
-        const fileIndex = tt !== null ? tt : (index !== null ? index : uploaded + 1);
+        const fileIndex = tt !== null ? tt : (index !== null ? index : fileOrdinal + 1);
         const storagePath = `${specimen.specimen_code}/${String(fileIndex).padStart(3, '0')}.webp`;
         const isPrimary = !specimen.primary_image_url || index === 1 || index === null;
 
@@ -131,7 +136,12 @@ async function run() {
         }
 
         // Delete existing file first (avoid RLS upsert restriction on existing objects)
-        await supabase.storage.from(BUCKET).remove([storagePath]);
+        const { error: removeError } = await supabase.storage.from(BUCKET).remove([storagePath]);
+        if (removeError) {
+            console.error(`  ❌ Delete old file fail ${filename}:`, removeError.message);
+            skipped++;
+            continue;
+        }
 
         // --- Upload ---
         const { error: upErr } = await supabase.storage
@@ -148,10 +158,14 @@ async function run() {
 
         // --- Update DB ---
         if (isPrimary) {
-            await supabase.from('specimens')
+            const { error: primaryError } = await supabase.from('specimens')
                 .update({ primary_image_url: publicUrl })
                 .eq('id', specimen.id);
-            specimen.primary_image_url = publicUrl;
+            if (primaryError) {
+                console.error(`  ⚠️  Primary URL update warn ${filename}:`, primaryError.message);
+            } else {
+                specimen.primary_image_url = publicUrl;
+            }
         }
 
         const { error: imgErr } = await supabase.from('specimen_images').upsert([{
@@ -184,4 +198,7 @@ async function run() {
     }
 }
 
-run();
+run().catch(error => {
+    console.error(error.message);
+    process.exitCode = 1;
+});

@@ -21,12 +21,54 @@ const state = {
   filterImage: '',
   editingSpecimenId: null,
   pendingImages: [], // Files waiting to upload
+  lastModalTrigger: null,
+  specimensRequestId: 0,
+  specimensAbortController: null,
 };
 
 // ============================================================
 // SECURITY: XSS prevention — escape all DB data before innerHTML
 // ============================================================
 const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+const safeImageUrl = value => {
+  try {
+    const url = new URL(String(value), window.location.origin);
+    const isLocal = url.origin === window.location.origin;
+    const isSupabase = url.protocol === 'https:' && url.hostname.endsWith('.supabase.co');
+    return isLocal || isSupabase ? url.href : '/no-photo.png';
+  } catch {
+    return '/no-photo.png';
+  }
+};
+
+const removeAccents = value => String(value)
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/đ/g, 'd')
+  .replace(/Đ/g, 'D');
+
+const specimenStoragePath = value => {
+  try {
+    const url = new URL(String(value));
+    const marker = '/storage/v1/object/public/specimen-images/';
+    const markerIndex = url.pathname.indexOf(marker);
+    if (url.protocol !== 'https:' || !url.hostname.endsWith('.supabase.co') || markerIndex < 0) return null;
+    return url.pathname.slice(markerIndex + marker.length)
+      .split('/')
+      .map(segment => decodeURIComponent(segment))
+      .join('/');
+  } catch {
+    return null;
+  }
+};
+
+async function removeStoredSpecimenImage(value) {
+  const path = specimenStoragePath(value);
+  if (!path) return null;
+  const { error } = await supabase.storage.from('specimen-images').remove([path]);
+  return error;
+}
 
 // ============================================================
 // INIT
@@ -56,9 +98,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   bindEvents();
 
-  // Expose to window for inline onclick handlers in HTML (ES module scope is not global)
-  window.navigateTo = navigateTo;
-  window.openAddSpecimenForm = () => { navigateTo('specimens'); openSpecimenModal(); };
 });
 
 // ============================================================
@@ -175,10 +214,13 @@ function navigateTo(page) {
 // DASHBOARD
 // ============================================================
 async function loadDashboard() {
-  const [specimensRes, groupsRes, sitesRes] = await Promise.all([
-    supabase.from('specimens').select('*, specimen_groups(name), collection_sites(name)', { count: 'exact' }),
-    supabase.from('specimen_groups').select('*'),
-    supabase.from('collection_sites').select('*'),
+  const [specimensRes, groupsRes, sitesRes, recentRes] = await Promise.all([
+    // Charts only need scalar fields; keep names/images out of the full dataset.
+    supabase.from('specimens').select('id, group_id, site_id, is_cites, iucn_status, is_red_book_vn, primary_image_url, created_at'),
+    supabase.from('specimen_groups').select('id, name'),
+    supabase.from('collection_sites').select('id, name'),
+    // The recent list is the only dashboard block that needs display metadata.
+    supabase.from('specimens').select('id, specimen_code, species, common_name_vi, primary_image_url, is_cites, iucn_status, is_red_book_vn, created_at, specimen_groups(name)').order('created_at', { ascending: false }).limit(8),
   ]);
 
   const specimens = specimensRes.data || [];
@@ -204,7 +246,7 @@ async function loadDashboard() {
   renderGroupChart(specimens, groups);
   renderConservationChart(specimens);
   renderTopSites(specimens, sites);
-  renderRecentSpecimens(specimens);
+  renderRecentSpecimens(recentRes.data || []);
 }
 
 function renderGroupChart(specimens, groups) {
@@ -355,7 +397,7 @@ function renderRecentSpecimens(specimens) {
     const hasImage = s.primary_image_url;
     const isConserved = s.is_cites || s.iucn_status || s.is_red_book_vn;
     const thumb = hasImage
-      ? `<img class="recent-item-thumb" src="${esc(s.primary_image_url)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      ? `<img class="recent-item-thumb" src="${esc(safeImageUrl(s.primary_image_url))}" alt="" loading="lazy" decoding="async" width="48" height="48">`
       : '';
     const icon = `<div class="recent-item-icon" ${hasImage ? 'style="display:none"' : ''}>
         <span class="material-icons">pets</span>
@@ -375,26 +417,34 @@ function renderRecentSpecimens(specimens) {
       </div>
     `;
   }).join('');
+
+  container.querySelectorAll('.recent-item-thumb').forEach(image => {
+    image.addEventListener('error', () => {
+      image.style.display = 'none';
+      if (image.nextElementSibling) image.nextElementSibling.style.display = 'flex';
+    }, { once: true });
+  });
 }
 
 // ============================================================
 // SPECIMENS CRUD
 // ============================================================
 async function loadSpecimens() {
+  const requestId = ++state.specimensRequestId;
+  state.specimensAbortController?.abort();
+  const abortController = new AbortController();
+  state.specimensAbortController = abortController;
   await loadGroupsAndSites();
 
   let query = supabase
     .from('specimens')
-    .select('*, specimen_groups(name), collection_sites(name)', { count: 'exact' })
-    .order('serial_number', { ascending: true });
+    .select('id, serial_number, specimen_code, group_id, family, species, common_name_vi, site_id, collection_date, is_cites, iucn_status, is_red_book_vn, primary_image_url, specimen_groups(name), collection_sites(name)', { count: 'exact' })
+    .order('serial_number', { ascending: true })
+    .abortSignal(abortController.signal);
 
   if (state.searchQuery) {
-    query = query.or(
-      `species.ilike.%${state.searchQuery}%,` +
-      `common_name_vi.ilike.%${state.searchQuery}%,` +
-      `specimen_code.ilike.%${state.searchQuery}%,` +
-      `family.ilike.%${state.searchQuery}%`
-    );
+    const cleanQuery = removeAccents(state.searchQuery.trim().toLowerCase());
+    query = query.ilike('search_text', `%${cleanQuery}%`);
   }
   if (state.filterGroup) {
     query = query.eq('group_id', state.filterGroup);
@@ -408,16 +458,26 @@ async function loadSpecimens() {
     query = query.is('primary_image_url', null);
   }
 
-  const { data, error, count } = await query
-    .range(
+  let result;
+  try {
+    result = await query.range(
       (state.pagination.page - 1) * state.pagination.perPage,
       state.pagination.page * state.pagination.perPage - 1
     );
+  } catch (requestError) {
+    if (requestId !== state.specimensRequestId || abortController.signal.aborted) return;
+    showToast('Lỗi tải dữ liệu: ' + requestError.message, 'error');
+    return;
+  }
+  const { data, error, count } = result;
 
   if (error) {
+    if (requestId !== state.specimensRequestId || abortController.signal.aborted) return;
     showToast('Lỗi tải dữ liệu: ' + error.message, 'error');
     return;
   }
+
+  if (requestId !== state.specimensRequestId || abortController.signal.aborted) return;
 
   state.specimens = data || [];
   state.pagination.total = count || 0;
@@ -447,11 +507,11 @@ function renderSpecimensTable() {
     if (s.is_red_book_vn) badges.push('<span class="badge badge-redbook">SĐ VN</span>');
 
     return `
-      <tr data-id="${s.id}">
+      <tr data-id="${esc(s.id)}">
         <td style="padding:4px 6px">
           ${s.primary_image_url
-            ? `<img src="${esc(s.primary_image_url)}" alt="" class="specimen-thumb" onclick="editSpecimen('${s.id}')" title="Có ảnh - click để sửa">`
-            : `<img src="/no-photo.png" alt="Chưa có ảnh" class="specimen-thumb specimen-thumb-nophoto" onclick="editSpecimen('${s.id}')" title="Chưa có ảnh">`
+            ? `<button class="specimen-thumb-button" type="button" data-action="edit-specimen" data-id="${esc(s.id)}" title="Có ảnh - click để sửa" aria-label="Sửa mẫu vật ${esc(s.specimen_code)}"><img src="${esc(safeImageUrl(s.primary_image_url))}" alt="" class="specimen-thumb" loading="lazy" decoding="async" width="48" height="48"></button>`
+            : `<button class="specimen-thumb-button" type="button" data-action="edit-specimen" data-id="${esc(s.id)}" title="Chưa có ảnh" aria-label="Sửa mẫu vật ${esc(s.specimen_code)}"><img src="/no-photo.png" alt="Chưa có ảnh" class="specimen-thumb specimen-thumb-nophoto" loading="lazy" decoding="async" width="48" height="48"></button>`
           }
         </td>
         <td>${s.serial_number || ''}</td>
@@ -465,10 +525,10 @@ function renderSpecimensTable() {
         <td>${badges.join(' ') || '—'}</td>
         <td>
           <div class="table-actions">
-            <button class="btn-icon" onclick="editSpecimen('${s.id}')" title="Sửa">
+            <button class="btn-icon" type="button" data-action="edit-specimen" data-id="${esc(s.id)}" title="Sửa" aria-label="Sửa mẫu vật ${esc(s.specimen_code)}">
               <span class="material-icons">edit</span>
             </button>
-            <button class="btn-icon" onclick="deleteSpecimen('${s.id}', '${esc(s.specimen_code)}')" title="Xóa">
+            <button class="btn-icon" type="button" data-action="delete-specimen" data-id="${esc(s.id)}" data-code="${esc(s.specimen_code)}" title="Xóa" aria-label="Xóa mẫu vật ${esc(s.specimen_code)}">
               <span class="material-icons">delete</span>
             </button>
           </div>
@@ -489,7 +549,7 @@ function renderPagination() {
 
   let html = '';
   for (let i = 1; i <= totalPages; i++) {
-    html += `<button class="${i === state.pagination.page ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+    html += `<button class="${i === state.pagination.page ? 'active' : ''}" type="button" data-action="go-page" data-page="${i}" aria-label="Trang ${i}"${i === state.pagination.page ? ' aria-current="page"' : ''}>${i}</button>`;
   }
   container.innerHTML = html;
 }
@@ -519,6 +579,7 @@ function openSpecimenModal(specimen = null) {
   const modal = document.getElementById('specimen-modal');
   const title = document.getElementById('modal-title');
   const form = document.getElementById('specimen-form');
+  state.lastModalTrigger = document.activeElement;
 
   // Populate group/site dropdowns in form
   const formGroup = document.getElementById('form-group');
@@ -574,10 +635,10 @@ function openSpecimenModal(specimen = null) {
     existing.className = 'image-preview-item primary current-image';
     existing.id = 'current-image-preview';
     existing.innerHTML = `
-      <img src="${specimen.primary_image_url}" alt="Ảnh hiện tại">
+      <img src="${esc(safeImageUrl(specimen.primary_image_url))}" alt="Ảnh hiện tại">
       <div class="current-image-label">Ảnh hiện tại</div>
-      <button class="remove-image" type="button" title="Xóa ảnh này"
-        onclick="clearSpecimenImage('${specimen.id}', this.closest('.image-preview-item'))">
+      <button class="remove-image" type="button" title="Xóa ảnh này" aria-label="Xóa ảnh này"
+        data-action="clear-specimen-image" data-id="${esc(specimen.id)}">
         <span class="material-icons" style="font-size:14px">delete</span>
       </button>
     `;
@@ -585,16 +646,22 @@ function openSpecimenModal(specimen = null) {
   }
 
   modal.style.display = 'flex';
+  requestAnimationFrame(() => document.getElementById('form-code')?.focus());
 }
 
 window.clearSpecimenImage = async function(specimenId, el) {
   if (!confirm('Xóa ảnh này khỏi mẫu vật?')) return;
+  const { data: specimen } = await supabase.from('specimens')
+    .select('primary_image_url')
+    .eq('id', specimenId)
+    .single();
   const { error } = await supabase.from('specimens')
     .update({ primary_image_url: null })
     .eq('id', specimenId);
   if (error) { showToast('Lỗi xóa ảnh: ' + error.message, 'error'); return; }
+  const storageError = await removeStoredSpecimenImage(specimen?.primary_image_url);
   el.remove();
-  showToast('Đã xóa ảnh', 'success');
+  showToast(storageError ? 'Đã bỏ ảnh khỏi mẫu vật; cần kiểm tra lại file Storage' : 'Đã xóa ảnh', storageError ? 'error' : 'success');
   // Update local cache
   const s = state.specimens.find(s => s.id === specimenId);
   if (s) s.primary_image_url = null;
@@ -736,18 +803,29 @@ async function uploadSpecimenImages(specimenId) {
 
 // Make functions global for onclick handlers
 window.editSpecimen = async function(id) {
-  const { data } = await supabase.from('specimens').select('*').eq('id', id).single();
+  const { data } = await supabase.from('specimens')
+    .select('id, serial_number, specimen_code, group_id, family, species, author, common_name_vi, site_id, collection_date, is_cites, iucn_status, is_red_book_vn, is_exploited, is_food_use, morphology, ecology, distribution, toxicity, application, notes, primary_image_url')
+    .eq('id', id)
+    .single();
   if (data) openSpecimenModal(data);
 };
 
 window.deleteSpecimen = async function(id, code) {
   if (!confirm(`Xóa mẫu vật ${code}?`)) return;
 
+  const { data: specimen } = await supabase.from('specimens')
+    .select('primary_image_url')
+    .eq('id', id)
+    .single();
   const { error } = await supabase.from('specimens').delete().eq('id', id);
   if (error) {
     showToast('Lỗi xóa: ' + error.message, 'error');
   } else {
-    showToast(`Đã xóa ${code}`, 'success');
+    const storageError = await removeStoredSpecimenImage(specimen?.primary_image_url);
+    showToast(
+      storageError ? `Đã xóa ${code}; cần kiểm tra lại file Storage` : `Đã xóa ${code}`,
+      storageError ? 'error' : 'success'
+    );
     loadSpecimens();
   }
 };
@@ -763,7 +841,7 @@ window.goToPage = function(page) {
 async function loadGroups() {
   const { data } = await supabase
     .from('specimen_groups')
-    .select('*, specimens(count)')
+    .select('id, name, name_en, description, specimens(count)')
     .order('name');
 
   state.groups = data || [];
@@ -788,10 +866,10 @@ function renderGroupCards() {
         <div class="group-card-count">${count} mẫu vật</div>
         ${g.description ? `<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">${esc(g.description)}</p>` : ''}
         <div class="group-card-actions">
-          <button class="btn btn-sm btn-secondary" onclick="editGroup('${g.id}')">
+          <button class="btn btn-sm btn-secondary" type="button" data-action="edit-group" data-id="${esc(g.id)}">
             <span class="material-icons" style="font-size:14px;">edit</span> Sửa
           </button>
-          <button class="btn btn-sm btn-danger" onclick="deleteGroup('${g.id}', '${esc(g.name)}')">
+          <button class="btn btn-sm btn-danger" type="button" data-action="delete-group" data-id="${esc(g.id)}" data-name="${esc(g.name)}" aria-label="Xóa nhóm ${esc(g.name)}">
             <span class="material-icons" style="font-size:14px;">delete</span>
           </button>
         </div>
@@ -804,27 +882,29 @@ function openGroupModal(group = null) {
   const modal = document.getElementById('inline-modal');
   const title = document.getElementById('inline-modal-title');
   const body = document.getElementById('inline-modal-body');
+  state.lastModalTrigger = document.activeElement;
 
   title.textContent = group ? 'Sửa nhóm mẫu' : 'Thêm nhóm mẫu';
 
   body.innerHTML = `
     <div class="form-group" style="margin-bottom:12px;">
       <label for="inline-name">Tên nhóm *</label>
-      <input type="text" id="inline-name" required value="${group?.name || ''}" placeholder="VD: Da gai">
+      <input type="text" id="inline-name" required value="${esc(group?.name || '')}" placeholder="VD: Da gai">
     </div>
     <div class="form-group" style="margin-bottom:12px;">
       <label for="inline-name-en">Tên tiếng Anh</label>
-      <input type="text" id="inline-name-en" value="${group?.name_en || ''}" placeholder="Echinodermata">
+      <input type="text" id="inline-name-en" value="${esc(group?.name_en || '')}" placeholder="Echinodermata">
     </div>
     <div class="form-group">
       <label for="inline-desc">Mô tả</label>
-      <textarea id="inline-desc" rows="3">${group?.description || ''}</textarea>
+      <textarea id="inline-desc" rows="3">${esc(group?.description || '')}</textarea>
     </div>
-    <input type="hidden" id="inline-edit-id" value="${group?.id || ''}">
+    <input type="hidden" id="inline-edit-id" value="${esc(group?.id || '')}">
   `;
 
   modal.dataset.type = 'group';
   modal.style.display = 'flex';
+  requestAnimationFrame(() => document.getElementById('inline-name')?.focus());
 }
 
 async function handleGroupSubmit() {
@@ -874,7 +954,7 @@ window.deleteGroup = async function(id, name) {
 async function loadSites() {
   const { data } = await supabase
     .from('collection_sites')
-    .select('*, specimens(count)')
+    .select('id, name, region, latitude, longitude, specimens(count)')
     .order('name');
 
   state.sites = data || [];
@@ -898,10 +978,10 @@ function renderSitesTable() {
       <td>${s.specimens?.[0]?.count || 0}</td>
       <td>
         <div class="table-actions">
-          <button class="btn-icon" onclick="editSite('${s.id}')" title="Sửa">
+          <button class="btn-icon" type="button" data-action="edit-site" data-id="${esc(s.id)}" title="Sửa" aria-label="Sửa địa điểm ${esc(s.name)}">
             <span class="material-icons">edit</span>
           </button>
-          <button class="btn-icon" onclick="deleteSite('${s.id}', '${esc(s.name)}')" title="Xóa">
+          <button class="btn-icon" type="button" data-action="delete-site" data-id="${esc(s.id)}" data-name="${esc(s.name)}" title="Xóa" aria-label="Xóa địa điểm ${esc(s.name)}">
             <span class="material-icons">delete</span>
           </button>
         </div>
@@ -914,33 +994,35 @@ function openSiteModal(site = null) {
   const modal = document.getElementById('inline-modal');
   const title = document.getElementById('inline-modal-title');
   const body = document.getElementById('inline-modal-body');
+  state.lastModalTrigger = document.activeElement;
 
   title.textContent = site ? 'Sửa địa điểm' : 'Thêm địa điểm';
 
   body.innerHTML = `
     <div class="form-group" style="margin-bottom:12px;">
       <label for="inline-name">Tên địa điểm *</label>
-      <input type="text" id="inline-name" required value="${site?.name || ''}" placeholder="VD: Đá Nam">
+      <input type="text" id="inline-name" required value="${esc(site?.name || '')}" placeholder="VD: Đá Nam">
     </div>
     <div class="form-group" style="margin-bottom:12px;">
       <label for="inline-region">Khu vực</label>
-      <input type="text" id="inline-region" value="${site?.region || ''}" placeholder="VD: Trường Sa">
+      <input type="text" id="inline-region" value="${esc(site?.region || '')}" placeholder="VD: Trường Sa">
     </div>
     <div class="form-row" style="margin-bottom:12px;">
       <div class="form-group">
         <label for="inline-lat">Vĩ độ</label>
-        <input type="number" step="any" id="inline-lat" value="${site?.latitude || ''}" placeholder="10.1234">
+        <input type="number" step="any" id="inline-lat" value="${esc(site?.latitude ?? '')}" placeholder="10.1234">
       </div>
       <div class="form-group">
         <label for="inline-lng">Kinh độ</label>
-        <input type="number" step="any" id="inline-lng" value="${site?.longitude || ''}" placeholder="114.5678">
+        <input type="number" step="any" id="inline-lng" value="${esc(site?.longitude ?? '')}" placeholder="114.5678">
       </div>
     </div>
-    <input type="hidden" id="inline-edit-id" value="${site?.id || ''}">
+    <input type="hidden" id="inline-edit-id" value="${esc(site?.id || '')}">
   `;
 
   modal.dataset.type = 'site';
   modal.style.display = 'flex';
+  requestAnimationFrame(() => document.getElementById('inline-name')?.focus());
 }
 
 async function handleSiteSubmit() {
@@ -989,6 +1071,7 @@ window.deleteSite = async function(id, name) {
 // CSV IMPORT
 // ============================================================
 let parsedCSVData = [];
+const normalizeImportName = value => String(value || '').trim().toLowerCase();
 
 function handleCSVFile(file) {
   const reader = new FileReader();
@@ -1067,6 +1150,7 @@ function parseMuseumCSV(text) {
           is_red_book_vn: fields[13] === '1',
           is_exploited: fields[14] === '1',
           is_food_use: fields[15] === '1',
+          display_area: normalizeDisplayArea(fields[18]),
           ...parsed,
         });
       }
@@ -1079,6 +1163,12 @@ function parseMuseumCSV(text) {
   }
 
   return records;
+}
+
+function normalizeDisplayArea(value) {
+  return String(value || '')
+    .replace(/^Khu(?: vực)? trưng bày\s*/i, '')
+    .trim();
 }
 
 function parseThongTin(text) {
@@ -1183,6 +1273,7 @@ function renderImportPreview() {
       <td><span class="species-name">${esc(r.species)}</span></td>
       <td>${esc(r.common_name_vi)}</td>
       <td>${esc(r.site_name)}</td>
+      <td>${esc(r.display_area)}</td>
     </tr>
   `).join('');
 }
@@ -1199,100 +1290,103 @@ async function executeImport() {
   statusEl.className = 'badge badge-info';
 
   const log = (msg, type = 'info') => {
-    logEl.innerHTML += `<div class="log-${type}">${msg}</div>`;
+    logEl.insertAdjacentHTML('beforeend', `<div class="log-${type}">${esc(msg)}</div>`);
     logEl.scrollTop = logEl.scrollHeight;
   };
 
   log('Bắt đầu import...');
 
-  // Step 1: Create groups
-  const uniqueGroups = [...new Set(parsedCSVData.map(r => r.group_name).filter(Boolean))];
+  try {
+  // Step 1: Resolve groups with one read + one batch insert.
+  const uniqueGroups = [...new Map(parsedCSVData
+    .map(r => String(r.group_name || '').trim())
+    .filter(Boolean)
+    .map(name => [normalizeImportName(name), name])).values()];
   log(`Tìm thấy ${uniqueGroups.length} nhóm mẫu`);
-
   const groupMap = {};
-  for (const name of uniqueGroups) {
-    const { data, error } = await supabase
+  if (uniqueGroups.length) {
+    const { data: existingGroups, error: groupReadError } = await supabase
       .from('specimen_groups')
-      .upsert({ name }, { onConflict: 'name' })
-      .select()
-      .single();
-
-    if (data) {
-      groupMap[name] = data.id;
-      log(`✓ Nhóm: ${name}`, 'success');
-    } else {
-      log(`✗ Lỗi tạo nhóm ${name}: ${error?.message}`, 'error');
+      .select('id, name');
+    if (groupReadError) {
+      log(`✗ Không đọc được nhóm mẫu: ${groupReadError.message}`, 'error');
+      executeBtn.disabled = false;
+      return;
     }
+    (existingGroups || []).forEach(g => { groupMap[normalizeImportName(g.name)] = g.id; });
+    const missingGroups = uniqueGroups
+      .filter(name => !groupMap[normalizeImportName(name)])
+      .map(name => ({ name }));
+    if (missingGroups.length) {
+      const { data: insertedGroups, error: groupInsertError } = await supabase
+        .from('specimen_groups')
+        .upsert(missingGroups, { onConflict: 'name' })
+        .select('id, name');
+      if (groupInsertError) {
+        log(`✗ Không tạo được nhóm mẫu: ${groupInsertError.message}`, 'error');
+        executeBtn.disabled = false;
+        return;
+      }
+      (insertedGroups || []).forEach(g => { groupMap[normalizeImportName(g.name)] = g.id; });
+    }
+    log(`✓ Đã chuẩn bị ${Object.keys(groupMap).length} nhóm`, 'success');
   }
 
-  // Step 2: Create sites
-  const uniqueSites = [...new Map(
-    parsedCSVData.map(r => [r.site_name, r])
-  ).values()].filter(r => r.site_name);
-
+  // Step 2: Resolve sites with one read + one batch insert.
+  // Existing sites are kept; this avoids the NULL-region uniqueness trap and
+  // leaves coordinate edits explicit in the Sites screen.
+  const uniqueSites = [...new Map(parsedCSVData
+    .map(r => ({ ...r, site_name: String(r.site_name || '').trim() }))
+    .filter(r => r.site_name)
+    .map(r => [normalizeImportName(r.site_name), r])).values()];
   log(`Tìm thấy ${uniqueSites.length} địa điểm`);
-
   const siteMap = {};
-  for (const r of uniqueSites) {
-    const rawLat = parseDMS(r.latitude_raw);
-    const rawLng = parseDMS(r.longitude_raw);
-    const { lat, lng } = autoFixLatLng(rawLat, rawLng);
-
-    // ponytail: SELECT-then-update avoids onConflict:'name,region' with NULL region
-    // PostgreSQL treats NULL≠NULL so the unique constraint never fires → always inserts
-    let siteId = null;
-
-    const { data: existing } = await supabase
+  const siteNames = uniqueSites.map(r => r.site_name);
+  if (siteNames.length) {
+    const { data: existingSites, error: siteReadError } = await supabase
       .from('collection_sites')
-      .select('id')
-      .eq('name', r.site_name)
-      .is('region', null)
-      .maybeSingle();
-
-    if (existing) {
-      const { data: updated, error: updErr } = await supabase
-        .from('collection_sites')
-        .update({ latitude: lat, longitude: lng })
-        .eq('id', existing.id)
-        .select()
-        .single();
-      if (updated) {
-        siteId = updated.id;
-        log(`✓ Địa điểm (cập nhật): ${r.site_name} (${lat?.toFixed(4) || '?'}, ${lng?.toFixed(4) || '?'})`, 'success');
-      } else {
-        log(`✗ Lỗi cập nhật ${r.site_name}: ${updErr?.message}`, 'error');
-      }
-    } else {
-      const { data: inserted, error: insErr } = await supabase
-        .from('collection_sites')
-        .insert({ name: r.site_name, latitude: lat, longitude: lng })
-        .select()
-        .single();
-      if (inserted) {
-        siteId = inserted.id;
-        log(`✓ Địa điểm (mới): ${r.site_name} (${lat?.toFixed(4) || '?'}, ${lng?.toFixed(4) || '?'})`, 'success');
-      } else {
-        log(`✗ Lỗi tạo ${r.site_name}: ${insErr?.message}`, 'error');
-      }
+      .select('id, name');
+    if (siteReadError) {
+      log(`✗ Không đọc được địa điểm: ${siteReadError.message}`, 'error');
+      executeBtn.disabled = false;
+      return;
     }
-
-    if (siteId) siteMap[r.site_name] = siteId;
+    (existingSites || []).forEach(s => {
+      const key = normalizeImportName(s.name);
+      if (!siteMap[key]) siteMap[key] = s.id;
+    });
+    const missingSites = uniqueSites
+      .filter(r => !siteMap[normalizeImportName(r.site_name)])
+      .map(r => {
+        const { lat, lng } = autoFixLatLng(parseDMS(r.latitude_raw), parseDMS(r.longitude_raw));
+        return { name: r.site_name, latitude: lat, longitude: lng };
+      });
+    if (missingSites.length) {
+      const { data: insertedSites, error: siteInsertError } = await supabase
+        .from('collection_sites')
+        .insert(missingSites)
+        .select('id, name');
+      if (siteInsertError) {
+        log(`✗ Không tạo được địa điểm: ${siteInsertError.message}`, 'error');
+        executeBtn.disabled = false;
+        return;
+      }
+      (insertedSites || []).forEach(s => { siteMap[normalizeImportName(s.name)] = s.id; });
+    }
+    log(`✓ Đã chuẩn bị ${Object.keys(siteMap).length} địa điểm`, 'success');
   }
 
-  // Step 3: Insert specimens
-  let success = 0;
-  let errors = 0;
-
-  for (const r of parsedCSVData) {
+  // Step 3: Upsert all specimens in one request (one server transaction).
+  const specimens = parsedCSVData.map(r => {
     const specimen = {
       serial_number: r.serial_number,
       specimen_code: r.specimen_code,
-      group_id: groupMap[r.group_name] || null,
+      group_id: groupMap[normalizeImportName(r.group_name)] || null,
       family: r.family || null,
       species: r.species || null,
       author: r.author || null,
       common_name_vi: r.common_name_vi || null,
-      site_id: siteMap[r.site_name] || null,
+      site_id: siteMap[normalizeImportName(r.site_name)] || null,
       collection_date: r.collection_date,
       is_cites: r.is_cites,
       iucn_status: r.iucn_status,
@@ -1305,25 +1399,28 @@ async function executeImport() {
       toxicity: r.toxicity || null,
       application: r.application || null,
       notes: r.notes || null,
+      display_area: r.display_area || null,
     };
+    return specimen;
+  });
+  const { error: specimenError } = await supabase
+    .from('specimens')
+    .upsert(specimens, { onConflict: 'specimen_code' });
 
-    const { error } = await supabase
-      .from('specimens')
-      .upsert(specimen, { onConflict: 'specimen_code' });
-
-    if (error) {
-      log(`✗ ${r.specimen_code}: ${error.message}`, 'error');
-      errors++;
-    } else {
-      log(`✓ ${r.specimen_code} — ${r.species}`, 'success');
-      success++;
-    }
-  }
-
+  const success = specimenError ? 0 : specimens.length;
+  const errors = specimenError ? specimens.length : 0;
+  if (specimenError) log(`✗ Import mẫu vật thất bại: ${specimenError.message}`, 'error');
+  else log(`✓ Đã upsert ${success} mẫu vật trong một batch`, 'success');
   log(`\nHoàn tất: ${success} thành công, ${errors} lỗi`);
   statusEl.textContent = `Xong: ${success}/${parsedCSVData.length}`;
   statusEl.className = errors ? 'badge badge-conservation' : 'badge badge-success';
   executeBtn.disabled = false;
+  } catch (error) {
+    log(`✗ Import bị gián đoạn: ${error?.message || 'Lỗi không xác định'}`, 'error');
+    statusEl.textContent = 'Import thất bại';
+    statusEl.className = 'badge badge-conservation';
+    executeBtn.disabled = false;
+  }
 }
 
 // ============================================================
@@ -1350,7 +1447,7 @@ async function loadQRCodes() {
         <div class="qr-card-name">${esc(s.species || s.common_name_vi || '')}</div>
       </div>
       <div class="qr-card-actions">
-        <button class="btn btn-sm btn-secondary" onclick="downloadQR('${s.id}', '${esc(s.specimen_code)}')">
+        <button class="btn btn-sm btn-secondary" type="button" data-action="download-qr" data-id="${esc(s.id)}" data-code="${esc(s.specimen_code)}" aria-label="Tải QR ${esc(s.specimen_code)}">
           <span class="material-icons" style="font-size:14px;">download</span>
         </button>
       </div>
@@ -1399,11 +1496,11 @@ function printAllQR() {
 // ============================================================
 async function loadGroupsAndSites() {
   if (!state.groups.length) {
-    const { data } = await supabase.from('specimen_groups').select('*').order('name');
+    const { data } = await supabase.from('specimen_groups').select('id, name, name_en, description').order('name');
     state.groups = data || [];
   }
   // Always refresh sites — new sites added via import won't appear otherwise
-  const { data } = await supabase.from('collection_sites').select('*').order('name');
+  const { data } = await supabase.from('collection_sites').select('id, name, region, latitude, longitude').order('name');
   state.sites = data || [];
 }
 
@@ -1430,12 +1527,64 @@ function showToast(message, type = 'info') {
 function closeAllModals() {
   document.getElementById('specimen-modal').style.display = 'none';
   document.getElementById('inline-modal').style.display = 'none';
+  const trigger = state.lastModalTrigger;
+  state.lastModalTrigger = null;
+  if (trigger && typeof trigger.focus === 'function' && document.contains(trigger)) trigger.focus();
 }
 
 // ============================================================
 // EVENT BINDINGS
 // ============================================================
 function bindEvents() {
+  // One CSP-safe handler for buttons rendered dynamically with innerHTML.
+  document.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-action]');
+    if (!target) return;
+
+    const { action, id, code, name, page } = target.dataset;
+    event.preventDefault();
+
+    switch (action) {
+      case 'add-specimen':
+        navigateTo('specimens');
+        openSpecimenModal();
+        break;
+      case 'navigate':
+        navigateTo(page);
+        break;
+      case 'open-public':
+        window.open('/', '_blank', 'noopener,noreferrer');
+        break;
+      case 'edit-specimen':
+        window.editSpecimen(id);
+        break;
+      case 'delete-specimen':
+        window.deleteSpecimen(id, code);
+        break;
+      case 'go-page':
+        window.goToPage(Number(page));
+        break;
+      case 'clear-specimen-image':
+        window.clearSpecimenImage(id, target.closest('.image-preview-item'));
+        break;
+      case 'edit-group':
+        window.editGroup(id);
+        break;
+      case 'delete-group':
+        window.deleteGroup(id, name);
+        break;
+      case 'edit-site':
+        window.editSite(id);
+        break;
+      case 'delete-site':
+        window.deleteSite(id, name);
+        break;
+      case 'download-qr':
+        window.downloadQR(id, code);
+        break;
+    }
+  });
+
   // Login
   document.getElementById('login-form').addEventListener('submit', handleLogin);
   document.getElementById('logout-btn').addEventListener('click', handleLogout);
@@ -1457,10 +1606,12 @@ function bindEvents() {
   function closeSidebar() {
     sidebar.classList.remove('open');
     overlay.classList.remove('active');
+    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', 'false');
   }
   document.getElementById('sidebar-toggle').addEventListener('click', () => {
     const isOpen = sidebar.classList.toggle('open');
     overlay.classList.toggle('active', isOpen);
+    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', String(isOpen));
   });
   overlay.addEventListener('click', closeSidebar);
 
@@ -1507,6 +1658,9 @@ function bindEvents() {
   });
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', closeAllModals);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeAllModals();
   });
 
   // Groups
@@ -1572,8 +1726,22 @@ function bindEvents() {
 }
 
 function handleImageFiles(files) {
+  const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  const maxFileSize = 10 * 1024 * 1024;
+
   for (const file of files) {
-    if (!file.type.startsWith('image/')) continue;
+    if (state.pendingImages.length >= 1) {
+      showToast('Mỗi mẫu vật hiện chỉ lưu một ảnh đại diện', 'info');
+      break;
+    }
+    if (!allowedTypes.has(file.type)) {
+      showToast(`Bỏ qua ${file.name}: chỉ nhận JPEG, PNG hoặc WebP`, 'error');
+      continue;
+    }
+    if (file.size > maxFileSize) {
+      showToast(`Bỏ qua ${file.name}: ảnh vượt quá 10 MB`, 'error');
+      continue;
+    }
     state.pendingImages.push(file);
 
     const reader = new FileReader();
@@ -1581,15 +1749,19 @@ function handleImageFiles(files) {
       const grid = document.getElementById('image-preview-grid');
       const item = document.createElement('div');
       item.className = `image-preview-item ${state.pendingImages.length === 1 ? 'primary' : ''}`;
-      item.innerHTML = `
-        <img src="${e.target.result}" alt="preview">
-        <button class="remove-image" type="button">×</button>
-      `;
-      item.querySelector('.remove-image').addEventListener('click', () => {
+      const image = document.createElement('img');
+      image.src = e.target.result;
+      image.alt = 'Xem trước ảnh';
+      const removeButton = document.createElement('button');
+      removeButton.className = 'remove-image';
+      removeButton.type = 'button';
+      removeButton.textContent = '×';
+      removeButton.addEventListener('click', () => {
         const idx = state.pendingImages.indexOf(file);
         if (idx > -1) state.pendingImages.splice(idx, 1);
         item.remove();
       });
+      item.append(image, removeButton);
       grid.appendChild(item);
     };
     reader.readAsDataURL(file);

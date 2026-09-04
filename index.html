@@ -25,14 +25,14 @@
   <meta name="theme-color" content="#0a1628">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/src/style.css">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co https://*.tile.openstreetmap.org; connect-src 'self' https://*.supabase.co;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co https://*.tile.openstreetmap.org; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
   <style>
     /* ── HERO ── */
     .hero {
       position: relative;
-      min-height: 100dvh;
+      min-height: clamp(540px, 78dvh, 760px);
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       overflow: hidden;
     }
     .hero-bg {
@@ -58,7 +58,7 @@
       position: relative;
       z-index: 2;
       text-align: center;
-      padding: var(--sp-24) 0 var(--sp-16);
+      padding: clamp(7rem, 16vh, 10rem) 0 var(--sp-16);
     }
     .hero-content h1 {
       font-size: clamp(2rem, 6vw, 4rem);
@@ -111,6 +111,10 @@
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
       cursor: pointer;
+      width: 100%;
+      color: inherit;
+      font: inherit;
+      text-align: left;
       transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
     }
     .site-item:hover { border-color: var(--accent-primary); background: var(--bg-elevated); }
@@ -244,12 +248,12 @@
         Bảo tàng Hải dương học
       </a>
       <div class="navbar-spacer"></div>
-      <ul class="navbar-links">
-        <li><a href="/" class="active">Trang chủ</a></li>
+      <ul class="navbar-links" id="primary-navigation">
+        <li><a href="/" class="active" aria-current="page">Trang chủ</a></li>
         <li><a href="/browse/">Tra cứu</a></li>
         <li><a href="/map/">Bản đồ</a></li>
       </ul>
-      <button class="navbar-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">
+      <button class="navbar-toggle" id="navbarToggle" type="button" aria-label="Mở menu điều hướng" aria-controls="primary-navigation" aria-expanded="false">
         <span class="material-icons">menu</span>
       </button>
     </div>
@@ -270,6 +274,7 @@
         <div class="hero-search">
           <div class="search-wrap">
             <span class="material-icons">search</span>
+            <label class="sr-only" for="heroSearch">Tìm kiếm mẫu vật</label>
             <input type="text" class="search-input" id="heroSearch"
               placeholder="Tìm mẫu vật: tên loài, họ, địa điểm..."
               autocomplete="off">
@@ -436,16 +441,19 @@
     </footer>
   </div>
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
   <script type="module">
     import { supabase } from '/src/lib/supabase.js';
-    import L from 'leaflet';
-    import 'leaflet/dist/leaflet.css';
 
     // Security: escape DB data before innerHTML
     const esc = str => !str ? '' : String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const safeImageUrl = value => {
+      try {
+        const url = new URL(String(value), window.location.origin);
+        return url.origin === window.location.origin ||
+          (url.protocol === 'https:' && url.hostname.endsWith('.supabase.co'))
+          ? url.href : '/no-photo.png';
+      } catch { return '/no-photo.png'; }
+    };
     // ── Loading ──
     const loading = document.getElementById('loading');
     window.addEventListener('load', () => {
@@ -488,18 +496,18 @@
 
     // ── Stats ──
     async function loadStats() {
-      const [{ count: specimens }, { count: groups }, { count: sites }, { data: cons }] = await Promise.all([
-        supabase.from('specimens').select('*', { count: 'exact', head: true }),
-        supabase.from('specimen_groups').select('*', { count: 'exact', head: true }),
-        supabase.from('collection_sites').select('*', { count: 'exact', head: true }),
-        supabase.from('specimens').select('is_cites,iucn_status,is_red_book_vn')
+      const [{ count: specimens }, { count: groups }, { count: sites }, { count: conservationCount }] = await Promise.all([
+        supabase.from('specimens').select('id', { count: 'exact', head: true }),
+        supabase.from('specimen_groups').select('id', { count: 'exact', head: true }),
+        supabase.from('collection_sites').select('id', { count: 'exact', head: true }),
+        supabase.from('specimens').select('id', { count: 'exact', head: true })
+          .or('is_cites.eq.true,iucn_status.not.is.null,is_red_book_vn.eq.true')
       ]);
-      const conservationCount = (cons || []).filter(s => s.is_cites || s.iucn_status || s.is_red_book_vn).length;
       const stats = [
         { icon: 'inventory_2', num: specimens || 0, label: 'Tổng mẫu vật' },
         { icon: 'category',    num: groups || 0,    label: 'Nhóm mẫu' },
         { icon: 'pin_drop',    num: sites || 0,     label: 'Địa điểm thu mẫu' },
-        { icon: 'warning',     num: conservationCount, label: 'Cần bảo tồn' },
+        { icon: 'warning',     num: conservationCount || 0, label: 'Cần bảo tồn' },
       ];
       document.getElementById('statsGrid').innerHTML = stats.map(s => `
         <div class="stat-card reveal">
@@ -527,7 +535,7 @@
       // Chỉ hiển thị loài có ảnh, shuffle → random mỗi lần load
       const { data: withImg } = await supabase
         .from('specimens')
-        .select('*, specimen_groups(name), collection_sites(name)')
+        .select('specimen_code, common_name_vi, species, primary_image_url, is_cites, iucn_status, is_red_book_vn, specimen_groups(name), collection_sites(name)')
         .not('primary_image_url', 'is', null)
         .limit(40);
 
@@ -552,7 +560,7 @@
         <a href="/specimen/?code=${encodeURIComponent(s.specimen_code)}" class="card card-accent reveal" style="display:block;cursor:pointer;text-decoration:none">
           <div class="card-img">
             ${s.primary_image_url
-              ? `<img src="${esc(s.primary_image_url)}" alt="${esc(s.common_name_vi || s.species)}" loading="lazy">`
+              ? `<img src="${esc(safeImageUrl(s.primary_image_url))}" alt="${esc(s.common_name_vi || s.species)}" loading="lazy" decoding="async">`
               : `<div class="card-img-placeholder"><span class="material-icons">photo</span></div>`
             }
           </div>
@@ -574,14 +582,15 @@
 
     // ── Map preview ──
     async function loadMapPreview() {
+      const { default: L } = await import('leaflet');
+      await import('leaflet/dist/leaflet.css');
       const { data: sites } = await supabase
         .from('collection_sites')
-        .select('*, specimens(id)');
+        .select('id, name, region, latitude, longitude, specimens(count)');
 
       if (!sites?.length) return;
 
       // Leaflet map
-      const L = window.L;
       const map = L.map('preview-map', { zoomControl: false, scrollWheelZoom: false });
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri',
@@ -612,12 +621,12 @@
       if (!validSites.length) return;
 
       validSites.forEach(site => {
-        const count = site.specimens?.length || 0;
+        const count = site.specimens?.[0]?.count || 0;
         const marker = L.circleMarker([site.latitude, site.longitude], {
           radius: 9, fillColor: '#06b6d4', color: '#fff',
           weight: 2, opacity: 1, fillOpacity: 0.9,
         }).addTo(map);
-        marker.bindPopup(`<b style="color:#06b6d4">${site.name}</b><br><small>${site.region || ''}</small><br>${count} mẫu vật`);
+        marker.bindPopup(`<b style="color:#06b6d4">${esc(site.name)}</b><br><small>${esc(site.region || '')}</small><br>${count} mẫu vật`);
       });
 
       // View cố định để thấy Biển Đông + 2 quần đảo
@@ -625,14 +634,14 @@
 
       // Site list
       document.getElementById('siteList').innerHTML = validSites.map(site => `
-        <div class="site-item reveal" onclick="document.querySelector('#preview-map').scrollIntoView()">
+        <button type="button" class="site-item reveal" data-action="scroll-map" aria-label="Xem ${esc(site.name)} trên bản đồ">
           <span class="material-icons">pin_drop</span>
           <div>
             <div class="site-name">${esc(site.name)}</div>
             <div class="site-count">${esc(site.region || '')}</div>
           </div>
-          <span class="site-badge">${site.specimens?.length || 0}</span>
-        </div>
+          <span class="site-badge">${site.specimens?.[0]?.count || 0}</span>
+        </button>
       `).join('');
       document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
     }
@@ -659,8 +668,27 @@
       else if (isAndroid) iosCard.style.display = 'none';
     })();
 
-    // Boot
-    Promise.all([loadStats(), loadFeatured(), loadMapPreview()]);
+    document.getElementById('navbarToggle')?.addEventListener('click', () => {
+      const links = document.querySelector('.navbar-links');
+      const toggle = document.getElementById('navbarToggle');
+      const isOpen = links?.classList.toggle('open') ?? false;
+      toggle?.setAttribute('aria-expanded', String(isOpen));
+    });
+    document.getElementById('siteList')?.addEventListener('click', event => {
+      if (event.target.closest('[data-action="scroll-map"]')) {
+        document.querySelector('#preview-map')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    // Boot: keep the map off the critical path until it approaches the viewport.
+    const mapPreview = document.getElementById('preview-map');
+    const mapObserver = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return;
+      mapObserver.disconnect();
+      loadMapPreview().catch(error => console.warn('Map preview unavailable:', error));
+    }, { rootMargin: '320px' });
+    mapObserver.observe(mapPreview);
+    Promise.all([loadStats(), loadFeatured()]);
   </script>
   <script type="module" src="/src/pwa-ui.js"></script>
 </body>

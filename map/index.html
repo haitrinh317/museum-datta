@@ -10,8 +10,8 @@
   <meta name="theme-color" content="#0a1628">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/src/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://*.supabase.co;">
+  <!-- Leaflet CSS is loaded with the lazy module when the map is needed. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline https://*.supabase.co; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
   <style>
     body { overflow: hidden; }
     .map-page { position: fixed; inset: 56px 0 0 0; display: flex; }
@@ -83,10 +83,16 @@
       gap: var(--sp-3);
       padding: var(--sp-3);
       border-radius: var(--radius-md);
-      cursor: pointer;
       transition: background var(--dur-fast) ease;
       margin-bottom: var(--sp-2);
       border: 1px solid transparent;
+      width: 100%;
+      background: transparent;
+      appearance: none;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
     }
     .site-panel-item:hover { background: rgba(255,255,255,0.07); border-color: var(--border-subtle); }
     .site-panel-item.active { background: rgba(8,145,178,0.15); border-color: var(--accent-primary); }
@@ -205,12 +211,12 @@
         Bảo tàng Hải dương học
       </a>
       <div class="navbar-spacer"></div>
-      <ul class="navbar-links">
+      <ul class="navbar-links" id="primary-navigation">
         <li><a href="/">Trang chủ</a></li>
         <li><a href="/browse/">Tra cứu</a></li>
-        <li><a href="/map/" class="active">Bản đồ</a></li>
+        <li><a href="/map/" class="active" aria-current="page">Bản đồ</a></li>
       </ul>
-      <button class="navbar-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('open')">
+      <button class="navbar-toggle" id="navbarToggle" type="button" aria-label="Mở menu điều hướng" aria-controls="primary-navigation" aria-expanded="false">
         <span class="material-icons">menu</span>
       </button>
     </div>
@@ -232,7 +238,7 @@
         <div>·</div>
         <div><span id="headerSpecimens">—</span> mẫu vật</div>
       </div>
-      <button class="toggle-panel-btn" id="toggleBtn" onclick="togglePanel()">
+      <button class="toggle-panel-btn" id="toggleBtn" type="button" aria-controls="sitePanel" aria-expanded="true">
         <span class="material-icons" style="font-size:16px">list</span>
         Danh sách
       </button>
@@ -242,7 +248,7 @@
     <div id="main-map"></div>
 
     <!-- SITE PANEL -->
-    <aside class="site-panel" id="sitePanel">
+    <aside class="site-panel" id="sitePanel" aria-label="Danh sách địa điểm thu mẫu">
       <div class="site-panel-inner">
         <p class="panel-title">Địa điểm thu mẫu</p>
         <div id="siteListPanel">
@@ -259,6 +265,7 @@
   <script type="module">
     import { supabase } from '/src/lib/supabase.js';
     import L from 'leaflet';
+    import 'leaflet/dist/leaflet.css';
 
     let map, siteLayers = {}, selectedSiteId = null;
     let panelOpen = true;
@@ -351,7 +358,8 @@
     // ── Load data ──
     const { data: sites, error: sitesError } = await supabase
       .from('collection_sites')
-      .select('*, specimens(id, specimen_code, common_name_vi, species, is_cites, iucn_status, is_red_book_vn)');
+      // Keep the initial map payload small; specimen names are fetched on site selection.
+      .select('id, name, region, latitude, longitude, specimens(id, is_cites, iucn_status, is_red_book_vn)');
 
     if (sitesError) console.warn('Sites query error:', sitesError);
 
@@ -401,18 +409,18 @@
 
     // ── Render site list ──
     document.getElementById('siteListPanel').innerHTML = allSites.map(site => `
-      <div class="site-panel-item" id="siteItem_${site.id}" onclick="selectSite('${site.id}')">
+      <button type="button" class="site-panel-item" id="siteItem_${esc(site.id)}" data-site-id="${esc(site.id)}" aria-label="Xem mẫu vật tại ${esc(site.name)}">
         <div class="site-dot"></div>
         <div class="site-info">
           <div class="name">${esc(site.name)}</div>
           <div class="region">${esc(site.region || '')}</div>
         </div>
         <span class="site-count-badge">${site.specimens?.length || 0}</span>
-      </div>
+      </button>
     `).join('');
 
     // ── Select site ──
-    window.selectSite = function(id) {
+    async function selectSite(id) {
       // Deselect previous
       if (selectedSiteId) {
         document.getElementById(`siteItem_${selectedSiteId}`)?.classList.remove('active');
@@ -428,6 +436,19 @@
       siteLayers[id].openPopup();
       map.flyTo([site.latitude, site.longitude], 10, { duration: 1.2 });
 
+      // Fetch specimen display fields only for the selected site.
+      if (!site.specimensLoaded) {
+        const { data: specimens, error } = await supabase
+          .from('specimens')
+          .select('id, specimen_code, common_name_vi, species')
+          .eq('site_id', id)
+          .order('serial_number');
+        if (!error) {
+          site.specimens = specimens || [];
+          site.specimensLoaded = true;
+        }
+      }
+
       // Show specimens in panel
       const detail = document.getElementById('panelDetail');
       detail.style.display = 'block';
@@ -442,18 +463,30 @@
         `).join('')}
         <a href="/browse/" class="btn-view-all">Xem tất cả →</a>
       `;
-    };
+    }
 
     // ── Toggle panel ──
-    window.togglePanel = function() {
+    function togglePanel() {
       panelOpen = !panelOpen;
       document.getElementById('sitePanel').classList.toggle('collapsed', !panelOpen);
       const btn = document.getElementById('toggleBtn');
+      btn.setAttribute('aria-expanded', String(panelOpen));
       btn.innerHTML = panelOpen
         ? '<span class="material-icons" style="font-size:16px">list</span> Danh sách'
         : '<span class="material-icons" style="font-size:16px">map</span> Bản đồ';
       setTimeout(() => map.invalidateSize(), 350);
-    };
+    }
+    document.getElementById('navbarToggle')?.addEventListener('click', () => {
+      const links = document.querySelector('.navbar-links');
+      const toggle = document.getElementById('navbarToggle');
+      const isOpen = links?.classList.toggle('open') ?? false;
+      toggle?.setAttribute('aria-expanded', String(isOpen));
+    });
+    document.getElementById('toggleBtn').addEventListener('click', togglePanel);
+    document.getElementById('siteListPanel').addEventListener('click', event => {
+      const item = event.target.closest('[data-site-id]');
+      if (item) selectSite(item.dataset.siteId);
+    });
   </script>
   <style>
     @keyframes spin { to { transform: rotate(360deg); } }

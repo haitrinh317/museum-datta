@@ -131,6 +131,14 @@ grant insert, update, delete on table storage.objects to authenticated;
 
 -- Keep public computed-column search working, but make function lookup deterministic.
 alter function public.update_updated_at_column() set search_path = pg_catalog, public;
-alter function public.search_text(public.specimens) set search_path = pg_catalog, public;
+-- `search_text` is created by the later performance migration. Guard this
+-- hardening step so a fresh migration replay does not fail before that file.
+do $$
+begin
+  if to_regprocedure('public.search_text(public.specimens)') is not null then
+    alter function public.search_text(public.specimens) set search_path = pg_catalog, public;
+  end if;
+end;
+$$;
 
 commit;

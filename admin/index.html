@@ -6,11 +6,11 @@
     <title>Quản trị CSDL - Bảo tàng Hải dương học</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="./admin.css">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
 </head>
 <body>
     <!-- ==================== LOGIN SCREEN ==================== -->
@@ -44,7 +44,7 @@
     <!-- ==================== MAIN ADMIN LAYOUT ==================== -->
     <div id="admin-app" class="admin-app" style="display:none;">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="admin-sidebar">
             <div class="sidebar-header">
                 <span class="material-icons logo-icon">directions_boat</span>
                 <div class="sidebar-title">
@@ -52,28 +52,28 @@
                     <span class="subtitle">Bảo tàng Hải dương học</span>
                 </div>
             </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard">
+            <nav class="sidebar-nav" aria-label="Điều hướng quản trị">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
                     <span class="material-icons">dashboard</span>
                     <span>Tổng quan</span>
                 </a>
-                <a href="#" class="nav-item" data-page="specimens">
+                <a href="#specimens" class="nav-item" data-page="specimens">
                     <span class="material-icons">pets</span>
                     <span>Mẫu vật</span>
                 </a>
-                <a href="#" class="nav-item" data-page="groups">
+                <a href="#groups" class="nav-item" data-page="groups">
                     <span class="material-icons">category</span>
                     <span>Nhóm mẫu</span>
                 </a>
-                <a href="#" class="nav-item" data-page="sites">
+                <a href="#sites" class="nav-item" data-page="sites">
                     <span class="material-icons">pin_drop</span>
                     <span>Địa điểm</span>
                 </a>
-                <a href="#" class="nav-item" data-page="import">
+                <a href="#import" class="nav-item" data-page="import">
                     <span class="material-icons">cloud_upload</span>
                     <span>Import CSV</span>
                 </a>
-                <a href="#" class="nav-item" data-page="qrcodes">
+                <a href="#qrcodes" class="nav-item" data-page="qrcodes">
                     <span class="material-icons">qr_code</span>
                     <span>QR Codes</span>
                 </a>
@@ -88,7 +88,7 @@
                     <span class="material-icons">account_circle</span>
                     <span id="user-email">admin</span>
                 </div>
-                <button class="btn-icon" id="logout-btn" title="Đăng xuất">
+                <button class="btn-icon" id="logout-btn" type="button" title="Đăng xuất" aria-label="Đăng xuất">
                     <span class="material-icons">logout</span>
                 </button>
             </div>
@@ -101,7 +101,7 @@
         <main class="main-content">
             <!-- Top Bar -->
             <header class="topbar">
-                <button class="btn-icon sidebar-toggle" id="sidebar-toggle">
+                <button class="btn-icon sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Mở thanh điều hướng" aria-controls="admin-sidebar" aria-expanded="false">
                     <span class="material-icons">menu</span>
                 </button>
                 <h1 id="page-title">Tổng quan</h1>
@@ -156,19 +156,19 @@
 
                     <!-- Quick Actions -->
                     <div class="dash-actions">
-                        <button class="dash-action-btn" onclick="window.openAddSpecimenForm()">
+                        <button class="dash-action-btn" data-action="add-specimen">
                             <span class="material-icons">add_circle</span>
                             <span>Thêm mẫu vật</span>
                         </button>
-                        <button class="dash-action-btn" onclick="navigateTo('import')">
+                        <button class="dash-action-btn" data-action="navigate" data-page="import">
                             <span class="material-icons">upload_file</span>
                             <span>Import CSV</span>
                         </button>
-                        <button class="dash-action-btn" onclick="navigateTo('qrcodes')">
+                        <button class="dash-action-btn" data-action="navigate" data-page="qrcodes">
                             <span class="material-icons">qr_code</span>
                             <span>QR Codes</span>
                         </button>
-                        <button class="dash-action-btn" onclick="window.open('/', '_blank')">
+                        <button class="dash-action-btn" data-action="open-public">
                             <span class="material-icons">public</span>
                             <span>Xem trang công cộng</span>
                         </button>
@@ -218,15 +218,19 @@
                     <div class="page-toolbar">
                         <div class="search-box">
                             <span class="material-icons">search</span>
+                            <label class="sr-only" for="search-specimens">Tìm kiếm mẫu vật</label>
                             <input type="text" id="search-specimens" placeholder="Tìm theo tên, mã, họ, loài...">
                         </div>
                         <div class="filter-group">
+                            <label class="sr-only" for="filter-group">Lọc theo nhóm</label>
                             <select id="filter-group">
                                 <option value="">Tất cả nhóm</option>
                             </select>
+                            <label class="sr-only" for="filter-site">Lọc theo địa điểm</label>
                             <select id="filter-site">
                                 <option value="">Tất cả địa điểm</option>
                             </select>
+                            <label class="sr-only" for="filter-image">Lọc theo ảnh</label>
                             <select id="filter-image">
                                 <option value="">Tất cả</option>
                                 <option value="has">Có ảnh</option>
@@ -255,16 +259,16 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="pagination" id="specimens-pagination"></div>
+                    <div class="pagination" id="specimens-pagination" role="navigation" aria-label="Phân trang mẫu vật"></div>
                 </section>
 
                 <!-- Specimen Form Modal -->
-                <div id="specimen-modal" class="modal" style="display:none;">
+                <div id="specimen-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="display:none;">
                     <div class="modal-overlay"></div>
                     <div class="modal-content modal-large">
                         <div class="modal-header">
                             <h2 id="modal-title">Thêm mẫu vật mới</h2>
-                            <button class="btn-icon modal-close">
+                            <button class="btn-icon modal-close" type="button" aria-label="Đóng cửa sổ mẫu vật">
                                 <span class="material-icons">close</span>
                             </button>
                         </div>
@@ -473,6 +477,7 @@
                                             <th>Loài</th>
                                             <th>Tên Việt</th>
                                             <th>Nơi thu</th>
+                                            <th>Khu trưng bày</th>
                                         </tr>
                                     </thead>
                                     <tbody id="import-tbody"></tbody>
@@ -509,15 +514,15 @@
     </div>
 
     <!-- Toast notifications -->
-    <div id="toast-container" class="toast-container"></div>
+    <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <!-- Group/Site inline modals -->
-    <div id="inline-modal" class="modal" style="display:none;">
+    <div id="inline-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="inline-modal-title" style="display:none;">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-small">
             <div class="modal-header">
                 <h2 id="inline-modal-title">Thêm mới</h2>
-                <button class="btn-icon modal-close">
+                <button class="btn-icon modal-close" type="button" aria-label="Đóng cửa sổ">
                     <span class="material-icons">close</span>
                 </button>
             </div>

@@ -31,17 +31,6 @@ export default defineConfig({
             }
           },
           {
-            // Supabase REST API (browse listing, specimen detail)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api',
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 100, maxAgeSeconds: 24 * 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] }
-            }
-          },
-          {
             // Google Fonts stylesheets
             urlPattern: /^https:\/\/fonts\.googleapis\.com/,
             handler: 'StaleWhileRevalidate',

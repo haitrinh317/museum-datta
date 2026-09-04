@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-09-02 (Security hardening production + Supabase CLI audit)
+> Cập nhật lần cuối: 2026-09-04 (Performance + UI/accessibility hardening)
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
@@ -80,8 +80,8 @@
 - [x] Tạo `public/sw.js` — đăng ký trong `index.html`, `browse/`, `specimen/`
 - [x] **Cache strategy:**
   - App Shell (HTML/CSS/JS): Cache First
-  - Ảnh mẫu vật (Supabase Storage): Cache First, stale-while-revalidate
-  - API calls Supabase: Network First, fallback cache
+  - Ảnh mẫu vật (Supabase Storage): Cache First (URL upload có tên mới, TTL 30 ngày)
+  - API calls Supabase: network-only để tránh dữ liệu admin cũ; app shell vẫn có offline fallback
 - [x] Cache tên: `museum-v1` — version bump khi deploy lớn
 - [x] Offline fallback page (`/offline.html`) khi mất mạng hoàn toàn
 
@@ -91,8 +91,8 @@
 - [x] Không hiện lại nếu đã cài hoặc đã từ chối
 
 ### 4.4 Offline UX
-- [x] Specimen page: nếu offline, show dữ liệu từ cache (Cache API)
-- [x] Browse page: hiện kết quả cache lần browse cuối + badge "Dữ liệu offline"
+- [x] Specimen page: nếu offline, show bản ghi cuối từ localStorage snapshot (TTL 7 ngày)
+- [x] Browse page: hiện kết quả lần browse cuối từ localStorage + badge "Dữ liệu offline"
 - [x] Toast thông báo khi mất/có lại kết nối mạng
 
 ### 4.5 Test & Validate
@@ -118,7 +118,30 @@
 - Material Icons hoạt động trong browser thật nhưng headless browser (Playwright) không load Google Fonts
 - CSV parser: test thêm với dữ liệu các nhóm mẫu khác (có thể format khác Da gai)
 - [ ] Baseline migration history production trước khi dùng `supabase db push`; RBAC hardening đã được áp dụng thủ công ngày 2026-09-02, vì vậy không chạy lại migration qua CLI khi history chưa được reconcile.
-- [ ] Bật Supabase Auth leaked-password protection trong Dashboard (không thuộc SQL migration).
+- [ ] Supabase Auth leaked-password protection chỉ có từ gói Pro; dự án Free chưa thể bật. Cân nhắc khi nâng gói.
+
+### Đã sửa (2026-09-04 — Security hardening frontend)
+- [x] Loại bỏ toàn bộ inline event handlers; `script-src` không còn `unsafe-inline`
+- [x] Escape dữ liệu DB/CSV tại các HTML sink và giới hạn URL ảnh về local/Supabase HTTPS
+- [x] Admin search dùng computed column `search_text`, không ghép chuỗi `.or()` từ input
+- [x] Thêm security headers trên Vercel: CSP, nosniff, deny framing, referrer và permissions policy
+- [x] Upload admin chỉ nhận JPEG/PNG/WebP, tối đa 10 MB và một ảnh đại diện
+- [x] Xóa ảnh/mẫu vật sẽ dọn file ảnh đại diện trong Supabase Storage nếu URL thuộc bucket
+- [x] Nâng các dependency gián tiếp có advisory; `npm audit --offline` = 0 lỗ hổng
+- [x] Script import/upload không còn nhận mật khẩu qua argv; dùng prompt ẩn hoặc `MUSEUM_ADMIN_PASSWORD`
+- [ ] CSV import đã gom batch (nhóm/địa điểm/mẫu vật) nhưng chưa atomic xuyên suốt 3 bước; cân nhắc RPC/Edge Function sau khi migration history được reconcile
+- [ ] Kiểm tra và dọn các file ảnh mồ côi đã tồn tại trước bản vá
+
+### Đã sửa (2026-09-04 — Performance + UI/accessibility)
+- [x] Browse phân trang server-side 24 bản ghi/trang, chỉ chọn các cột card cần dùng và loại bỏ request cũ khi gõ tìm kiếm nhanh
+- [x] Dashboard tách payload chart khỏi 8 mẫu gần đây; import CSV gom batch nhóm/địa điểm/mẫu vật
+- [x] Script `push_to_db.mjs` gom batch resolve nhóm/địa điểm và upsert mẫu vật; loại bỏ `select('*')`/N+1
+- [x] Đồng bộ unique index `specimen_images.image_url` với API upsert gallery; migration sẽ báo duplicate legacy rõ ràng
+- [x] Map preview lazy-load Leaflet; bản đồ chính chỉ tải tên mẫu vật khi chọn một địa điểm
+- [x] Loại bỏ runtime cache Supabase REST để không phục vụ dữ liệu CRUD cũ từ Service Worker
+- [x] Thêm focus-visible, reduced-motion, nhãn form/ARIA, vùng chạm 40–44px và thao tác modal khôi phục focus
+- [x] Giảm pattern side-stripe trên card, chuyển sang đường nhấn phía trên theo audit Hallmark
+- [ ] Chạy migration `20260904083659_search_text_and_perf.sql` sau khi reconcile migration history và có database password
 
 ### Đã sửa (2026-07-28 Session 2+3)
 - [x] Image upload: `uploadSpecimenImages` giờ update `specimens.primary_image_url` trực tiếp
@@ -146,7 +169,7 @@
 
 ### Next Session Starting Point
 - [ ] Baseline migration history trên production bằng `npx supabase migration repair --linked --status applied 001` sau khi Database password hoạt động; không chạy `supabase db push` trước đó.
-- [ ] Bật Supabase Auth leaked-password protection trong Dashboard.
+- [ ] Chỉ bật Supabase Auth leaked-password protection sau khi nâng project từ Free lên Pro.
 - [ ] Upload 14 ảnh no-match thủ công qua Admin (filter "Chưa có ảnh").
 - [ ] Tiếp tục backlog: image lightbox, bulk edit, export và analytics.
 
