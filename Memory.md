@@ -257,7 +257,7 @@ Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có t
 - **Vercel:** https://museum-datta.vercel.app/
 - **Auto-deploy:** Push to main → Vercel auto build
 - **Deploy 2026-09-03:** commit `db7ef06` đã có trên `main`; production trả HTTP 200 sau deploy.
-- **Security patch 2026-09-04:** đã hoàn tất cục bộ (XSS/CSP/headers/Storage/dependency audit), chưa commit hoặc deploy.
+- **Release 2026-09-04:** commit `ce5ade7` đã push lên `main`; Git Integration tự deploy production và smoke test các route public đạt HTTP 200.
 
 ## 12. SKILLS
 
