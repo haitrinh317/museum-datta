@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-09-04 (Performance + UI/accessibility hardening)
+> Cập nhật lần cuối: 2026-09-04 (Performance + UI/accessibility + map CSP fix)
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
@@ -143,6 +143,11 @@
 - [x] Giảm pattern side-stripe trên card, chuyển sang đường nhấn phía trên theo audit Hallmark
 - [ ] Chạy migration `20260904083659_search_text_and_perf.sql` sau khi reconcile migration history và có database password
 
+### Đã sửa (2026-09-04 — Map tile CSP)
+- [x] Sửa CSP tại `/map/` và `/specimen/`: cho phép đúng hostname `https://server.arcgisonline.com` để tile Esri không bị trình duyệt chặn
+- [x] Build production và smoke test local: `/map/` tải 30 tile, `/specimen/` tải 8 tile
+- [x] Commit `42d3b4e` đã push lên `main`; Vercel nhận build mới và trả CSP đúng trên production
+
 ### Đã sửa (2026-07-28 Session 2+3)
 - [x] Image upload: `uploadSpecimenImages` giờ update `specimens.primary_image_url` trực tiếp
 - [x] Search tiếng Việt không dấu: computed column `search_text` + `unaccent()` + `removeAccents()` client-side
@@ -171,6 +176,7 @@
 - [ ] Baseline migration history trên production bằng `npx supabase migration repair --linked --status applied 001` sau khi Database password hoạt động; không chạy `supabase db push` trước đó.
 - [ ] Chỉ bật Supabase Auth leaked-password protection sau khi nâng project từ Free lên Pro.
 - [ ] Upload 14 ảnh no-match thủ công qua Admin (filter "Chưa có ảnh").
+- [ ] Nếu nền bản đồ vẫn xám trên một mạng/thiết bị cụ thể, kiểm tra thêm khả năng Esri tile bị ISP hoặc trình duyệt chặn; CSP production đã đúng.
 - [ ] Tiếp tục backlog: image lightbox, bulk edit, export và analytics.
 
 ### Đã hoàn thành Session 10 (2026-08-03)

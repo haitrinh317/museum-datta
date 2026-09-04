@@ -1,6 +1,6 @@
 # MEMORY — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-09-04 (Performance + UI/accessibility hardening; baseline migration pending)
+> Cập nhật lần cuối: 2026-09-04 (Performance + UI/accessibility + map CSP fix; baseline migration pending)
 
 ## 1. TỔNG QUAN DỰ ÁN
 
@@ -166,6 +166,7 @@ Parser trong `admin.js` (`parseThongTin()`) tách bằng regex theo keyword head
 - Leaflet CSS load bằng `<link>` CDN, **KHÔNG** import trong JS module
 - `map-header` phải nằm **ngoài** `#main-map` container (tránh đè Leaflet)
 - Overlay: vòng tròn + nhãn QĐ. Hoàng Sa (vàng) + QĐ. Trường Sa (xanh)
+- CSP của mọi trang dùng tile phải cho phép chính xác `https://server.arcgisonline.com` (không được bỏ `.com`); nếu sai, Leaflet vẫn tạo marker nhưng nền tile bị chặn và hiện màu xám.
 
 ### Supabase Client
 - Singleton trong `src/lib/supabase.js`
@@ -238,6 +239,7 @@ Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có t
 | 11 | Không tự tạo thủ công migration history trên production | Chỉ dùng `supabase migration repair` sau khi xác thực được Database password; tránh lịch sử migration sai lệch |
 | 12 | CSP chặn inline script; UI dùng event delegation | Giảm bề mặt Stored XSS, giữ tương thích Vanilla JS |
 | 13 | Chỉ một ảnh đại diện/mẫu vật cho đến khi có gallery table | Tránh upload nhiều file nhưng DB chỉ lưu một URL, gây ảnh mồ côi |
+| 14 | Khai báo CSP tile provider theo đúng hostname đầy đủ | Tránh lỗi nền bản đồ xám do meta CSP ở từng trang chặn ảnh Esri |
 
 ## 10. PERFORMANCE + UI HARDENING (2026-09-04)
 
@@ -249,6 +251,7 @@ Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có t
 - Service Worker không cache Supabase REST để tránh dữ liệu CRUD cũ; chỉ giữ cache ảnh/tile/font.
 - Browse/specimen lưu kết quả cuối ở localStorage với TTL 7 ngày, có nhãn cảnh báo khi dùng dữ liệu offline.
 - Public/admin có focus-visible, reduced-motion, nhãn/ARIA, vùng chạm tối thiểu và modal khôi phục focus.
+- Sửa CSP sai hostname Esri ở `map/index.html` và `specimen/index.html`; local smoke test xác nhận tile tải hợp lệ.
 - Migration chờ apply: `supabase/migrations/20260904083659_search_text_and_perf.sql` (cần reconcile history + database password).
 
 ## 11. DEPLOY
@@ -258,6 +261,7 @@ Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có t
 - **Auto-deploy:** Push to main → Vercel auto build
 - **Deploy 2026-09-03:** commit `db7ef06` đã có trên `main`; production trả HTTP 200 sau deploy.
 - **Release 2026-09-04:** commit `ce5ade7` đã push lên `main`; Git Integration tự deploy production và smoke test các route public đạt HTTP 200.
+- **Map CSP hotfix 2026-09-04:** commit `42d3b4e` đã push lên `main`; production HTML/header đã nhận hostname Esri đúng. Local smoke test `/map/` tải 30 tile và `/specimen/` tải 8 tile.
 
 ## 12. SKILLS
 
