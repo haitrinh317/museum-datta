@@ -19,6 +19,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       scope: '/',
       workbox: {
+        // Kích hoạt SW mới ngay để bản PWA cài trên iPhone không giữ WebAR bundle cũ.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         // Precache build output — exclude admin
         globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,webp,woff2,mind}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,

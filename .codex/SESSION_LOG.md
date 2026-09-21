@@ -19,6 +19,7 @@
 
 - Hoãn tải runtime Three.js/MindAR đến thao tác Bật Camera để một lỗi runtime không ngăn nút hoạt động.
 - Thêm trạng thái lỗi rõ ràng khi runtime AR không tải được; build và audit dependency đạt trước deploy.
+- Cấu hình PWA skipWaiting/clientsClaim/cleanupOutdatedCaches để bản cài iPhone nhận bundle WebAR mới ngay khi mở lại.
 
 ## 2026-09-04 — Khởi tạo tích hợp Codex
 
