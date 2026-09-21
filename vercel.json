@@ -4,7 +4,8 @@
     { "source": "/map", "destination": "/map/index.html" },
     { "source": "/specimen", "destination": "/specimen/index.html" },
     { "source": "/admin", "destination": "/admin/index.html" },
-    { "source": "/ar", "destination": "/ar/index.html" }
+    { "source": "/ar", "destination": "/ar/index.html" },
+    { "source": "/ar/target", "destination": "/ar/target/index.html" }
   ],
   "headers": [
     {

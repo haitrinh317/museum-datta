@@ -16,11 +16,21 @@ export default defineConfig({
         globIgnores: ['admin/**', '**/logo*.png', '**/og-image*.png', '**/hero_bg.png'],
         // Offline navigation fallback
         navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/^\/admin/],
+        navigateFallbackDenylist: [/^\/admin/, /\.[a-zA-Z0-9]+$/],
         // ponytail: MPA with query params (?code=XXX) — strip ALL params when matching precache
         ignoreURLParametersMatching: [/./],
         // Runtime cache strategies
         runtimeCaching: [
+          {
+            // Assets WebAR local (ảnh target, model, video)
+            urlPattern: /\/ar\/.*\.(?:jpg|jpeg|png|webp|webm|mind)$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'ar-assets',
+              expiration: { maxEntries: 20, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
           {
             // Ảnh mẫu vật từ Supabase Storage
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage/,
@@ -87,9 +97,10 @@ export default defineConfig({
         main:     resolve(__dirname, 'index.html'),
         admin:    resolve(__dirname, 'admin/index.html'),
         browse:   resolve(__dirname, 'browse/index.html'),
-        specimen: resolve(__dirname, 'specimen/index.html'),
-        map:      resolve(__dirname, 'map/index.html'),
-        ar:       resolve(__dirname, 'ar/index.html'),
+        specimen:  resolve(__dirname, 'specimen/index.html'),
+        map:       resolve(__dirname, 'map/index.html'),
+        ar:        resolve(__dirname, 'ar/index.html'),
+        ar_target: resolve(__dirname, 'ar/target/index.html'),
       },
     },
   },
