@@ -1,0 +1,8 @@
+{
+  "scanned_at": "2026-09-21",
+  "framework": "Vite multi-page + vanilla JavaScript",
+  "fonts": ["Be Vietnam Pro", "JetBrains Mono", "Space Grotesk"],
+  "motion": "motion-cut",
+  "spacing": "4px-derived semantic scale",
+  "palette": "dark-ocean Midnight tokens in tokens.css"
+}

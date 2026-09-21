@@ -1,0 +1,95 @@
+/* Hallmark · genre: atmospheric · macrostructure: Map / Diagram · theme: Midnight
+ * tone: technical-scientific · anchor hue: ocean cyan · nav: N9 · footer: Ft5
+ * pre-emit critique: P4 H4 E4 S5 R4 V4
+ */
+
+:root {
+  --color-paper: oklch(14% 0.025 250);
+  --color-paper-2: oklch(17% 0.03 250);
+  --color-paper-3: oklch(21% 0.035 250);
+  --color-ink: oklch(93% 0.012 240);
+  --color-ink-2: oklch(77% 0.025 240);
+  --color-muted: oklch(60% 0.03 240);
+  --color-rule: oklch(30% 0.045 250);
+  --color-rule-strong: oklch(43% 0.065 245);
+  --color-accent: oklch(70% 0.13 215);
+  --color-accent-strong: oklch(64% 0.14 220);
+  --color-accent-ink: oklch(99% 0.004 240);
+  --color-focus: oklch(78% 0.14 215);
+  --color-danger: oklch(64% 0.2 25);
+  --color-warning: oklch(78% 0.15 80);
+  --color-success: oklch(70% 0.14 160);
+  --color-cites: oklch(61% 0.2 28);
+  --color-iucn: oklch(70% 0.17 52);
+  --color-redbook: oklch(77% 0.16 90);
+  --color-exploit: oklch(74% 0.16 70);
+  --color-food: oklch(67% 0.14 160);
+
+  --surface-veil: color-mix(in oklch, var(--color-paper) 82%, transparent);
+  --surface-strong: color-mix(in oklch, var(--color-paper-3) 92%, transparent);
+  --accent-soft: color-mix(in oklch, var(--color-accent) 16%, transparent);
+  --accent-strong-soft: color-mix(in oklch, var(--color-accent) 28%, transparent);
+  --ink-soft: color-mix(in oklch, var(--color-ink) 8%, transparent);
+  --ink-strong-soft: color-mix(in oklch, var(--color-ink) 15%, transparent);
+  --hero-overlay-start: color-mix(in oklch, var(--color-paper) 54%, transparent);
+  --hero-overlay-mid: color-mix(in oklch, var(--color-paper) 18%, transparent);
+  --hero-overlay-end: color-mix(in oklch, var(--color-paper) 88%, transparent);
+  --hero-shadow: 0 0.5rem 2rem color-mix(in oklch, var(--color-paper) 86%, transparent);
+  --badge-cites-soft: color-mix(in oklch, var(--color-cites) 16%, transparent);
+  --badge-cites-rule: color-mix(in oklch, var(--color-cites) 45%, transparent);
+  --badge-iucn-soft: color-mix(in oklch, var(--color-iucn) 16%, transparent);
+  --badge-iucn-rule: color-mix(in oklch, var(--color-iucn) 45%, transparent);
+  --badge-redbook-soft: color-mix(in oklch, var(--color-redbook) 16%, transparent);
+  --badge-redbook-rule: color-mix(in oklch, var(--color-redbook) 45%, transparent);
+  --badge-exploit-soft: color-mix(in oklch, var(--color-exploit) 16%, transparent);
+  --badge-exploit-rule: color-mix(in oklch, var(--color-exploit) 45%, transparent);
+  --badge-food-soft: color-mix(in oklch, var(--color-food) 16%, transparent);
+  --badge-food-rule: color-mix(in oklch, var(--color-food) 45%, transparent);
+  --admin-paper: color-mix(in oklch, var(--color-paper) 92%, black);
+  --admin-panel: color-mix(in oklch, var(--color-paper-3) 86%, black);
+  --admin-input: color-mix(in oklch, var(--color-paper-2) 88%, black);
+  --admin-hover: color-mix(in oklch, var(--color-paper-3) 78%, var(--color-accent));
+  --admin-gradient-ocean: linear-gradient(135deg, var(--color-paper) 0%, var(--color-paper-2) 52%, var(--color-paper-3) 100%);
+  --admin-gradient-card: linear-gradient(145deg, var(--surface-strong), var(--color-paper-2));
+  --admin-gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+
+  --font-display: "Space Grotesk", "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-4xl: 8rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-display: clamp(2.5rem, 6vw, 4.75rem);
+
+  --radius-input: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-pill: 999px;
+  --rule-hair: 1px;
+  --rule-fine: 2px;
+  --shadow-card: 0 1rem 2.75rem color-mix(in oklch, var(--color-paper) 76%, transparent);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-fast: 180ms;
+  --dur-base: 240ms;
+  --dur-slow: 320ms;
+}

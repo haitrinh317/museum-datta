@@ -2,6 +2,13 @@
 
 > Cập nhật lần cuối: 2026-09-21 (Triển khai WebAR Cá voi lưng gù + Sửa lỗi PWA Camera & Service Worker)
 
+## ✅ Hệ thiết kế Hallmark (2026-09-21)
+
+- [x] Khóa hệ design visitor-first trong `design.md`: atmospheric Midnight, ocean cyan, Map / Diagram cho tra cứu và khám phá bộ sưu tập.
+- [x] Tạo `tokens.css` dùng chung public/admin; thêm display font Space Grotesk, giữ Be Vietnam Pro và JetBrains Mono.
+- [x] Sửa responsive guards nền tảng: `overflow-x: clip`, grid `minmax(0, 1fr)`, heading wrap và named easing.
+- [ ] Chạy visual smoke test tại 320 / 375 / 414 / 768px sau khi khôi phục native binding của Vite/Rolldown.
+
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
 - [x] Setup Supabase project + schema (4 bảng, RLS, indexes, storage)

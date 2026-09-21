@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Chi tiết mẫu vật — Bảo tàng Hải dương học</title>
   <meta name="description" content="Thông tin khoa học chi tiết về mẫu vật sinh vật biển: phân loại, hình thái, sinh thái, phân bố và tình trạng bảo tồn.">
   <!-- Open Graph -->
@@ -41,7 +41,7 @@
       color: var(--text-secondary);
       margin-bottom: var(--sp-4);
     }
-    .breadcrumb a { color: var(--text-secondary); transition: color var(--dur-fast) ease; }
+    .breadcrumb a { color: var(--text-secondary); transition: color var(--dur-fast) var(--ease-out); }
     .breadcrumb a:hover { color: var(--accent-light); }
     .breadcrumb .material-icons { font-size: 14px; }
     .specimen-name { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 800; margin-bottom: var(--sp-2); line-height: 1.2; }
@@ -65,7 +65,7 @@
     .specimen-body { background: var(--bg-deep); }
     .specimen-main {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: var(--sp-6);
       align-items: start;
       padding: var(--sp-6) 0 0;
@@ -112,7 +112,7 @@
     /* ── COLLECTION ROW: thu mẫu | bản đồ (full width, 1fr 1fr) ── */
     .collection-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: var(--sp-6);
       padding: var(--sp-4) 0 0;
     }
@@ -198,7 +198,7 @@
     /* ── STATUS BADGES ── */
     .status-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(8.125rem, 100%), 1fr));
       gap: var(--sp-3);
     }
     .status-item {
@@ -248,8 +248,8 @@
     }
 
     @media (max-width: 900px) {
-      .specimen-main { grid-template-columns: 1fr; }
-      .collection-row { grid-template-columns: 1fr; }
+      .specimen-main { grid-template-columns: minmax(0, 1fr); }
+      .collection-row { grid-template-columns: minmax(0, 1fr); }
       .specimen-img-panel { position: static; }
       .specimen-img-box { aspect-ratio: 3/2; max-height: 300px; }
       .map-card { min-height: 240px; }
@@ -258,7 +258,7 @@
     @media (max-width: 768px) {
       .specimen-header { padding: var(--sp-4) 0; }
       .specimen-name { font-size: 1.5rem; }
-      .status-grid { grid-template-columns: repeat(2, 1fr); }
+      .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>

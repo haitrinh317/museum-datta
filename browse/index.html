@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Tra cứu mẫu vật — Bảo tàng Hải dương học</title>
   <meta name="description" content="Tra cứu cơ sở dữ liệu mẫu vật sinh vật biển. Tìm kiếm theo tên loài, họ, địa điểm thu mẫu và tình trạng bảo tồn.">
   <!-- Open Graph -->
@@ -29,7 +29,7 @@
   <style>
     .browse-layout {
       display: grid;
-      grid-template-columns: 260px 1fr;
+      grid-template-columns: minmax(14rem, 16.25rem) minmax(0, 1fr);
       gap: var(--sp-8);
       align-items: start;
       padding-top: var(--sp-8);
@@ -70,7 +70,7 @@
       cursor: pointer;
       font-size: 13px;
       color: var(--text-secondary);
-      transition: color var(--dur-fast) ease;
+      transition: color var(--dur-fast) var(--ease-out);
     }
     .filter-option:hover { color: var(--accent-light); }
     .filter-option input[type="checkbox"] {
@@ -100,7 +100,7 @@
       font-size: 13px;
       cursor: pointer;
       margin-top: var(--sp-4);
-      transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+      transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
     }
     .btn-reset:hover { color: var(--text-primary); border-color: var(--border-strong); }
 
@@ -116,7 +116,7 @@
     }
     .result-count { font-size: 14px; color: var(--text-secondary); }
     .result-count span { color: var(--text-white); font-weight: 700; }
-    .offline-status { color: #fbbf24 !important; font-size: 12px; font-weight: 600; }
+    .offline-status { color: var(--color-warning) !important; font-size: 12px; font-weight: 600; }
     .sort-select {
       background: var(--bg-surface);
       border: 1px solid var(--border-default);
@@ -183,7 +183,7 @@
     }
 
     @media (max-width: 1024px) {
-      .browse-layout { grid-template-columns: 1fr; }
+      .browse-layout { grid-template-columns: minmax(0, 1fr); }
       .filter-sidebar { display: none; position: fixed; top: 0; left: 0; height: 100vh; z-index: 500; overflow-y: auto; border-radius: 0; }
       .filter-sidebar.open { display: block; }
       .mobile-filter-toggle { display: flex; }

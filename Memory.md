@@ -258,6 +258,13 @@ Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có t
 - Sửa CSP sai hostname Esri ở `map/index.html` và `specimen/index.html`; local smoke test xác nhận tile tải hợp lệ.
 - Migration chờ apply: `supabase/migrations/20260904083659_search_text_and_perf.sql` (cần reconcile history + database password).
 
+## 10.1 HALLMARK DESIGN SYSTEM (2026-09-21)
+
+- `design.md` là nguồn quy ước thiết kế khóa cho các thay đổi UI sau: visitor-first, tone technical-scientific, atmospheric Midnight, macrostructure Map / Diagram.
+- `tokens.css` là nguồn token canonical cho public/admin: dark ocean OKLCH, ocean cyan, Space Grotesk display, Be Vietnam Pro body, JetBrains Mono metadata; dùng named easing/duration và scale spacing semantic.
+- `src/style.css` và `admin/admin.css` import token chung; không tạo palette hoặc font stack song song. Các trang public cần giữ overlay QĐ. Hoàng Sa/QĐ. Trường Sa.
+- Build hiện bị chặn cục bộ do thiếu optional native dependency `@rolldown/binding-darwin-x64`; không coi design update đã được Vite build hoặc visual smoke test cho đến khi dependency được khôi phục.
+
 ## 11. DEPLOY
 
 - **GitHub:** `haitrinh317/museum-datta` (main branch)
