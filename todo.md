@@ -226,3 +226,6 @@
 - [x] Fix lỗi PWA Camera: thêm Start Screen và gọi `getUserMedia` thông qua User Gesture chuẩn mobile
 - [x] Cấu hình CSP & Permissions-Policy camera trên Vercel (`vercel.json`), thêm route vào `vite.config.js`
 - [x] Deploy Vercel Production thành công và kiểm thử trực tiếp
+- [x] Audit + hardening WebAR: QR nội bộ, registry mã mẫu, retry/timeout/cleanup camera, bundle thư viện, CSP/PWA cache riêng
+- [ ] Kiểm thử thiết bị thật: iPhone Safari, Android Chrome, ánh sáng/tủ kính tại khu trưng bày
+- [ ] Ghi nguồn, quyền sử dụng và metadata cho video WebAR trước khi công bố rộng

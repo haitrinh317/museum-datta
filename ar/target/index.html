@@ -306,13 +306,14 @@
       color: #64748b;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
 
   <!-- HEADER -->
   <header>
-    <a href="/specimen/?code=TB.012" class="nav-btn">
+    <a href="/specimen/?code=TB.012" data-ar-specimen-link class="nav-btn">
       <span class="material-icons" style="font-size: 16px;">arrow_back</span>
       <span>Chi tiết mẫu vật</span>
     </a>
@@ -329,10 +330,16 @@
   </header>
 
   <!-- MAIN -->
-  <main>
+  <section id="target-error" hidden style="max-width:760px;margin:48px auto;padding:28px;text-align:center;">
+    <h1 style="font-size:24px;margin-bottom:12px;">Mẫu vật chưa có WebAR</h1>
+    <p style="color:#94a3b8;margin-bottom:18px;">Mã trên đường dẫn không thuộc danh sách trải nghiệm đã được công bố.</p>
+    <a href="/browse/" class="btn-action-secondary">Quay lại danh sách mẫu vật</a>
+  </section>
+
+  <main id="target-content">
     <div class="hero-banner">
-      <h1>Mẫu vật: Bộ xương cá voi lưng gù</h1>
-      <p>Mã mẫu: <strong>TB.012</strong> • <em>Megaptera novaeangliae</em> (Borowski, 1781)</p>
+      <h1>Mẫu vật: <span data-ar-title>Bộ xương cá voi lưng gù</span></h1>
+      <p>Mã mẫu: <strong data-ar-code>TB.012</strong> • <em data-ar-scientific-name>Megaptera novaeangliae</em> (Borowski, 1781)</p>
     </div>
 
     <div class="ar-prep-grid">
@@ -349,6 +356,7 @@
 
         <div class="qr-box">
           <img id="qr-image" src="" alt="Mã QR mở WebAR" />
+          <p id="qr-error" hidden style="color:#fca5a5;font-size:12px;">Không thể tạo mã QR trên thiết bị này.</p>
         </div>
 
         <a id="btn-direct-ar" href="/ar/?code=TB.012" class="btn-action-primary" style="width: 100%; justify-content: center;">
@@ -364,7 +372,7 @@
             <span class="material-icons" style="font-size: 16px;">crop_free</span>
             <span>BƯỚC 2</span>
           </div>
-          <a href="/ar/TB.012-target.jpg" download="TB.012-target.jpg" class="btn-action-secondary" style="padding: 6px 14px; font-size: 12px;">
+          <a id="target-download" href="/ar/TB.012-target.jpg" download="TB.012-target.jpg" class="btn-action-secondary" style="padding: 6px 14px; font-size: 12px;">
             <span class="material-icons" style="font-size: 15px;">download</span>
             <span>Tải ảnh về máy</span>
           </a>
@@ -386,7 +394,7 @@
             <div class="meta-sub">Ảnh mẫu vật thật tại phòng trưng bày Viện Hải dương học</div>
           </div>
           <div style="display: flex; gap: 8px;">
-            <a href="/specimen/?code=TB.012" class="btn-action-secondary">
+            <a href="/specimen/?code=TB.012" data-ar-specimen-link class="btn-action-secondary">
               <span class="material-icons" style="font-size: 16px;">info</span>
               <span>Hồ sơ mẫu vật</span>
             </a>
@@ -400,21 +408,6 @@
     Hệ thống CSDL & Trải nghiệm WebAR Mẫu vật — Viện Hải dương học Nha Trang
   </footer>
 
-  <script>
-    // Generate QR Code dynamically pointing to the live AR URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code') || 'TB.012';
-    
-    const arUrl = window.location.origin + '/ar/?code=' + encodeURIComponent(code);
-    const qrImg = document.getElementById('qr-image');
-    if (qrImg) {
-      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(arUrl);
-    }
-
-    const btnDirectAR = document.getElementById('btn-direct-ar');
-    if (btnDirectAR) {
-      btnDirectAR.href = '/ar/?code=' + encodeURIComponent(code);
-    }
-  </script>
+  <script type="module" src="/src/ar-target.js"></script>
 </body>
 </html>

@@ -12,6 +12,8 @@
 - Performance và UI/accessibility hardening đã hoàn tất trong source; migration hiệu năng được lưu cục bộ.
 - Hotfix CSP map Esri đã deploy qua commit `42d3b4e`: local smoke test `/map/` tải 30 tile, `/specimen/?code=E.57392` tải 8 tile.
 
+- Refactor WebAR `TB.012`: QR sinh cục bộ, registry cấu hình theo mã mẫu, MindAR/Three bundle nội bộ, camera có timeout/retry/cleanup, asset AR cache-first và CSP/Permissions-Policy riêng cho `/ar/*`.
+
 ## Công việc mở
 
 1. **High — blocked:** Baseline migration history production với `npx supabase migration repair --linked --status applied 001` khi Database password xác thực được. Không chạy `supabase db push` trước đó.

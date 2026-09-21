@@ -5,6 +5,14 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   cacheDir: '.vite_cache',
   root: '.',
+  resolve: {
+    alias: {
+      'node-fetch': resolve(__dirname, 'src/vendor/mindar/browser-node-fetch.js'),
+      'string_decoder': resolve(__dirname, 'src/vendor/mindar/browser-string-decoder.js'),
+      'util': resolve(__dirname, 'src/vendor/mindar/browser-util.js'),
+      'fs': resolve(__dirname, 'src/vendor/mindar/browser-fs.js'),
+    },
+  },
   publicDir: 'public',
   plugins: [
     VitePWA({
@@ -12,7 +20,8 @@ export default defineConfig({
       scope: '/',
       workbox: {
         // Precache build output — exclude admin
-        globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,webp,woff2,mind}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globIgnores: ['admin/**', '**/logo*.png', '**/og-image*.png', '**/hero_bg.png'],
         // Offline navigation fallback
         navigateFallback: '/offline.html',
@@ -23,11 +32,11 @@ export default defineConfig({
         runtimeCaching: [
           {
             // Assets WebAR local (ảnh target, model, video)
-            urlPattern: /\/ar\/.*\.(?:jpg|jpeg|png|webp|webm|mind)$/,
-            handler: 'NetworkFirst',
+            urlPattern: /\/ar\/.*\.(?:jpg|jpeg|png|webp|webm|mp4|mind)$/,
+            handler: 'CacheFirst',
             options: {
               cacheName: 'ar-assets',
-              expiration: { maxEntries: 20, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              expiration: { maxEntries: 40, maxAgeSeconds: 30 * 24 * 60 * 60 },
               cacheableResponse: { statuses: [0, 200] }
             }
           },

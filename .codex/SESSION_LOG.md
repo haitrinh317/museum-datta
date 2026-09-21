@@ -7,6 +7,14 @@
 - Tích hợp nút WebAR trên trang chi tiết mẫu vật `/specimen/?code=TB.012`.
 - Cấu hình permissions-policy và CSP cho camera trên Vercel, build và deploy thành công lên production.
 
+## 2026-09-21 — Audit và hardening WebAR
+
+- Sửa QR target sinh tại trình duyệt, không còn phụ thuộc dịch vụ QR bên thứ ba hay bị CSP chặn.
+- Chuyển cấu hình trải nghiệm `TB.012` vào registry, từ chối mã WebAR chưa công bố.
+- Tách logic WebAR thành module; bundle Three.js/MindAR cục bộ, thêm timeout, retry, dừng camera/render khi vào Demo, ẩn trang hoặc rời trang.
+- Cập nhật PWA cache-first cho asset AR và CSP/Permissions-Policy riêng cho `/ar/*`.
+- Build và npm audit đạt; còn cần test camera/image tracking trên thiết bị thật.
+
 ## 2026-09-04 — Khởi tạo tích hợp Codex
 
 - Thêm `AGENTS.md` gốc dự án để Codex tự nạp hướng dẫn bền vững.
