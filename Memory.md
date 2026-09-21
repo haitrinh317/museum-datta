@@ -1,12 +1,13 @@
 # MEMORY — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-09-04 (Performance + UI/accessibility + map CSP fix; baseline migration pending)
+> Cập nhật lần cuối: 2026-09-21 (WebAR Image Tracking Cá voi lưng gù + Sửa lỗi PWA Camera & Service Worker)
 
 ## 1. TỔNG QUAN DỰ ÁN
 
 **Mục tiêu:** Xây dựng webapp quản lý cơ sở dữ liệu mẫu vật lưu trữ cho Bảo tàng Hải dương học Việt Nam. Gồm 2 phần:
 - **Admin Panel** — quản trị viên nhập liệu, quản lý mẫu vật, generate QR code
 - **Public UX** — khách tham quan tra cứu, quét QR xem thông tin mẫu vật
+- **WebAR** — thực tế tăng cường quét ảnh/bảng tên mẫu vật hiển thị video sinh vật sống động 3D
 
 **Bối cảnh:** Bảo tàng có bộ sưu tập mẫu vật sinh vật biển (Da gai, Thân mềm, San hô, Cá...) thu thập từ các chuyến khảo sát biển. Dữ liệu gốc lưu trong Excel/CSV theo chuẩn nội bộ với trường "Thông tin" dạng blob text lớn cần tách cấu trúc.
 
@@ -14,7 +15,7 @@
 
 | Layer | Công nghệ | Ghi chú |
 |---|---|---|
-| Frontend | Vite + Vanilla JS | Multi-page: `/admin/` + `/` |
+| Frontend | Vite + Vanilla JS | Multi-page: `/admin/`, `/browse/`, `/map/`, `/specimen/`, `/ar/`, `/ar/target/` |
 | CSS | Vanilla CSS | Dark ocean theme, glassmorphism |
 | Backend | Supabase (BaaS) | PostgreSQL + Auth + Storage |
 | Icons | Material Icons | `https://fonts.googleapis.com/icon?family=Material+Icons` |
@@ -22,6 +23,7 @@
 | QR | qrcode npm package | Client-side generation |
 | Map | Leaflet.js | Esri World Imagery tiles (CartoDB blocked ở VN) |
 | PWA | vite-plugin-pwa (Workbox) | Auto-generate SW, precache, runtime cache |
+| WebAR | MindAR.js + Three.js | Image tracking (marker-based), 3D video plane, audio loop |
 
 ## 3. CẤU TRÚC THƯ MỤC
 
@@ -240,6 +242,8 @@ Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có t
 | 12 | CSP chặn inline script; UI dùng event delegation | Giảm bề mặt Stored XSS, giữ tương thích Vanilla JS |
 | 13 | Chỉ một ảnh đại diện/mẫu vật cho đến khi có gallery table | Tránh upload nhiều file nhưng DB chỉ lưu một URL, gây ảnh mồ côi |
 | 14 | Khai báo CSP tile provider theo đúng hostname đầy đủ | Tránh lỗi nền bản đồ xám do meta CSP ở từng trang chặn ảnh Esri |
+| 15 | Exclude static assets khỏi navigateFallback của Service Worker | Tránh Workbox chặn các request tải file tĩnh (.jpg, .webm, .mind) và redirect nhầm sang offline.html |
+| 16 | WebAR Camera kích hoạt bắt buộc qua User Gesture | Tránh bị hệ điều hành iOS/Android âm thầm chặn getUserMedia khi gọi tự động lúc tải trang |
 
 ## 10. PERFORMANCE + UI HARDENING (2026-09-04)
 
@@ -262,6 +266,7 @@ Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có t
 - **Deploy 2026-09-03:** commit `db7ef06` đã có trên `main`; production trả HTTP 200 sau deploy.
 - **Release 2026-09-04:** commit `ce5ade7` đã push lên `main`; Git Integration tự deploy production và smoke test các route public đạt HTTP 200.
 - **Map CSP hotfix 2026-09-04:** commit `42d3b4e` đã push lên `main`; production HTML/header đã nhận hostname Esri đúng. Local smoke test `/map/` tải 30 tile và `/specimen/` tải 8 tile.
+- **Release WebAR 2026-09-21:** commit `669b053` và `91db65a` đã deploy production thành công. Tuyến `/ar/`, `/ar/target/`, tài nguyên video/mind/jpg đều trả HTTP 200.
 
 ## 12. SKILLS
 

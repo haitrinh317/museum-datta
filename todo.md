@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-09-04 (Performance + UI/accessibility + map CSP fix)
+> Cập nhật lần cuối: 2026-09-21 (Triển khai WebAR Cá voi lưng gù + Sửa lỗi PWA Camera & Service Worker)
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
@@ -220,5 +220,9 @@
 - [x] Tải video đại dương thực tế sống động `public/ar/TB.012.webm` (Cá voi lưng gù bơi và hát dưới nước)
 - [x] Xây dựng trang WebAR `/ar/` (Three.js + MindAR.js Image Tracking, HUD quét, video overlay 3D, âm thanh tiếng hát)
 - [x] Tích hợp chế độ Demo mô phỏng trực tiếp (dành cho PC/laptop hoặc khách không có ảnh in sẵn)
+- [x] Tạo trang xem ảnh Target chuyên dụng `/ar/target/` có mã QR quét nhanh bằng điện thoại
 - [x] Gắn nút kích hoạt WebAR vào trang chi tiết mẫu vật (`/specimen/?code=TB.012`)
+- [x] Fix lỗi Service Worker Navigation Fallback làm chặn file ảnh tĩnh `.jpg`
+- [x] Fix lỗi PWA Camera: thêm Start Screen và gọi `getUserMedia` thông qua User Gesture chuẩn mobile
 - [x] Cấu hình CSP & Permissions-Policy camera trên Vercel (`vercel.json`), thêm route vào `vite.config.js`
+- [x] Deploy Vercel Production thành công và kiểm thử trực tiếp
