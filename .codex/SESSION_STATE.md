@@ -6,6 +6,7 @@
 
 - Triển khai tính năng WebAR Image Tracking cho mẫu vật Bộ xương cá voi lưng gù (`TB.012`): MindAR target compiler, Three.js 3D video plane, audio tiếng hát cá voi, chế độ mô phỏng trực tiếp khi không có camera, nút kích hoạt WebAR từ trang chi tiết mẫu vật.
 - Sửa lỗi PWA Service Worker navigation fallback: loại trừ static assets (`/\.[a-zA-Z0-9]+$/`) khỏi `navigateFallbackDenylist` để tránh bị redirect nhầm sang `offline.html`; tạo trang xem target chuyên dụng `/ar/target/` tích hợp mã QR quét nhanh cho điện thoại.
+- Sửa lỗi xin quyền Camera trên ứng dụng PWA & trình duyệt di động: bổ sung màn hình Start Screen với nút bấm "Bật Camera quét mẫu vật" kích hoạt trực tiếp qua User Gesture (bắt buộc trên iOS/Android PWA); cấu hình `camera=*` trong Permissions-Policy.
 - Cấu hình Vercel CSP & Camera Permissions-Policy, deploy thành công lên production (`https://museum-datta.vercel.app/ar/?code=TB.012`).
 - Security hardening frontend/RLS/Storage đã hoàn tất và deploy.
 - Performance và UI/accessibility hardening đã hoàn tất trong source; migration hiệu năng được lưu cục bộ.
