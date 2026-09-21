@@ -456,6 +456,67 @@
       100% { width: 85%; transform: translateX(20%); }
     }
 
+    /* Buttons on Start Screen */
+    .btn-start-camera {
+      width: 100%;
+      padding: 14px 24px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      color: #060e1a;
+      font-weight: 800;
+      font-size: 15px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 25px rgba(0, 242, 254, 0.45);
+      transition: all 0.2s;
+    }
+    .btn-start-camera:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(0, 242, 254, 0.65);
+    }
+    .btn-start-camera:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary-action {
+      width: 100%;
+      padding: 11px 20px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-secondary-action:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent-cyan);
+    }
+
+    .btn-text-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #94a3b8;
+      font-size: 12px;
+      text-decoration: none;
+      transition: color 0.2s;
+      margin-top: 4px;
+    }
+    .btn-text-link:hover {
+      color: var(--accent-cyan);
+    }
+
     /* Simulation modal view */
     .simulation-box {
       position: fixed;
@@ -472,20 +533,42 @@
 </head>
 <body>
 
-  <!-- LOADING SCREEN -->
+  <!-- START & PERMISSION SCREEN -->
   <div id="loading-screen">
     <div class="whale-spinner">🐋</div>
-    <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 6px;">WebAR Đại dương</h2>
-    <p style="font-size: 13px; color: var(--text-muted); max-width: 300px;">Đang tải dữ liệu nhận diện mẫu vật cá voi lưng gù...</p>
-    <div class="loading-bar-track">
-      <div class="loading-bar-fill"></div>
+    <div class="ar-badge" style="margin-bottom: 8px;">WebAR Sinh vật Biển 3D</div>
+    <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 4px; background: linear-gradient(135deg, #ffffff 30%, #00f2fe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Bộ xương cá voi lưng gù</h2>
+    <p style="font-size: 13px; color: var(--text-muted); max-width: 320px; line-height: 1.4;">
+      Mẫu vật <strong>TB.012</strong> • <em>Megaptera novaeangliae</em>
+    </p>
+
+    <!-- USER GESTURE ACTION BUTTONS -->
+    <div id="start-actions" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px; width: 100%; max-width: 320px;">
+      <button id="btn-start-camera" type="button" class="btn-start-camera">
+        <span class="material-icons" style="font-size: 20px;">camera_alt</span>
+        <span>Bật Camera quét mẫu vật</span>
+      </button>
+
+      <button id="btn-quick-demo" type="button" class="btn-secondary-action">
+        <span class="material-icons" style="font-size: 18px; color: #f59e0b;">play_circle</span>
+        <span>Xem Mô phỏng AR (Không cần Camera)</span>
+      </button>
+
+      <a href="/ar/target/?code=TB.012" target="_blank" class="btn-text-link">
+        <span class="material-icons" style="font-size: 16px;">crop_free</span>
+        <span>Xem ảnh mẫu vật để quét</span>
+      </a>
     </div>
-    <p id="loading-hint" style="font-size: 11px; color: #64748b; margin-top: 8px;">Vui lòng cấp quyền truy cập camera khi được hỏi</p>
-    
-    <button id="btn-quick-demo" type="button" style="margin-top: 18px; padding: 11px 22px; border-radius: 999px; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #060e1a; font-weight: 700; font-size: 13px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,242,254,0.4); transition: transform 0.2s;">
-      <span class="material-icons" style="font-size: 18px;">play_circle</span>
-      <span>Xem Mô phỏng AR ngay (Không cần Camera)</span>
-    </button>
+
+    <!-- INITIALIZATION PROGRESS (Shown after camera button click) -->
+    <div id="loading-progress" style="display: none; flex-direction: column; align-items: center; margin-top: 20px;">
+      <div class="loading-bar-track">
+        <div class="loading-bar-fill"></div>
+      </div>
+      <p id="loading-hint" style="font-size: 12px; color: #38bdf8; margin-top: 8px; text-align: center; max-width: 300px; line-height: 1.4;">
+        Đang khởi động camera...
+      </p>
+    </div>
   </div>
 
   <!-- AR VIEWPORT -->
@@ -594,9 +677,14 @@
         <div class="ar-badge" style="background:rgba(245,158,11,0.2); color:#f59e0b; border-color:#f59e0b;">Chế độ Mô phỏng AR</div>
         <div class="ar-specimen-title">Cá voi lưng gù ở đại dương</div>
       </div>
-      <button class="btn-icon-action" id="btn-sim-sound">
-        <span class="material-icons" id="sim-sound-icon" style="font-size: 20px;">volume_up</span>
-      </button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn-icon-action" id="btn-reopen-camera" title="Bật Camera quét AR" style="border-color:var(--accent-cyan); color:var(--accent-cyan);">
+          <span class="material-icons" style="font-size: 20px;">camera_alt</span>
+        </button>
+        <button class="btn-icon-action" id="btn-sim-sound" title="Bật/Tắt âm thanh">
+          <span class="material-icons" id="sim-sound-icon" style="font-size: 20px;">volume_up</span>
+        </button>
+      </div>
     </div>
 
     <div style="flex:1; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px 20px; overflow:hidden;">
@@ -674,9 +762,14 @@
     const simVideo = document.querySelector('#sim-video');
     const btnSimSound = document.querySelector('#btn-sim-sound');
     const simSoundIcon = document.querySelector('#sim-sound-icon');
+    const btnStartCamera = document.querySelector('#btn-start-camera');
+    const btnReopenCamera = document.querySelector('#btn-reopen-camera');
+    const startActions = document.querySelector('#start-actions');
+    const loadingProgress = document.querySelector('#loading-progress');
 
     let isAudioEnabled = false;
     let mindarThree = null;
+    let isStartingAR = false;
 
     // Toggle Audio
     function setAudio(enabled) {
@@ -705,7 +798,7 @@
 
     // Simulation Demo Switcher
     const openSimulation = (reason) => {
-      if (reason) {
+      if (reason && loadingHint) {
         loadingHint.textContent = reason;
       }
       loadingScreen.style.opacity = '0';
@@ -718,14 +811,22 @@
 
     const btnQuickDemo = document.querySelector('#btn-quick-demo');
     if (btnQuickDemo) {
-      btnQuickDemo.addEventListener('click', () => openSimulation());
+      btnQuickDemo.addEventListener('click', () => openSimulation('Mở Chế độ Mô phỏng theo yêu cầu'));
     }
 
-    btnLaunchDemo.addEventListener('click', () => openSimulation());
+    btnLaunchDemo.addEventListener('click', () => openSimulation('Mở Chế độ Mô phỏng theo yêu cầu'));
     btnExitSim.addEventListener('click', () => {
       simBox.classList.remove('active');
       simVideo.pause();
     });
+
+    if (btnReopenCamera) {
+      btnReopenCamera.addEventListener('click', () => {
+        simBox.classList.remove('active');
+        simVideo.pause();
+        startAR();
+      });
+    }
 
     // Opacity comparison slider
     const simOpacitySlider = document.querySelector('#sim-opacity-slider');
@@ -735,123 +836,138 @@
       });
     }
 
-    async function checkCameraAvailable() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        return false;
-      }
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const hasCamera = devices.some(device => device.kind === 'videoinput');
-        return hasCamera;
-      } catch (e) {
-        return false;
-      }
-    }
+    // Camera & AR Initialization via Direct User Gesture
+    async function startAR() {
+      if (isStartingAR) return;
+      isStartingAR = true;
 
-    async function initAR() {
-      // 1. Pre-check if hardware camera exists
-      const hasCamera = await checkCameraAvailable();
-      if (!hasCamera) {
-        console.warn('Không tìm thấy camera trên thiết bị -> Tự động chuyển sang Chế độ Mô phỏng AR.');
-        loadingHint.textContent = 'Máy tính không có camera. Đang mở Chế độ Mô phỏng AR...';
-        setTimeout(() => openSimulation('Chuyển sang Chế độ Mô phỏng AR'), 600);
-        return;
+      loadingScreen.style.display = 'flex';
+      loadingScreen.style.opacity = '1';
+      if (startActions) startActions.style.display = 'none';
+      if (loadingProgress) loadingProgress.style.display = 'flex';
+      if (loadingHint) {
+        loadingHint.innerHTML = 'Đang kích hoạt camera...<br><span style="color:#e2e8f0; font-size:12px;">Vui lòng chọn <strong>"Cho phép"</strong> / <strong>"Allow"</strong> khi trình duyệt hỏi.</span>';
       }
-
-      // 2. Safety watchdog timeout: If camera hangs for > 4s, auto-open simulation
-      const watchdog = setTimeout(() => {
-        console.warn('Khởi tạo AR quá thời gian cho phép -> Mở Chế độ Mô phỏng.');
-        openSimulation('Khởi tạo camera quá lâu. Chuyển sang Chế độ Mô phỏng AR');
-      }, 4500);
 
       try {
-        loadingHint.textContent = 'Đang kích hoạt camera và công nghệ nhận diện...';
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('NOT_SUPPORTED');
+        }
 
-        mindarThree = new MindARThree({
-          container: container,
-          imageTargetSrc: '/ar/TB.012.mind',
-          filterMinCF: 0.0001,
-          filterBeta: 0.001,
-          warmupTolerance: 5,
-          missTolerance: 5,
-          uiLoading: 'no',
-          uiScanning: 'no',
+        // 1. Direct explicit getUserMedia probe inside user gesture
+        const probeStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
         });
+        probeStream.getTracks().forEach(track => track.stop());
 
-        const { renderer, scene, camera } = mindarThree;
+        if (loadingHint) loadingHint.textContent = 'Đang nạp mô hình nhận diện cá voi lưng gù...';
 
-        // Create 3D anchor for Target 0 (Skeleton photo)
-        const anchor = mindarThree.addAnchor(0);
+        // 2. Initialize MindAR
+        if (!mindarThree) {
+          mindarThree = new MindARThree({
+            container: container,
+            imageTargetSrc: '/ar/TB.012.mind',
+            filterMinCF: 0.0001,
+            filterBeta: 0.001,
+            warmupTolerance: 5,
+            missTolerance: 5,
+            uiLoading: 'no',
+            uiScanning: 'no',
+          });
 
-        // Aspect ratio: width 1.2, height 0.528 (matches 1200x528)
-        const geometry = new THREE.PlaneGeometry(1.2, 0.528);
-        const texture = new THREE.VideoTexture(arVideo);
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.format = THREE.RGBAFormat;
+          const { renderer, scene, camera } = mindarThree;
+          const anchor = mindarThree.addAnchor(0);
 
-        const material = new THREE.MeshBasicMaterial({
-          map: texture,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 0.95,
-        });
+          const geometry = new THREE.PlaneGeometry(1.2, 0.528);
+          const texture = new THREE.VideoTexture(arVideo);
+          texture.minFilter = THREE.LinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.format = THREE.RGBAFormat;
 
-        const plane = new THREE.Mesh(geometry, material);
-        anchor.group.add(plane);
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.95,
+          });
 
-        // Subtle glowing border around the AR plane
-        const borderGeo = new THREE.EdgesGeometry(geometry);
-        const borderMat = new THREE.LineBasicMaterial({ color: 0x00f2fe, linewidth: 2 });
-        const borderLine = new THREE.LineSegments(borderGeo, borderMat);
-        anchor.group.add(borderLine);
+          const plane = new THREE.Mesh(geometry, material);
+          anchor.group.add(plane);
 
-        // Target Found handler
-        anchor.onTargetFound = () => {
-          statusText.textContent = '✨ Đã nhận diện: Cá voi lưng gù!';
-          statusDot.style.background = '#10b981';
-          statusDot.style.boxShadow = '0 0 10px #10b981';
-          recognizedCard.classList.add('active');
-          helpStrip.style.opacity = '0';
-          helpStrip.style.pointerEvents = 'none';
+          const borderGeo = new THREE.EdgesGeometry(geometry);
+          const borderMat = new THREE.LineBasicMaterial({ color: 0x00f2fe, linewidth: 2 });
+          const borderLine = new THREE.LineSegments(borderGeo, borderMat);
+          anchor.group.add(borderLine);
 
-          arVideo.play().catch(e => console.warn('Video play error:', e));
-        };
+          anchor.onTargetFound = () => {
+            statusText.textContent = '✨ Đã nhận diện: Cá voi lưng gù!';
+            statusDot.style.background = '#10b981';
+            statusDot.style.boxShadow = '0 0 10px #10b981';
+            recognizedCard.classList.add('active');
+            helpStrip.style.opacity = '0';
+            helpStrip.style.pointerEvents = 'none';
+            arVideo.play().catch(e => console.warn('Video play error:', e));
+          };
 
-        // Target Lost handler
-        anchor.onTargetLost = () => {
-          statusText.textContent = 'Đang quét tìm bảng tên / mẫu vật...';
-          statusDot.style.background = '#00f2fe';
-          statusDot.style.boxShadow = '0 0 8px #00f2fe';
-          recognizedCard.classList.remove('active');
-          helpStrip.style.opacity = '1';
-          helpStrip.style.pointerEvents = 'auto';
+          anchor.onTargetLost = () => {
+            statusText.textContent = 'Đang quét tìm bảng tên / mẫu vật...';
+            statusDot.style.background = '#00f2fe';
+            statusDot.style.boxShadow = '0 0 8px #00f2fe';
+            recognizedCard.classList.remove('active');
+            helpStrip.style.opacity = '1';
+            helpStrip.style.pointerEvents = 'auto';
+            arVideo.pause();
+          };
 
-          arVideo.pause();
-        };
+          await mindarThree.start();
 
-        // Start MindAR
-        await mindarThree.start();
-        clearTimeout(watchdog);
+          renderer.setAnimationLoop(() => {
+            renderer.render(scene, camera);
+          });
+        }
 
-        renderer.setAnimationLoop(() => {
-          renderer.render(scene, camera);
-        });
-
-        // Hide loading
         loadingScreen.style.opacity = '0';
-        setTimeout(() => loadingScreen.style.display = 'none', 500);
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+        }, 500);
 
       } catch (err) {
-        clearTimeout(watchdog);
-        console.error('AR Init Error:', err);
-        loadingHint.textContent = 'Không thể bật camera. Tự động chuyển sang Chế độ Mô phỏng...';
-        setTimeout(() => openSimulation('Không thể bật camera'), 800);
+        console.error('AR Camera Error:', err);
+        isStartingAR = false;
+
+        if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError' || err.message === 'NOT_SUPPORTED') {
+          if (loadingHint) loadingHint.textContent = 'Thiết bị không có camera phần cứng. Đang chuyển sang Mô phỏng...';
+          setTimeout(() => openSimulation('Thiết bị không có camera phần cứng'), 800);
+        } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          if (loadingHint) {
+            loadingHint.innerHTML = '⚠️ <strong>Chưa được cấp quyền Camera.</strong><br><span style="color:#94a3b8; font-size:12px;">Vui lòng chọn <em>"Cho phép"</em> trong Cài đặt trang web hoặc dùng Chế độ Mô phỏng bên dưới.</span>';
+          }
+          if (startActions) startActions.style.display = 'flex';
+        } else {
+          if (loadingHint) loadingHint.textContent = 'Không thể mở camera (' + (err.message || 'Lỗi kết nối') + '). Đang mở Mô phỏng...';
+          setTimeout(() => openSimulation('Lỗi khởi tạo camera'), 1000);
+        }
       }
     }
 
-    // Launch
-    window.addEventListener('DOMContentLoaded', initAR);
+    if (btnStartCamera) {
+      btnStartCamera.addEventListener('click', () => startAR());
+    }
+
+    // Auto-detect returning users who already granted permission
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'camera' })
+        .then(res => {
+          if (res.state === 'granted') {
+            startAR();
+          }
+        })
+        .catch(() => {});
+    }
   </script>
 </body>
 </html>
