@@ -15,6 +15,11 @@
 - Cập nhật PWA cache-first cho asset AR và CSP/Permissions-Policy riêng cho `/ar/*`.
 - Build và npm audit đạt; còn cần test camera/image tracking trên thiết bị thật.
 
+## 2026-09-21 — Hotfix khởi tạo WebAR trên iPhone
+
+- Hoãn tải runtime Three.js/MindAR đến thao tác Bật Camera để một lỗi runtime không ngăn nút hoạt động.
+- Thêm trạng thái lỗi rõ ràng khi runtime AR không tải được; build và audit dependency đạt trước deploy.
+
 ## 2026-09-04 — Khởi tạo tích hợp Codex
 
 - Thêm `AGENTS.md` gốc dự án để Codex tự nạp hướng dẫn bền vững.

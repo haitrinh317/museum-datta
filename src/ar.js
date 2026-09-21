@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-import { MindARThree } from './vendor/mindar/mindar-image-three.prod.js';
 import { getExperienceFromLocation } from './ar-config.js';
 
 const START_TIMEOUT_MS = 15000;
@@ -32,6 +30,8 @@ let arState = 'idle';
 let sessionVersion = 0;
 let isAudioEnabled = false;
 let modalReturnFocus = null;
+let THREE = null;
+let MindARThree = null;
 
 function setText(selector, value) {
   document.querySelectorAll(selector).forEach((node) => {
@@ -117,6 +117,26 @@ function stopMediaTracks() {
     video.srcObject.getTracks().forEach((track) => track.stop());
     video.srcObject = null;
   });
+}
+
+async function loadArRuntime() {
+  if (THREE && MindARThree) return;
+
+  const [threeModule, mindarModule] = await withTimeout(
+    Promise.all([
+      import('three'),
+      import('./vendor/mindar/mindar-image-three.prod.js'),
+    ]),
+    START_TIMEOUT_MS,
+    'AR_RUNTIME_TIMEOUT',
+  );
+
+  if (!mindarModule.MindARThree) {
+    throw new Error('AR_RUNTIME_UNAVAILABLE');
+  }
+
+  THREE = threeModule;
+  MindARThree = mindarModule.MindARThree;
 }
 
 async function stopAR({ showStartScreen = false } = {}) {
@@ -230,6 +250,9 @@ function describeCameraError(error) {
   if (error?.message === 'AR_START_TIMEOUT') {
     return 'Khởi động camera quá thời gian. Hãy kiểm tra mạng hoặc thử lại.';
   }
+  if (error?.message === 'AR_RUNTIME_TIMEOUT' || error?.message === 'AR_RUNTIME_UNAVAILABLE') {
+    return 'Trình duyệt chưa nạp được bộ nhận diện AR. Hãy tải lại trang rồi thử lại.';
+  }
   return `Không thể khởi động WebAR${error?.message ? `: ${error.message}` : '.'}`;
 }
 
@@ -254,6 +277,7 @@ async function startAR() {
   ensureVideoSource(el.arVideo);
 
   try {
+    await loadArRuntime();
     const resources = createMindarSession();
     mindarThree = resources.instance;
     arResources = resources;

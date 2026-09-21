@@ -13,6 +13,7 @@
 - Hotfix CSP map Esri đã deploy qua commit `42d3b4e`: local smoke test `/map/` tải 30 tile, `/specimen/?code=E.57392` tải 8 tile.
 
 - Refactor WebAR `TB.012`: QR sinh cục bộ, registry cấu hình theo mã mẫu, MindAR/Three bundle nội bộ, camera có timeout/retry/cleanup, asset AR cache-first và CSP/Permissions-Policy riêng cho `/ar/*`.
+- Hotfix iPhone WebAR: hoãn tải runtime Three.js/MindAR đến khi khách bấm nút Camera; lỗi nạp runtime được bắt và hiển thị thay vì làm nút không phản hồi.
 
 ## Công việc mở
 
