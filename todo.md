@@ -1,6 +1,6 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-09-21 (Deploy hệ thiết kế Hallmark visitor-first)
+> Cập nhật lần cuối: 2026-09-21 (Redesign browse visitor-first)
 
 ## ✅ Hệ thiết kế Hallmark (2026-09-21)
 
@@ -8,6 +8,7 @@
 - [x] Tạo `tokens.css` dùng chung public/admin; thêm display font Space Grotesk, giữ Be Vietnam Pro và JetBrains Mono.
 - [x] Sửa responsive guards nền tảng: `overflow-x: clip`, grid `minmax(0, 1fr)`, heading wrap và named easing.
 - [x] Build Vite và production HTTP smoke: `/`, `/browse/`, `/specimen/?code=TB.012`, `/map/` trả `200`; CSS bundle production chứa token mới.
+- [x] Thiết kế lại `/browse/`: filter deck visitor-first, chip bảo tồn, active-filter summary và drawer mobile có close/Escape; giữ nguyên query và phân trang.
 - [ ] Chạy visual smoke test tại 320 / 375 / 414 / 768px trên thiết bị hoặc browser automation.
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)

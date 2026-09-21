@@ -1,6 +1,13 @@
 [
   {
     "date": "2026-09-21",
+    "macrostructure": "Workbench",
+    "theme": "Midnight",
+    "enrichment": "none — functional filter deck",
+    "brief": "Visitor-first redesign of the browse collection filters"
+  },
+  {
+    "date": "2026-09-21",
     "macrostructure": "Map / Diagram",
     "theme": "Midnight",
     "enrichment": "existing collection map and supplied hero photography",

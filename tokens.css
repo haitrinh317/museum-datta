@@ -14,7 +14,7 @@
   --color-rule-strong: oklch(43% 0.065 245);
   --color-accent: oklch(70% 0.13 215);
   --color-accent-strong: oklch(64% 0.14 220);
-  --color-accent-ink: oklch(99% 0.004 240);
+  --color-accent-ink: oklch(18% 0.025 250);
   --color-focus: oklch(78% 0.14 215);
   --color-danger: oklch(64% 0.2 25);
   --color-warning: oklch(78% 0.15 80);
@@ -52,6 +52,12 @@
   --admin-gradient-ocean: linear-gradient(135deg, var(--color-paper) 0%, var(--color-paper-2) 52%, var(--color-paper-3) 100%);
   --admin-gradient-card: linear-gradient(145deg, var(--surface-strong), var(--color-paper-2));
   --admin-gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+  --browse-panel: color-mix(in oklch, var(--color-paper-3) 88%, var(--color-paper));
+  --browse-panel-raised: color-mix(in oklch, var(--color-paper-3) 82%, var(--color-accent));
+  --browse-control: color-mix(in oklch, var(--color-paper-2) 78%, var(--color-paper-3));
+  --browse-control-hover: color-mix(in oklch, var(--color-paper-3) 86%, var(--color-accent));
+  --browse-accent-soft: color-mix(in oklch, var(--color-accent) 14%, transparent);
+  --browse-backdrop: color-mix(in oklch, var(--color-paper) 78%, transparent);
 
   --font-display: "Space Grotesk", "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;

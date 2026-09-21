@@ -6,6 +6,8 @@
 
 - Khóa và deploy hệ thiết kế Hallmark visitor-first qua commit `abc59df`: thêm `design.md` và `tokens.css`; public/admin cùng dark-ocean OKLCH token, typography Space Grotesk + Be Vietnam Pro + JetBrains Mono, focus/motion/responsive guardrails. Trang chủ chuyển hero lệch trái, nhấn hành trình khám phá bộ sưu tập và footer statement. Production HTTP smoke: `/`, `/browse/`, `/specimen/?code=TB.012`, `/map/` đều trả `200`; CSS bundle production có token mới.
 
+- Thiết kế lại `/browse/` theo Workbench: tìm kiếm dẫn đầu, bộ lọc dạng bảng điều khiển với chip bảo tồn, tóm tắt tiêu chí đang áp dụng và drawer mobile đóng bằng nút/Escape; giữ nguyên Supabase query, phân trang 24 kết quả và route hồ sơ mẫu vật.
+
 - Triển khai tính năng WebAR Image Tracking cho mẫu vật Bộ xương cá voi lưng gù (`TB.012`): MindAR target compiler, Three.js 3D video plane, audio tiếng hát cá voi, chế độ mô phỏng trực tiếp khi không có camera, nút kích hoạt WebAR từ trang chi tiết mẫu vật.
 - Sửa lỗi PWA Service Worker navigation fallback: loại trừ static assets (`/\.[a-zA-Z0-9]+$/`) khỏi `navigateFallbackDenylist` để tránh bị redirect nhầm sang `offline.html`; tạo trang xem target chuyên dụng `/ar/target/` tích hợp mã QR quét nhanh cho điện thoại.
 - Sửa lỗi xin quyền Camera trên ứng dụng PWA & trình duyệt di động: bổ sung màn hình Start Screen với nút bấm "Bật Camera quét mẫu vật" kích hoạt trực tiếp qua User Gesture (bắt buộc trên iOS/Android PWA); cấu hình `camera=*` trong Permissions-Policy.
@@ -23,7 +25,7 @@
 2. **High:** Cân nhắc đưa import CSV ba bước vào transaction/RPC sau khi migration history ổn định.
 3. **Medium:** Dọn file ảnh Storage mồ côi có từ trước hardening.
 4. **Medium:** Thêm CI/test gates, Lighthouse và PWA test trên thiết bị thật.
-5. **Medium:** Chạy visual smoke test tại 320 / 375 / 414 / 768px cho design-system update trên thiết bị hoặc browser automation; build và HTTP smoke production đã đạt.
+5. **Medium:** Chạy visual smoke test tại 320 / 375 / 414 / 768px cho redesign `/browse/` trên thiết bị hoặc browser automation; build và HTTP smoke production đã đạt.
 5. **Low:** Nếu một mạng/thiết bị vẫn thấy nền map xám, kiểm tra ISP/trình duyệt có chặn Esri tile; CSP production đã đúng.
 
 ## Backlog đã hoãn
