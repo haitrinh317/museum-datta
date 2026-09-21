@@ -1,13 +1,14 @@
 # TODO — CSDL Bảo tàng Hải dương học
 
-> Cập nhật lần cuối: 2026-09-21 (Triển khai WebAR Cá voi lưng gù + Sửa lỗi PWA Camera & Service Worker)
+> Cập nhật lần cuối: 2026-09-21 (Deploy hệ thiết kế Hallmark visitor-first)
 
 ## ✅ Hệ thiết kế Hallmark (2026-09-21)
 
 - [x] Khóa hệ design visitor-first trong `design.md`: atmospheric Midnight, ocean cyan, Map / Diagram cho tra cứu và khám phá bộ sưu tập.
 - [x] Tạo `tokens.css` dùng chung public/admin; thêm display font Space Grotesk, giữ Be Vietnam Pro và JetBrains Mono.
 - [x] Sửa responsive guards nền tảng: `overflow-x: clip`, grid `minmax(0, 1fr)`, heading wrap và named easing.
-- [ ] Chạy visual smoke test tại 320 / 375 / 414 / 768px sau khi khôi phục native binding của Vite/Rolldown.
+- [x] Build Vite và production HTTP smoke: `/`, `/browse/`, `/specimen/?code=TB.012`, `/map/` trả `200`; CSS bundle production chứa token mới.
+- [ ] Chạy visual smoke test tại 320 / 375 / 414 / 768px trên thiết bị hoặc browser automation.
 
 ## ✅ PHASE 1 — Admin Panel + Database (HOÀN THÀNH)
 
