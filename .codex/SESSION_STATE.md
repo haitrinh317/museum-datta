@@ -1,9 +1,11 @@
 # Trạng thái hiện tại cho Codex
 
-> Cập nhật: 2026-09-04
+> Cập nhật: 2026-09-21
 
 ## Đã hoàn thành gần đây
 
+- Triển khai tính năng WebAR Image Tracking cho mẫu vật Bộ xương cá voi lưng gù (`TB.012`): MindAR target compiler, Three.js 3D video plane, audio tiếng hát cá voi, chế độ mô phỏng trực tiếp khi không có camera, nút kích hoạt WebAR từ trang chi tiết mẫu vật.
+- Cấu hình Vercel CSP & Camera Permissions-Policy, deploy thành công lên production (`https://museum-datta.vercel.app/ar/?code=TB.012`).
 - Security hardening frontend/RLS/Storage đã hoàn tất và deploy.
 - Performance và UI/accessibility hardening đã hoàn tất trong source; migration hiệu năng được lưu cục bộ.
 - Hotfix CSP map Esri đã deploy qua commit `42d3b4e`: local smoke test `/map/` tải 30 tile, `/specimen/?code=E.57392` tải 8 tile.
