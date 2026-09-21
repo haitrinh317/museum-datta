@@ -1,6 +1,9 @@
 node_modules
 dist
+.vite_cache
 .env
+"New Text Document.txt"
+New Text Document.txt
 .env.local
 .env.admin.local
 supabase/.temp/

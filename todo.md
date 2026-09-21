@@ -213,3 +213,12 @@
 - [x] Fix featured-grid bug: inline display:block vs CSS display:grid → dùng aspect-ratio:16/9 thay vì internal grid
 - [x] Featured count: 6 → 5 (clean asymmetric layout: row1=wide+1, row2=3)
 - [x] PWA guide: ẩn trên desktop (pointer:fine media query check)
+
+## ✅ PHASE 5 — WebAR Image Tracking (Thử nghiệm mẫu TB.012 Cá voi lưng gù)
+- [x] Tạo pipeline tự động biên dịch MindAR Target (`scripts/compile_ar_target.mjs`) bằng Edge headless WebGL
+- [x] Compile target image `TB.012` (Bộ xương cá voi lưng gù) → `public/ar/TB.012.mind`
+- [x] Tải video đại dương thực tế sống động `public/ar/TB.012.webm` (Cá voi lưng gù bơi và hát dưới nước)
+- [x] Xây dựng trang WebAR `/ar/` (Three.js + MindAR.js Image Tracking, HUD quét, video overlay 3D, âm thanh tiếng hát)
+- [x] Tích hợp chế độ Demo mô phỏng trực tiếp (dành cho PC/laptop hoặc khách không có ảnh in sẵn)
+- [x] Gắn nút kích hoạt WebAR vào trang chi tiết mẫu vật (`/specimen/?code=TB.012`)
+- [x] Cấu hình CSP & Permissions-Policy camera trên Vercel (`vercel.json`), thêm route vào `vite.config.js`

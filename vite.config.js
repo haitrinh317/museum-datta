@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  cacheDir: '.vite_cache',
   root: '.',
   publicDir: 'public',
   plugins: [
@@ -88,6 +89,7 @@ export default defineConfig({
         browse:   resolve(__dirname, 'browse/index.html'),
         specimen: resolve(__dirname, 'specimen/index.html'),
         map:      resolve(__dirname, 'map/index.html'),
+        ar:       resolve(__dirname, 'ar/index.html'),
       },
     },
   },
