@@ -23,3 +23,9 @@ tests retry, five start/stop cycles, denied permission and cancellation.
 
 These checks do not certify Safari/PWA hardware capture, real target detection, or
 the current WebM asset on iPhone. Those remain real-device acceptance requirements.
+
+
+### WebGL startup — 2026-09-22 (AR-session-20260922-3)
+- Kiểm tra context/precision thật trước renderer; WebGL2 lỗi thì release và thử canvas WebGL1 mới. Không spoof capability. Tắt antialias, cap DPR 2 và forceContextLoss khi dừng.
+- Scanner chỉ hiện khi tracking sẵn sàng; lỗi WebGL giữ preview và báo chưa khả dụng.
+- Unit tests bổ sung null precision, cả hai backend lỗi, renderer constructor lỗi. Chưa nghiệm thu trên iPhone thật.

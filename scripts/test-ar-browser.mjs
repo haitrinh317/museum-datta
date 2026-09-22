@@ -59,6 +59,14 @@ try {
   await send('Runtime.enable');
   await send('Network.enable');
   await send('Network.setBypassServiceWorker', { bypass: true });
+  if (process.env.AR_WEBGL_NULL) await send('Page.addScriptToEvaluateOnNewDocument', {source: `
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function(type, options) {
+      const gl = original.call(this, type, options);
+      if (gl && type === 'webgl2' && options?.alpha === true && options?.antialias === false) gl.getShaderPrecisionFormat = () => null;
+      return gl;
+    };
+  `});
   await send('Page.navigate', { url: base + '/ar/?code=TB.012' });
   for (let i=0;i<100;i++) {
     if(await evaluate("!!document.querySelector('#camera-preview')")) break;

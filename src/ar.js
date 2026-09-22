@@ -68,7 +68,7 @@ detail.hidden = true;
 detail.style.whiteSpace = 'pre-wrap';
 panel.append(status, cancel, resume, retry, copy, detail);
 document.body.append(panel);
-const BUILD = 'AR-session-20260922-2';
+const BUILD = 'AR-session-20260922-3';
 function report(next, message, error) {
   stage = next;
   const entry = { stage: next, time: new Date().toISOString(), message, error: error ? String(error.name || '') + ': ' + String(error.message || error) : undefined };
@@ -76,6 +76,8 @@ function report(next, message, error) {
   if (diagnostics.length > 30) diagnostics.shift();
   status.textContent = BUILD + ' · ' + message;
   el.loadingHint.textContent = message;
+  document.querySelector('#scanner-hud').hidden = next !== 'tracking';
+  el.statusText.textContent = next === 'tracking' ? 'Đang quét tìm ảnh mẫu vật…' : message;
 }
 copy.addEventListener('click', async () => {
   const text = JSON.stringify({ build: BUILD, secure: isSecureContext, standalone: matchMedia('(display-mode: standalone)').matches, stage, frames: [preview.videoWidth, preview.videoHeight], track: cameraSession.stream?.getVideoTracks()[0]?.readyState, diagnostics }, null, 2);
@@ -382,7 +384,7 @@ async function startAR() {
     ensureVideoSource(el.arVideo);
     const resources = createMindarSession();
     arResources = resources;
-    report('target', 'Đang tải ảnh nhận diện…');
+    report('target', 'Đang tải ảnh nhận diện… (' + resources.renderer.arBackend + ')');
     await bounded(resources.instance.start(), abort.signal, 35000, 'AR_START_TIMEOUT');
     if (!active()) return;
     resources.renderer.setAnimationLoop(() => resources.renderer.render(resources.scene, resources.camera));
@@ -397,7 +399,7 @@ async function startAR() {
     const hasFrames = cameraSession.stream?.active && preview.readyState >= 2;
     if (hasFrames) {
       retry.hidden = false;
-      report(failedStage + '-error', 'Camera vẫn mở. Nhận diện gặp lỗi; có thể thử lại.', error);
+      report(failedStage + '-error', failedStage === 'webgl' ? 'Camera vẫn mở nhưng đồ hoạ AR chưa khả dụng. Đóng các tab AR khác rồi thử lại; hoặc dùng mô phỏng.' : 'Camera vẫn mở. Nhận diện gặp lỗi; có thể thử lại.', error);
     } else {
       cameraSession.stop();
       report(failedStage + '-error', 'Chưa mở được camera. Xem thông báo bên dưới.', error);

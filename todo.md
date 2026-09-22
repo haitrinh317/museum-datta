@@ -251,3 +251,9 @@
 - Bản AR-session-20260922-2: thêm Bật lại camera tại panel; Dừng đóng target modal và chi tiết chẩn đoán, ẩn nút Dừng; tắt UI lỗi mặc định MindAR.
 - Kiểm thử CDP dùng chuột/chạm thật và hit-test, quy đổi visual viewport trên mobile; kiểm tra 5 chu kỳ qua cả hai nút mở, dừng khi modal mở. Build, 4 unit tests và desktop/mobile fake-camera đạt.
 - Chưa tái hiện được đầy đủ lỗi trên thiết bị của người dùng; chưa nghiệm thu camera thật iPhone/PWA. Bản sửa là cải thiện đường phục hồi và xử lý modal còn sót, không khẳng định giải quyết mọi lỗi camera.
+
+
+### WebGL startup — 2026-09-22 (AR-session-20260922-3)
+- Kiểm tra context/precision thật trước renderer; WebGL2 lỗi thì release và thử canvas WebGL1 mới. Không spoof capability. Tắt antialias, cap DPR 2 và forceContextLoss khi dừng.
+- Scanner chỉ hiện khi tracking sẵn sàng; lỗi WebGL giữ preview và báo chưa khả dụng.
+- Unit tests bổ sung null precision, cả hai backend lỗi, renderer constructor lỗi. Chưa nghiệm thu trên iPhone thật.
