@@ -1,63 +1,5 @@
 import { getExperienceFromLocation } from './ar-config.js';
-
-// ponytail: Polyfill phòng thủ WebGL cho iOS Safari (chống Advanced Fingerprinting Protection).
-// Trên iOS Safari 17+, gl.getParameter(gl.VERSION) và gl.getShaderPrecisionFormat(...)
-// có thể trả về null để chống fingerprinting GPU, khiến Three.js crash:
-// 1) TypeError: null is not an object (evaluating 'e.getShaderPrecisionFormat(...).precision')
-// 2) TypeError: null is not an object (evaluating 're.indexOf') khi Three.js đọc gl.VERSION
-function polyfillWebGLSafariDefenses() {
-  const safeShaderFormat = { rangeMin: 1, rangeMax: 1, precision: 23 };
-
-  const patch = (proto) => {
-    if (!proto) return;
-
-    // 1. Bảo vệ getShaderPrecisionFormat
-    if (proto.getShaderPrecisionFormat) {
-      const origPrecision = proto.getShaderPrecisionFormat;
-      proto.getShaderPrecisionFormat = function (...args) {
-        try {
-          const res = origPrecision.apply(this, args);
-          if (res && typeof res.precision === 'number') return res;
-        } catch (e) {}
-        return safeShaderFormat;
-      };
-    }
-
-    // 2. Bảo vệ getParameter khỏi bị trả về null trên Safari iOS
-    if (proto.getParameter) {
-      const origGetParam = proto.getParameter;
-      proto.getParameter = function (pname) {
-        try {
-          const val = origGetParam.apply(this, arguments);
-          if (val !== null && val !== undefined) return val;
-        } catch (e) {}
-
-        // Fallback an toàn cho các tham số WebGL hay bị Safari che giấu
-        if (pname === 7938 /* gl.VERSION */) return 'WebGL 2.0 (OpenGL ES 3.0 Safari)';
-        if (pname === 35724 /* gl.SHADING_LANGUAGE_VERSION */) return 'WebGL GLSL ES 3.00';
-        if (pname === 7936 /* gl.VENDOR */) return 'Apple Inc.';
-        if (pname === 7937 /* gl.RENDERER */) return 'Apple GPU';
-        if (pname === 35661 /* gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS */) return 32;
-        if (pname === 34930 /* gl.MAX_TEXTURE_IMAGE_UNITS */) return 16;
-        if (pname === 35660 /* gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS */) return 16;
-        if (pname === 3379 /* gl.MAX_TEXTURE_SIZE */) return 4096;
-        if (pname === 34076 /* gl.MAX_CUBE_MAP_TEXTURE_SIZE */) return 4096;
-        if (pname === 34921 /* gl.MAX_VERTEX_ATTRIBS */) return 16;
-        if (pname === 36347 /* gl.MAX_VERTEX_UNIFORM_VECTORS */) return 128;
-        if (pname === 36348 /* gl.MAX_VARYING_VECTORS */) return 8;
-        if (pname === 36349 /* gl.MAX_FRAGMENT_UNIFORM_VECTORS */) return 128;
-        if (pname === 3088 /* gl.SCISSOR_BOX */) return new Int32Array([0, 0, window.innerWidth || 1280, window.innerHeight || 720]);
-        if (pname === 2978 /* gl.VIEWPORT */) return new Int32Array([0, 0, window.innerWidth || 1280, window.innerHeight || 720]);
-
-        return null;
-      };
-    }
-  };
-
-  if (typeof WebGLRenderingContext !== 'undefined') patch(WebGLRenderingContext.prototype);
-  if (typeof WebGL2RenderingContext !== 'undefined') patch(WebGL2RenderingContext.prototype);
-}
-polyfillWebGLSafariDefenses();
+import { CameraSession, bounded } from './ar-camera.js';
 
 const START_TIMEOUT_MS = 35000;
 const experience = getExperienceFromLocation();
@@ -95,6 +37,59 @@ let isAudioEnabled = false;
 let modalReturnFocus = null;
 let THREE = null;
 let MindARThree = null;
+
+
+const preview = document.createElement('video');
+preview.id = 'camera-preview';
+preview.setAttribute('playsinline', '');
+preview.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0';
+el.container.appendChild(preview);
+const cameraSession = new CameraSession(preview);
+let sessionAbort = null;
+let stage = 'ready';
+const diagnostics = [];
+const panel = document.createElement('section');
+panel.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;z-index:110;background:#10223a;color:#e2e8f0;padding:12px;border-radius:12px;font:13px system-ui;max-height:32vh;overflow:auto';
+const status = document.createElement('p');
+status.setAttribute('role', 'status');
+const cancel = document.createElement('button');
+cancel.textContent = 'Dừng camera';
+const retry = document.createElement('button');
+retry.textContent = 'Thử lại nhận diện';
+retry.hidden = true;
+const copy = document.createElement('button');
+copy.textContent = 'Sao chép chẩn đoán';
+for (const button of [cancel, retry, copy]) button.style.cssText = 'min-height:44px;margin:4px;padding:8px;border-radius:8px';
+const detail = document.createElement('pre');
+detail.hidden = true;
+detail.style.whiteSpace = 'pre-wrap';
+panel.append(status, cancel, retry, copy, detail);
+document.body.append(panel);
+const BUILD = 'AR-session-20260922-1';
+function report(next, message, error) {
+  stage = next;
+  const entry = { stage: next, time: new Date().toISOString(), message, error: error ? String(error.name || '') + ': ' + String(error.message || error) : undefined };
+  diagnostics.push(entry);
+  if (diagnostics.length > 30) diagnostics.shift();
+  status.textContent = BUILD + ' · ' + message;
+  el.loadingHint.textContent = message;
+}
+copy.addEventListener('click', async () => {
+  const text = JSON.stringify({ build: BUILD, secure: isSecureContext, standalone: matchMedia('(display-mode: standalone)').matches, stage, frames: [preview.videoWidth, preview.videoHeight], track: cameraSession.stream?.getVideoTracks()[0]?.readyState, diagnostics }, null, 2);
+  try { await navigator.clipboard.writeText(text); copy.textContent = 'Đã sao chép'; }
+  catch { detail.textContent = text; detail.hidden = false; }
+});
+cancel.addEventListener('click', () => stopAR({ showStartScreen: true }));
+retry.addEventListener('click', startAR);
+report('ready', 'Sẵn sàng mở camera.');
+function disposeTracking() {
+  const resources = arResources;
+  arResources = null;
+  mindarThree = null;
+  if (!resources) return;
+  resources.instance.cancelSession();
+  for (const key of ['texture', 'geometry', 'borderGeometry', 'material', 'borderMaterial']) resources[key]?.dispose();
+}
 
 function setText(selector, value) {
   document.querySelectorAll(selector).forEach((node) => {
@@ -182,61 +177,6 @@ function stopMediaTracks() {
   });
 }
 
-function patchMindARForExistingStream(MindARThreeClass) {
-  // ponytail: idempotent — ceiling: MindAR _startVideo signature must stay stable
-  if (MindARThreeClass.prototype._streamPatched) return;
-  MindARThreeClass.prototype._streamPatched = true;
-  const orig = MindARThreeClass.prototype._startVideo;
-  MindARThreeClass.prototype._startVideo = function () {
-    if (!this._existingStream) return orig.call(this);
-    const stream = this._existingStream;
-    // Tạo video và gán stream với đầy đủ cờ tương thích WebKit/iOS
-    const video = (this.video = document.createElement('video'));
-    video.setAttribute('autoplay', '');
-    video.setAttribute('muted', '');
-    video.setAttribute('playsinline', '');
-    video.setAttribute('webkit-playsinline', '');
-    // BẮT BUỘC: Gán trực tiếp qua IDL property để Safari iOS không chặn autoplay
-    video.muted = true;
-    video.playsInline = true;
-    video.style.cssText = 'position:absolute;top:0;left:0;z-index:-2';
-    this.container.appendChild(video);
-    video.srcObject = stream;
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        console.warn('Cảnh báo video.play():', err);
-      });
-    }
-    return new Promise((resolve, reject) => {
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        const w = video.videoWidth;
-        const h = video.videoHeight;
-        if (!w || !h) return; // chờ đến khi có dimensions hợp lệ
-        done = true;
-        window.clearInterval(poll);
-        window.clearTimeout(deadline);
-        video.setAttribute('width', w);
-        video.setAttribute('height', h);
-        resolve();
-      };
-      video.addEventListener('loadedmetadata', finish);
-      video.addEventListener('canplay', finish);
-      video.addEventListener('playing', finish);
-      video.addEventListener('timeupdate', finish);
-      const poll = window.setInterval(finish, 50); // poll 50ms thay vì timeout cứng
-      const deadline = window.setTimeout(() => {
-        window.clearInterval(poll);
-        if (!done) {
-          reject(new Error(`VIDEO_METADATA_TIMEOUT (kích thước: ${video.videoWidth}x${video.videoHeight}, readyState: ${video.readyState}, paused: ${video.paused})`));
-        }
-      }, 10000);
-    });
-  };
-}
-
 async function loadArRuntime() {
   if (THREE && MindARThree) return;
 
@@ -255,46 +195,24 @@ async function loadArRuntime() {
 
   THREE = threeModule;
   MindARThree = mindarModule.MindARThree;
-  patchMindARForExistingStream(MindARThree);
+
 }
 
 async function stopAR({ showStartScreen = false } = {}) {
-  sessionVersion += 1;
-  const currentMindar = mindarThree;
-  const currentResources = arResources;
-  mindarThree = null;
-  arResources = null;
-  arState = 'stopping';
-
-  try {
-    currentResources?.renderer?.setAnimationLoop(null);
-    if (currentMindar) {
-      await Promise.race([
-        Promise.resolve(currentMindar.stop()),
-        new Promise((resolve) => window.setTimeout(resolve, 1500)),
-      ]);
-    }
-  } catch (error) {
-    console.warn('Không thể dừng MindAR sạch hoàn toàn:', error);
-  }
-
-  stopMediaTracks();
-  currentResources?.texture?.dispose();
-  currentResources?.geometry?.dispose();
-  currentResources?.borderGeometry?.dispose();
-  currentResources?.material?.dispose();
-  currentResources?.borderMaterial?.dispose();
-  currentResources?.renderer?.dispose();
-  el.container.replaceChildren();
+  ++sessionVersion;
+  sessionAbort?.abort();
+  sessionAbort = null;
+  disposeTracking();
+  cameraSession.stop();
   resetTrackingUi();
   arState = 'idle';
-
-  if (showStartScreen && !el.simBox.classList.contains('active')) {
+  retry.hidden = true;
+  if (showStartScreen) {
     el.loadingScreen.style.display = 'flex';
     el.loadingScreen.style.opacity = '1';
     el.startActions.hidden = false;
     el.loadingProgress.hidden = true;
-    el.loadingHint.textContent = 'Camera đã tạm dừng. Bấm nút bên dưới để quét lại.';
+    report('paused', 'Camera đã dừng. Bấm Bật Camera để tiếp tục.');
   }
 }
 
@@ -310,6 +228,19 @@ function createMindarSession() {
     uiScanning: 'no',
   });
 
+  mindarThree = instance;
+  arResources = { instance };
+  instance.onError = error => {
+    sessionAbort?.abort();
+    disposeTracking();
+    arState = 'idle';
+    retry.hidden = false;
+    report('tracking-error', 'Nhận diện bị gián đoạn. Camera vẫn mở, có thể thử lại.', error);
+  };
+  instance.video = preview;
+  instance._startVideo = async () => {};
+  instance.renderer.domElement.style.zIndex = '1';
+  instance.cssRenderer.domElement.style.zIndex = '2';
   const { renderer, scene, camera } = instance;
   const anchor = instance.addAnchor(0);
   const geometry = new THREE.PlaneGeometry(1.2, 0.528);
@@ -380,6 +311,9 @@ function hideError() {
 
 function describeCameraError(error) {
   const msg = error?.message || '';
+  if (msg === 'CAMERA_PERMISSION_TIMEOUT') return 'Chưa nhận được phản hồi quyền camera. Bấm thử lại khi sẵn sàng.';
+  if (msg === 'CAMERA_FRAME_TIMEOUT') return 'Đã có quyền camera nhưng chưa nhận được khung hình.';
+  if (msg === 'CAMERA_UNSUPPORTED') return 'Trình duyệt không cung cấp API camera trong trang này.';
   if (error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError') {
     return 'Chưa được cấp quyền Camera. Hãy vào Cài đặt iPhone → Safari → Camera → Cho phép, rồi tải lại trang.';
   }
@@ -396,7 +330,7 @@ function describeCameraError(error) {
     return 'Camera đã bật nhưng Safari không đọc được khung hình. Hãy đóng tab Safari này rồi mở lại.';
   }
   if (msg === 'AR_START_TIMEOUT') {
-    return 'Quá thời gian khởi động WebAR. Có thể do mạng tải mẫu quét 3D chậm, hãy thử lại.';
+    return 'Bộ nhận diện khởi động quá thời gian. Camera vẫn có thể hoạt động.';
   }
   if (msg === 'AR_RUNTIME_TIMEOUT' || msg === 'AR_RUNTIME_UNAVAILABLE') {
     return 'Trình duyệt chưa nạp được bộ nhận diện AR. Hãy kiểm tra kết nối mạng và thử lại.';
@@ -406,96 +340,56 @@ function describeCameraError(error) {
 
 async function startAR() {
   if (!experience || arState === 'starting' || arState === 'running') return;
-  if (!navigator.mediaDevices?.getUserMedia) {
-    showError('Không hỗ trợ Camera', 'Trình duyệt Safari này không hỗ trợ truy cập camera.');
-    return;
-  }
-
+  sessionAbort?.abort();
+  disposeTracking();
   const version = ++sessionVersion;
+  const abort = sessionAbort = new AbortController();
+  const active = () => version === sessionVersion && !abort.signal.aborted;
   arState = 'starting';
   hideError();
+  retry.hidden = true;
   el.simBox.classList.remove('active');
   el.simVideo.pause();
-  el.loadingScreen.style.display = 'flex';
-  el.loadingScreen.style.opacity = '1';
   el.startActions.hidden = true;
   el.loadingProgress.hidden = false;
-  el.loadingHint.textContent = 'Bước 1/4: Đang kết nối camera iPhone…';
-  ensureVideoSource(el.arVideo);
-
-  let cameraStream = null;
   try {
-    // Bước 1: getUserMedia NGAY trong gesture context — trước mọi await tốn thời gian
-    try {
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-    } catch (primaryErr) {
-      // Fallback cho PC / Desktop / Laptop hoặc thiết bị không có camera sau
-      console.warn('Không thể mở camera sau lý tưởng, chuyển sang camera mặc định (webcam):', primaryErr);
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: true,
-      });
+    if (!cameraSession.stream?.active) {
+      cameraSession.stop();
+      report('permission', 'Đang chờ quyền camera. Có thể bấm Dừng để huỷ.');
+      await bounded(cameraSession.open(abort.signal), abort.signal, 60000, 'CAMERA_PERMISSION_TIMEOUT');
     }
-
-    if (version !== sessionVersion) {
-      cameraStream.getTracks().forEach((t) => t.stop());
-      return;
-    }
-
-    el.loadingHint.textContent = 'Bước 2/4: Đã kết nối camera. Đang nạp thư viện AR…';
-
-    // Bước 2: Load runtime (preload ngầm — thường tức thì)
-    await loadArRuntime();
-
-    if (version !== sessionVersion) {
-      cameraStream.getTracks().forEach((t) => t.stop());
-      return;
-    }
-
-    el.loadingHint.textContent = 'Bước 3/4: Đang tạo phiên nhận diện…';
-
-    // Bước 3: Inject stream vào MindAR — MindAR dùng stream có sẵn, không gọi getUserMedia lần 2
+    report('frames', 'Đang chờ hình ảnh camera…');
+    await bounded(cameraSession.frames(abort.signal), abort.signal, 12000, 'CAMERA_FRAME_TIMEOUT');
+    if (!active()) return;
+    el.loadingScreen.style.display = 'none';
+    report('runtime', 'Camera đã có hình. Đang tải bộ nhận diện…');
+    await bounded(loadArRuntime(), abort.signal, 35000, 'AR_RUNTIME_TIMEOUT');
+    if (!active()) return;
+    report('webgl', 'Đang khởi tạo đồ hoạ nhận diện…');
+    ensureVideoSource(el.arVideo);
     const resources = createMindarSession();
-    resources.instance._existingStream = cameraStream;
-    mindarThree = resources.instance;
     arResources = resources;
-
-    el.loadingHint.textContent = 'Bước 4/4: Đang nạp mẫu quét & khởi động AR…';
-    await withTimeout(resources.instance.start(), START_TIMEOUT_MS, 'AR_START_TIMEOUT');
-
-    if (version !== sessionVersion) {
-      resources.renderer.setAnimationLoop(null);
-      await Promise.resolve(resources.instance.stop()).catch(() => {});
-      return;
-    }
-
-    resources.renderer.setAnimationLoop(() => {
-      resources.renderer.render(resources.scene, resources.camera);
-    });
+    report('target', 'Đang tải ảnh nhận diện…');
+    await bounded(resources.instance.start(), abort.signal, 35000, 'AR_START_TIMEOUT');
+    if (!active()) return;
+    resources.renderer.setAnimationLoop(() => resources.renderer.render(resources.scene, resources.camera));
     arState = 'running';
-    el.loadingScreen.style.opacity = '0';
-    window.setTimeout(() => {
-      if (arState === 'running') el.loadingScreen.style.display = 'none';
-    }, 400);
+    report('tracking', 'Hướng camera vào ảnh mẫu để nhận diện.');
   } catch (error) {
-    if (cameraStream) {
-      try {
-        cameraStream.getTracks().forEach((t) => t.stop());
-      } catch (e) {}
-      cameraStream = null;
+    if (!active()) return;
+    const failedStage = stage;
+    abort.abort();
+    disposeTracking();
+    arState = 'idle';
+    const hasFrames = cameraSession.stream?.active && preview.readyState >= 2;
+    if (hasFrames) {
+      retry.hidden = false;
+      report(failedStage + '-error', 'Camera vẫn mở. Nhận diện gặp lỗi; có thể thử lại.', error);
+    } else {
+      cameraSession.stop();
+      report(failedStage + '-error', 'Chưa mở được camera. Xem thông báo bên dưới.', error);
+      showError('Không thể mở camera', describeCameraError(error), error.message || error.name);
     }
-    console.error('Lỗi khởi động WebAR:', error);
-    await stopAR();
-    const friendly = describeCameraError(error);
-    const detail = error?.message || String(error);
-    showError('Không thể khởi động WebAR', friendly, detail);
   }
 }
 
@@ -566,17 +460,17 @@ function bindEvents() {
       el.simVideo.pause();
       // ponytail: không stop khi đang 'starting' — iOS hiển thị dialog xin quyền camera
       // sẽ kích hoạt visibilitychange tạm thời, gây ra false-positive stop làm hỏng luồng khởi động
-      if (arState === 'running') stopAR({ showStartScreen: false });
+      if (arState === 'running' || cameraSession.stream) stopAR({ showStartScreen: true });
     }
   });
   window.addEventListener('pagehide', () => {
     el.simVideo.pause();
-    stopAR({ showStartScreen: false });
+    stopAR({ showStartScreen: true });
   });
 
   window.addEventListener('ar-step', (event) => {
     if (arState === 'starting' && event.detail) {
-      el.loadingHint.textContent = event.detail;
+      report(event.detail.includes('4b') ? 'warmup' : 'target', event.detail);
     }
   });
 }
@@ -584,7 +478,7 @@ function bindEvents() {
 if (applyExperience()) {
   bindEvents();
   setAudio(false);
-  loadArRuntime().catch(() => {}); // preload ngầm: khi người dùng bấm Camera thì runtime đã sẵn sàng
+
 } else {
   showUnsupportedExperience();
 }

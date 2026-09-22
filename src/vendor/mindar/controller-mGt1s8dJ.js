@@ -55204,11 +55204,12 @@ class QQ {
   showTFStats() {
     console.log(rd.memory().numTensors), console.table(rd.memory());
   }
-  addImageTargets(t) {
-    return new Promise(async (e, s) => {
-      const r = await (await fetch(t)).arrayBuffer(), i = this.addImageTargetsFromBuffer(r);
-      e(i);
-    });
+  async addImageTargets(t, signal) {
+    const response = await fetch(t, { signal });
+    if (!response.ok) throw new Error('TARGET_HTTP_' + response.status);
+    const buffer = await response.arrayBuffer();
+    if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
+    return this.addImageTargetsFromBuffer(buffer);
   }
   addImageTargetsFromBuffer(t) {
     const s = new DY().importData(t), o = [], r = [], i = [];
@@ -55224,9 +55225,26 @@ class QQ {
     }), this.markerDimensions = i, { dimensions: i, matchingDataList: r, trackingDataList: o };
   }
   dispose() {
-    this.stopProcessVideo(), this.worker.postMessage({
-      type: "dispose"
-    });
+    if (this._disposed) return;
+    this._disposed = true;
+    this.stopProcessVideo();
+    this.onUpdate = null;
+    this.workerMatchDone?.({ targetIndex: -1, modelViewTransform: null });
+    this.workerTrackDone?.({ modelViewTransform: null });
+    this.worker.terminate();
+    const cleanup = () => {
+      const release = (value) => {
+        if (!value || typeof value !== 'object') return;
+        if (typeof value.dispose === 'function') { value.dispose(); return; }
+        for (const child of Object.values(value)) release(child);
+      };
+      release(this.cropDetector?.detector?.tensorCaches);
+      release(this.tracker?.featurePointsListT);
+      release(this.tracker?.imagePixelsListT);
+      release(this.tracker?.imagePropertiesListT);
+      if (this.inputLoader?.tempPixelHandle) ps().disposeData(this.inputLoader.tempPixelHandle.dataId);
+    };
+    Promise.resolve(this._videoLoop).then(cleanup, cleanup);
   }
   // warm up gpu - build kernels is slow
   dummyRun(t) {
@@ -55280,7 +55298,7 @@ class QQ {
         trackMiss: 0,
         filter: new WC({ minCutOff: this.filterMinCF, beta: this.filterBeta })
       });
-    (async () => {
+    this._videoLoop = (async () => {
       for (; this.processingVideo; ) {
         const s = this.inputLoader.loadInput(t);
         if (this.trackingStates.reduce((r, i) => r + (i.isTracking ? 1 : 0), 0) < this.maxTrack) {
@@ -55288,12 +55306,14 @@ class QQ {
           for (let l = 0; l < this.trackingStates.length; l++)
             this.trackingStates[l].isTracking !== !0 && (this.interestedTargetIndex !== -1 && this.interestedTargetIndex !== l || r.push(l));
           const { targetIndex: i, modelViewTransform: a } = await this._detectAndMatch(s, r);
+          if (!this.processingVideo) { s.dispose(); break; }
           i !== -1 && (this.trackingStates[i].isTracking = !0, this.trackingStates[i].currentModelViewTransform = a);
         }
         for (let r = 0; r < this.trackingStates.length; r++) {
           const i = this.trackingStates[r];
           if (i.isTracking) {
             let a = await this._trackAndUpdate(s, i.currentModelViewTransform, r);
+            if (!this.processingVideo) break;
             a === null ? i.isTracking = !1 : i.currentModelViewTransform = a;
           }
           if (i.showing || i.isTracking && (i.trackMiss = 0, i.trackCount += 1, i.trackCount > this.warmupTolerance && (i.showing = !0, i.trackingMatrix = null, i.filter.reset())), i.showing && (i.isTracking ? i.trackMiss = 0 : (i.trackCount = 0, i.trackMiss += 1, i.trackMiss > this.missTolerance && (i.showing = !1, i.trackingMatrix = null, this.onUpdate && this.onUpdate({ type: "updateMatrix", targetIndex: r, worldMatrix: null })))), i.showing) {
@@ -55307,7 +55327,10 @@ class QQ {
         }
         s.dispose(), this.onUpdate && this.onUpdate({ type: "processDone" }), await rd.nextFrame();
       }
-    })();
+    })().catch(error => {
+      this.processingVideo = false;
+      this.onUpdate?.({ type: 'error', error });
+    });
   }
   stopProcessVideo() {
     this.processingVideo = !1;

@@ -13580,7 +13580,18 @@ class Zb {
     userDeviceId: c = null,
     environmentDeviceId: d = null
   }) {
-    this.container = e, this.imageTargetSrc = t, this.maxTrack = a, this.filterMinCF = o, this.filterBeta = l, this.warmupTolerance = p, this.missTolerance = m, this.ui = new Rd({ uiLoading: r, uiScanning: n, uiError: u }), this.userDeviceId = c, this.environmentDeviceId = d, this.shouldFaceUser = !1, this.scene = new Ct(), this.cssScene = new Ct(), this.renderer = new Ti({ antialias: !0, alpha: !0 }), this.cssRenderer = new Vd({ antialias: !0 }), this.renderer.outputEncoding = Si, this.renderer.setPixelRatio(window.devicePixelRatio), this.camera = new vi(), this.anchors = [], this.renderer.domElement.style.position = "absolute", this.cssRenderer.domElement.style.position = "absolute", this.container.appendChild(this.renderer.domElement), this.container.appendChild(this.cssRenderer.domElement), window.addEventListener("resize", this.resize.bind(this));
+    this.container = e, this.imageTargetSrc = t, this.maxTrack = a, this.filterMinCF = o, this.filterBeta = l, this.warmupTolerance = p, this.missTolerance = m, this.ui = new Rd({ uiLoading: r, uiScanning: n, uiError: u }), this.userDeviceId = c, this.environmentDeviceId = d, this.shouldFaceUser = !1, this.scene = new Ct(), this.cssScene = new Ct(), this.renderer = new Ti({ antialias: !0, alpha: !0 }), this.cssRenderer = new Vd({ antialias: !0 }), this.renderer.outputEncoding = Si, this.renderer.setPixelRatio(window.devicePixelRatio), this.camera = new vi(), this.anchors = [], this.renderer.domElement.style.position = "absolute", this.cssRenderer.domElement.style.position = "absolute", this.container.appendChild(this.renderer.domElement), this.container.appendChild(this.cssRenderer.domElement), this._resizeHandler = this.resize.bind(this), window.addEventListener("resize", this._resizeHandler);
+  }
+  cancelSession() {
+    this._cancelled = true;
+    this._targetAbort?.abort();
+    this.renderer.setAnimationLoop(null);
+    try { this.controller?.dispose(); } catch (_) {}
+    this.controller?.worker?.terminate();
+    window.removeEventListener('resize', this._resizeHandler);
+    this.renderer.dispose();
+    this.renderer.domElement.remove();
+    this.cssRenderer.domElement.remove();
   }
   async start() {
     this.ui.showLoading(), await this._startVideo(), await this._startAR();
@@ -13627,6 +13638,7 @@ class Zb {
   _startAR() {
     return new Promise(async (e, t) => {
       try {
+        if (this._cancelled) throw new DOMException('Cancelled', 'AbortError');
         const a = this.video;
         window.dispatchEvent(new CustomEvent('ar-step', { detail: 'Bước 4a: Đang tải mẫu nhận diện (.mind)…' }));
         this.container, this.controller = new Fd({
@@ -13638,6 +13650,8 @@ class Zb {
           missTolerance: this.missTolerance,
           maxTrack: this.maxTrack,
           onUpdate: (n) => {
+            if (this._cancelled) return;
+            if (n.type === 'error') { this.onError?.(n.error); return; }
             if (n.type === "updateMatrix") {
               const { targetIndex: u, worldMatrix: o } = n;
               for (let p = 0; p < this.anchors.length; p++)
@@ -13655,7 +13669,8 @@ class Zb {
             }
           }
         }), this.resize();
-        const { dimensions: r } = await this.controller.addImageTargets(this.imageTargetSrc);
+        const { dimensions: r } = await this.controller.addImageTargets(this.imageTargetSrc, (this._targetAbort = new AbortController()).signal);
+        if (this._cancelled) { this.controller.worker.terminate(); throw new DOMException('Cancelled', 'AbortError'); }
         this.postMatrixs = [];
         for (let n = 0; n < r.length; n++) {
           const u = new Se(), o = new Qt(), l = new Se(), [p, m] = r[n];
@@ -13664,7 +13679,9 @@ class Zb {
           c.compose(u, o, l), this.postMatrixs.push(c);
         }
         window.dispatchEvent(new CustomEvent('ar-step', { detail: 'Bước 4b: Đang khởi tạo mạng nơ-ron AI (warm-up)…' }));
+        if (this._cancelled) throw new DOMException('Cancelled', 'AbortError');
         await this.controller.dummyRun(this.video);
+        if (this._cancelled) throw new DOMException('Cancelled', 'AbortError');
         window.dispatchEvent(new CustomEvent('ar-step', { detail: 'Bước 4c: Sẵn sàng quét mẫu vật!' }));
         this.ui.hideLoading(), this.ui.showScanning(), this.controller.processVideo(this.video), e();
       } catch (err) {

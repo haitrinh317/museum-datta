@@ -283,3 +283,12 @@ Script sẽ hỏi mật khẩu bằng prompt ẩn; khi chạy tự động có t
 | `session-end` | Tổng kết phiên, cập nhật memory/todo/log |
 | `skill-creator-ultra` | Tạo skill mới từ quy trình |
 | `skill-stocktake` | Audit skills định kỳ |
+
+
+## WebAR bước 1–3 — 2026-09-22
+
+- Bản chẩn đoán: AR-session-20260922-1. Một CameraSession sở hữu stream/video; preview hiện trước runtime, lỗi AR giữ camera và có thử lại.
+- Bỏ toàn bộ giả lập thông số WebGL. Huỷ target fetch, worker, listener resize, tài nguyên renderer và tensor khi dừng. Quyền trả muộn được đóng.
+- Chẩn đoán theo giai đoạn, nút sao chép chỉ chứa trạng thái/lỗi, không thu hình. /camera-diagnostic.html không đăng ký SW, không precache và dùng đường .html tránh navigation fallback.
+- Kiểm chứng: 4 Node tests; Edge headless camera giả + CSP: khởi tạo đến tracking, chặn target vẫn giữ preview, retry, 5 chu kỳ start/stop, từ chối quyền, huỷ chờ quyền; không có unhandled JS errors. Build/audit đạt.
+- Chưa nghiệm thu camera thật iPhone/Safari/PWA hoặc nhận diện target thật; không coi HTTP 200 là kiểm chứng camera. Bước 4–6 (media/icon/toàn bộ cập nhật PWA/ma trận thiết bị) còn mở.

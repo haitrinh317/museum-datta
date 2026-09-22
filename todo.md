@@ -238,3 +238,10 @@
 - [x] Audit + hardening WebAR: QR nội bộ, registry mã mẫu, retry/timeout/cleanup camera, bundle thư viện, CSP/PWA cache riêng
 - [ ] Kiểm thử thiết bị thật: iPhone Safari, Android Chrome, ánh sáng/tủ kính tại khu trưng bày
 - [ ] Ghi nguồn, quyền sử dụng và metadata cho video WebAR trước khi công bố rộng
+
+### WebAR refactor bước 1–3 (2026-09-22)
+- [x] Một chủ sở hữu camera, huỷ phiên và xử lý quyền trả muộn; preview độc lập nhận diện.
+- [x] Bỏ WebGL giả lập; bắt lỗi target, huỷ worker/fetch và cleanup; diagnostic có mã bản.
+- [x] Build, 4 Node tests và Edge fake-camera integration (retry, lỗi target, 5 lần start/stop, permission/cancel).
+- [ ] Xác nhận camera và target thật trên iPhone Safari/PWA trước nghiệm thu.
+- [ ] Hoàn tất bước 4–6: media tương thích, SVG toàn bộ, cập nhật PWA và ma trận thiết bị.

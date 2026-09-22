@@ -38,3 +38,12 @@
 - Database password đã từng không xác thực qua pooler; không thử lại bằng password đoán và không lưu password vào file.
 - Admin credential chỉ được giữ trong `.env.admin.local` bị Git ignore.
 - Thay đổi production chỉ sau build + smoke test phù hợp và có chấp thuận của người dùng.
+
+
+## WebAR bước 1–3 — 2026-09-22
+
+- Bản chẩn đoán: AR-session-20260922-1. Một CameraSession sở hữu stream/video; preview hiện trước runtime, lỗi AR giữ camera và có thử lại.
+- Bỏ toàn bộ giả lập thông số WebGL. Huỷ target fetch, worker, listener resize, tài nguyên renderer và tensor khi dừng. Quyền trả muộn được đóng.
+- Chẩn đoán theo giai đoạn, nút sao chép chỉ chứa trạng thái/lỗi, không thu hình. /camera-diagnostic.html không đăng ký SW, không precache và dùng đường .html tránh navigation fallback.
+- Kiểm chứng: 4 Node tests; Edge headless camera giả + CSP: khởi tạo đến tracking, chặn target vẫn giữ preview, retry, 5 chu kỳ start/stop, từ chối quyền, huỷ chờ quyền; không có unhandled JS errors. Build/audit đạt.
+- Chưa nghiệm thu camera thật iPhone/Safari/PWA hoặc nhận diện target thật; không coi HTTP 200 là kiểm chứng camera. Bước 4–6 (media/icon/toàn bộ cập nhật PWA/ma trận thiết bị) còn mở.
