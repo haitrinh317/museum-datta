@@ -59,7 +59,7 @@ function polyfillWebGLSafariDefenses() {
 }
 polyfillWebGLSafariDefenses();
 
-const START_TIMEOUT_MS = 15000;
+const START_TIMEOUT_MS = 35000;
 const experience = getExperienceFromLocation();
 
 const el = {
@@ -572,6 +572,12 @@ function bindEvents() {
   window.addEventListener('pagehide', () => {
     el.simVideo.pause();
     stopAR({ showStartScreen: false });
+  });
+
+  window.addEventListener('ar-step', (event) => {
+    if (arState === 'starting' && event.detail) {
+      el.loadingHint.textContent = event.detail;
+    }
   });
 }
 

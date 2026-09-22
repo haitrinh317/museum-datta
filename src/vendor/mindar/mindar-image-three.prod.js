@@ -13626,42 +13626,51 @@ class Zb {
   }
   _startAR() {
     return new Promise(async (e, t) => {
-      const a = this.video;
-      this.container, this.controller = new Fd({
-        inputWidth: a.videoWidth,
-        inputHeight: a.videoHeight,
-        filterMinCF: this.filterMinCF,
-        filterBeta: this.filterBeta,
-        warmupTolerance: this.warmupTolerance,
-        missTolerance: this.missTolerance,
-        maxTrack: this.maxTrack,
-        onUpdate: (n) => {
-          if (n.type === "updateMatrix") {
-            const { targetIndex: u, worldMatrix: o } = n;
-            for (let p = 0; p < this.anchors.length; p++)
-              if (this.anchors[p].targetIndex === u) {
-                if (this.anchors[p].css ? this.anchors[p].group.children.forEach((m) => {
-                  m.element.style.visibility = o === null ? "hidden" : "visible";
-                }) : this.anchors[p].group.visible = o !== null, o !== null) {
-                  let m = new Te();
-                  m.elements = [...o], m.multiply(this.postMatrixs[u]), this.anchors[p].css && m.multiply(Ni), this.anchors[p].group.matrix = m;
-                } else
-                  this.anchors[p].group.matrix = Xb;
-                this.anchors[p].visible && o === null && (this.anchors[p].visible = !1, this.anchors[p].onTargetLost && this.anchors[p].onTargetLost()), !this.anchors[p].visible && o !== null && (this.anchors[p].visible = !0, this.anchors[p].onTargetFound && this.anchors[p].onTargetFound()), this.anchors[p].onTargetUpdate && this.anchors[p].onTargetUpdate();
-              }
-            this.anchors.reduce((p, m) => p || m.visible, !1) ? this.ui.hideScanning() : this.ui.showScanning();
+      try {
+        const a = this.video;
+        window.dispatchEvent(new CustomEvent('ar-step', { detail: 'Bước 4a: Đang tải mẫu nhận diện (.mind)…' }));
+        this.container, this.controller = new Fd({
+          inputWidth: a.videoWidth,
+          inputHeight: a.videoHeight,
+          filterMinCF: this.filterMinCF,
+          filterBeta: this.filterBeta,
+          warmupTolerance: this.warmupTolerance,
+          missTolerance: this.missTolerance,
+          maxTrack: this.maxTrack,
+          onUpdate: (n) => {
+            if (n.type === "updateMatrix") {
+              const { targetIndex: u, worldMatrix: o } = n;
+              for (let p = 0; p < this.anchors.length; p++)
+                if (this.anchors[p].targetIndex === u) {
+                  if (this.anchors[p].css ? this.anchors[p].group.children.forEach((m) => {
+                    m.element.style.visibility = o === null ? "hidden" : "visible";
+                  }) : this.anchors[p].group.visible = o !== null, o !== null) {
+                    let m = new Te();
+                    m.elements = [...o], m.multiply(this.postMatrixs[u]), this.anchors[p].css && m.multiply(Ni), this.anchors[p].group.matrix = m;
+                  } else
+                    this.anchors[p].group.matrix = Xb;
+                  this.anchors[p].visible && o === null && (this.anchors[p].visible = !1, this.anchors[p].onTargetLost && this.anchors[p].onTargetLost()), !this.anchors[p].visible && o !== null && (this.anchors[p].visible = !0, this.anchors[p].onTargetFound && this.anchors[p].onTargetFound()), this.anchors[p].onTargetUpdate && this.anchors[p].onTargetUpdate();
+                }
+              this.anchors.reduce((p, m) => p || m.visible, !1) ? this.ui.hideScanning() : this.ui.showScanning();
+            }
           }
+        }), this.resize();
+        const { dimensions: r } = await this.controller.addImageTargets(this.imageTargetSrc);
+        this.postMatrixs = [];
+        for (let n = 0; n < r.length; n++) {
+          const u = new Se(), o = new Qt(), l = new Se(), [p, m] = r[n];
+          u.x = p / 2, u.y = p / 2 + (m - p) / 2, l.x = p, l.y = p, l.z = p;
+          const c = new Te();
+          c.compose(u, o, l), this.postMatrixs.push(c);
         }
-      }), this.resize();
-      const { dimensions: r } = await this.controller.addImageTargets(this.imageTargetSrc);
-      this.postMatrixs = [];
-      for (let n = 0; n < r.length; n++) {
-        const u = new Se(), o = new Qt(), l = new Se(), [p, m] = r[n];
-        u.x = p / 2, u.y = p / 2 + (m - p) / 2, l.x = p, l.y = p, l.z = p;
-        const c = new Te();
-        c.compose(u, o, l), this.postMatrixs.push(c);
+        window.dispatchEvent(new CustomEvent('ar-step', { detail: 'Bước 4b: Đang khởi tạo mạng nơ-ron AI (warm-up)…' }));
+        await this.controller.dummyRun(this.video);
+        window.dispatchEvent(new CustomEvent('ar-step', { detail: 'Bước 4c: Sẵn sàng quét mẫu vật!' }));
+        this.ui.hideLoading(), this.ui.showScanning(), this.controller.processVideo(this.video), e();
+      } catch (err) {
+        console.error("Lỗi bên trong _startAR:", err);
+        t(err);
       }
-      await this.controller.dummyRun(this.video), this.ui.hideLoading(), this.ui.showScanning(), this.controller.processVideo(this.video), e();
     });
   }
   resize() {
