@@ -1,5 +1,26 @@
 import { getExperienceFromLocation } from './ar-config.js';
 
+// ponytail: Polyfill phòng thủ WebGL getShaderPrecisionFormat cho iOS Safari.
+// Trên iOS Safari, gl.getShaderPrecisionFormat(...) trả về null với VERTEX_SHADER/HIGH_FLOAT
+// dẫn đến lỗi: TypeError: null is not an object (evaluating 'e.getShaderPrecisionFormat(...).precision')
+function polyfillWebGLShaderPrecision() {
+  const safeFormat = { rangeMin: 1, rangeMax: 1, precision: 23 };
+  const patch = (proto) => {
+    if (!proto || !proto.getShaderPrecisionFormat) return;
+    const orig = proto.getShaderPrecisionFormat;
+    proto.getShaderPrecisionFormat = function (...args) {
+      try {
+        const res = orig.apply(this, args);
+        if (res && typeof res.precision === 'number') return res;
+      } catch (e) {}
+      return safeFormat;
+    };
+  };
+  if (typeof WebGLRenderingContext !== 'undefined') patch(WebGLRenderingContext.prototype);
+  if (typeof WebGL2RenderingContext !== 'undefined') patch(WebGL2RenderingContext.prototype);
+}
+polyfillWebGLShaderPrecision();
+
 const START_TIMEOUT_MS = 15000;
 const experience = getExperienceFromLocation();
 
@@ -367,14 +388,23 @@ async function startAR() {
   let cameraStream = null;
   try {
     // Bước 1: getUserMedia NGAY trong gesture context — trước mọi await tốn thời gian
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-    });
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
+    } catch (primaryErr) {
+      // Fallback cho PC / Desktop / Laptop hoặc thiết bị không có camera sau
+      console.warn('Không thể mở camera sau lý tưởng, chuyển sang camera mặc định (webcam):', primaryErr);
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: true,
+      });
+    }
 
     if (version !== sessionVersion) {
       cameraStream.getTracks().forEach((t) => t.stop());
