@@ -1,25 +1,63 @@
 import { getExperienceFromLocation } from './ar-config.js';
 
-// ponytail: Polyfill phòng thủ WebGL getShaderPrecisionFormat cho iOS Safari.
-// Trên iOS Safari, gl.getShaderPrecisionFormat(...) trả về null với VERTEX_SHADER/HIGH_FLOAT
-// dẫn đến lỗi: TypeError: null is not an object (evaluating 'e.getShaderPrecisionFormat(...).precision')
-function polyfillWebGLShaderPrecision() {
-  const safeFormat = { rangeMin: 1, rangeMax: 1, precision: 23 };
+// ponytail: Polyfill phòng thủ WebGL cho iOS Safari (chống Advanced Fingerprinting Protection).
+// Trên iOS Safari 17+, gl.getParameter(gl.VERSION) và gl.getShaderPrecisionFormat(...)
+// có thể trả về null để chống fingerprinting GPU, khiến Three.js crash:
+// 1) TypeError: null is not an object (evaluating 'e.getShaderPrecisionFormat(...).precision')
+// 2) TypeError: null is not an object (evaluating 're.indexOf') khi Three.js đọc gl.VERSION
+function polyfillWebGLSafariDefenses() {
+  const safeShaderFormat = { rangeMin: 1, rangeMax: 1, precision: 23 };
+
   const patch = (proto) => {
-    if (!proto || !proto.getShaderPrecisionFormat) return;
-    const orig = proto.getShaderPrecisionFormat;
-    proto.getShaderPrecisionFormat = function (...args) {
-      try {
-        const res = orig.apply(this, args);
-        if (res && typeof res.precision === 'number') return res;
-      } catch (e) {}
-      return safeFormat;
-    };
+    if (!proto) return;
+
+    // 1. Bảo vệ getShaderPrecisionFormat
+    if (proto.getShaderPrecisionFormat) {
+      const origPrecision = proto.getShaderPrecisionFormat;
+      proto.getShaderPrecisionFormat = function (...args) {
+        try {
+          const res = origPrecision.apply(this, args);
+          if (res && typeof res.precision === 'number') return res;
+        } catch (e) {}
+        return safeShaderFormat;
+      };
+    }
+
+    // 2. Bảo vệ getParameter khỏi bị trả về null trên Safari iOS
+    if (proto.getParameter) {
+      const origGetParam = proto.getParameter;
+      proto.getParameter = function (pname) {
+        try {
+          const val = origGetParam.apply(this, arguments);
+          if (val !== null && val !== undefined) return val;
+        } catch (e) {}
+
+        // Fallback an toàn cho các tham số WebGL hay bị Safari che giấu
+        if (pname === 7938 /* gl.VERSION */) return 'WebGL 2.0 (OpenGL ES 3.0 Safari)';
+        if (pname === 35724 /* gl.SHADING_LANGUAGE_VERSION */) return 'WebGL GLSL ES 3.00';
+        if (pname === 7936 /* gl.VENDOR */) return 'Apple Inc.';
+        if (pname === 7937 /* gl.RENDERER */) return 'Apple GPU';
+        if (pname === 35661 /* gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS */) return 32;
+        if (pname === 34930 /* gl.MAX_TEXTURE_IMAGE_UNITS */) return 16;
+        if (pname === 35660 /* gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS */) return 16;
+        if (pname === 3379 /* gl.MAX_TEXTURE_SIZE */) return 4096;
+        if (pname === 34076 /* gl.MAX_CUBE_MAP_TEXTURE_SIZE */) return 4096;
+        if (pname === 34921 /* gl.MAX_VERTEX_ATTRIBS */) return 16;
+        if (pname === 36347 /* gl.MAX_VERTEX_UNIFORM_VECTORS */) return 128;
+        if (pname === 36348 /* gl.MAX_VARYING_VECTORS */) return 8;
+        if (pname === 36349 /* gl.MAX_FRAGMENT_UNIFORM_VECTORS */) return 128;
+        if (pname === 3088 /* gl.SCISSOR_BOX */) return new Int32Array([0, 0, window.innerWidth || 1280, window.innerHeight || 720]);
+        if (pname === 2978 /* gl.VIEWPORT */) return new Int32Array([0, 0, window.innerWidth || 1280, window.innerHeight || 720]);
+
+        return null;
+      };
+    }
   };
+
   if (typeof WebGLRenderingContext !== 'undefined') patch(WebGLRenderingContext.prototype);
   if (typeof WebGL2RenderingContext !== 'undefined') patch(WebGL2RenderingContext.prototype);
 }
-polyfillWebGLShaderPrecision();
+polyfillWebGLSafariDefenses();
 
 const START_TIMEOUT_MS = 15000;
 const experience = getExperienceFromLocation();
