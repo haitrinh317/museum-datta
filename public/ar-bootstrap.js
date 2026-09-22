@@ -5,13 +5,17 @@
   const progress = document.querySelector('#loading-progress');
   const hint = document.querySelector('#loading-hint');
   const container = document.querySelector('#ar-container');
+  const startTracking = document.querySelector('#btn-start-tracking');
 
-  if (!button || !loadingScreen || !startActions || !progress || !hint || !container) return;
+  if (!button || !loadingScreen || !startActions || !progress || !hint || !container || !startTracking) return;
 
   function showError(message) {
     hint.textContent = message;
     startActions.hidden = false;
     progress.hidden = true;
+    startTracking.hidden = true;
+    loadingScreen.style.opacity = '1';
+    loadingScreen.style.background = '#060e1a';
   }
 
   function describeError(error) {
@@ -54,14 +58,10 @@
       container.replaceChildren(preview);
       await preview.play().catch(() => {});
 
-      hint.textContent = 'Camera đã mở. Đang khởi động nhận diện mẫu vật…';
-      loadingScreen.style.background = 'rgba(6, 14, 26, 0.22)';
-      loadingScreen.style.opacity = '0';
-      window.setTimeout(() => {
-        if (window.__museumArBootstrapStream === stream) {
-          document.dispatchEvent(new CustomEvent('museum:ar-camera-ready'));
-        }
-      }, 0);
+      hint.textContent = 'Camera đã mở. Hướng camera vào mẫu vật, rồi bấm nút để bắt đầu nhận diện.';
+      loadingScreen.style.background = 'rgba(6, 14, 26, 0.35)';
+      loadingScreen.style.opacity = '1';
+      startTracking.hidden = false;
     } catch (error) {
       console.error('Camera bootstrap error:', error);
       showError(describeError(error));
@@ -70,4 +70,10 @@
   }
 
   button.addEventListener('click', requestCamera, true);
+  startTracking.addEventListener('click', () => {
+    if (!window.__museumArBootstrapStream) return;
+    startTracking.hidden = true;
+    hint.textContent = 'Đang khởi động nhận diện mẫu vật…';
+    document.dispatchEvent(new CustomEvent('museum:ar-camera-ready'));
+  });
 })();

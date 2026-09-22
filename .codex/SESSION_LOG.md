@@ -16,6 +16,8 @@
 - Build và npm audit đạt; còn cần test camera/image tracking trên thiết bị thật.
 
 ## 2026-09-21 — Hotfix khởi tạo WebAR trên iPhone
+- Sửa lỗi camera Safari chỉ nháy rồi đóng: giữ preview camera, yêu cầu thao tác riêng trước khi chuyển sang MindAR.
+
 
 - Hoãn tải runtime Three.js/MindAR đến thao tác Bật Camera để một lỗi runtime không ngăn nút hoạt động.
 - Thêm trạng thái lỗi rõ ràng khi runtime AR không tải được; build và audit dependency đạt trước deploy.
