@@ -10,6 +10,10 @@ const el = {
   loadingScreen: document.querySelector('#loading-screen'),
   loadingHint: document.querySelector('#loading-hint'),
   loadingProgress: document.querySelector('#loading-progress'),
+  errorBanner: document.querySelector('#error-banner'),
+  errorTitle: document.querySelector('#error-title'),
+  errorMessage: document.querySelector('#error-message'),
+  errorDetail: document.querySelector('#error-detail'),
   startActions: document.querySelector('#start-actions'),
   unsupported: document.querySelector('#unsupported-experience'),
   statusText: document.querySelector('#status-text'),
@@ -127,15 +131,24 @@ function patchMindARForExistingStream(MindARThreeClass) {
   MindARThreeClass.prototype._startVideo = function () {
     if (!this._existingStream) return orig.call(this);
     const stream = this._existingStream;
-    // Tạo video và gán stream NGAY (trước Promise) để video bắt đầu load càng sớm càng tốt
+    // Tạo video và gán stream với đầy đủ cờ tương thích WebKit/iOS
     const video = (this.video = document.createElement('video'));
     video.setAttribute('autoplay', '');
     video.setAttribute('muted', '');
     video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    // BẮT BUỘC: Gán trực tiếp qua IDL property để Safari iOS không chặn autoplay
+    video.muted = true;
+    video.playsInline = true;
     video.style.cssText = 'position:absolute;top:0;left:0;z-index:-2';
     this.container.appendChild(video);
     video.srcObject = stream;
-    video.play().catch(() => {}); // tường minh: iOS không tự autoplay
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn('Cảnh báo video.play():', err);
+      });
+    }
     return new Promise((resolve, reject) => {
       let done = false;
       const finish = () => {
@@ -152,11 +165,15 @@ function patchMindARForExistingStream(MindARThreeClass) {
       };
       video.addEventListener('loadedmetadata', finish);
       video.addEventListener('canplay', finish);
+      video.addEventListener('playing', finish);
+      video.addEventListener('timeupdate', finish);
       const poll = window.setInterval(finish, 50); // poll 50ms thay vì timeout cứng
       const deadline = window.setTimeout(() => {
         window.clearInterval(poll);
-        if (!done) reject(new Error('VIDEO_METADATA_TIMEOUT'));
-      }, 8000);
+        if (!done) {
+          reject(new Error(`VIDEO_METADATA_TIMEOUT (kích thước: ${video.videoWidth}x${video.videoHeight}, readyState: ${video.readyState}, paused: ${video.paused})`));
+        }
+      }, 10000);
     });
   };
 }
@@ -192,10 +209,12 @@ async function stopAR({ showStartScreen = false } = {}) {
 
   try {
     currentResources?.renderer?.setAnimationLoop(null);
-    await Promise.race([
-      Promise.resolve(currentMindar?.stop()),
-      new Promise((resolve) => window.setTimeout(resolve, 1500)),
-    ]);
+    if (currentMindar) {
+      await Promise.race([
+        Promise.resolve(currentMindar.stop()),
+        new Promise((resolve) => window.setTimeout(resolve, 1500)),
+      ]);
+    }
   } catch (error) {
     console.warn('Không thể dừng MindAR sạch hoàn toàn:', error);
   }
@@ -277,49 +296,72 @@ function createMindarSession() {
   };
 }
 
+function showError(title, message, detail = '') {
+  el.loadingProgress.hidden = true;
+  if (el.errorTitle) el.errorTitle.textContent = title;
+  if (el.errorMessage) el.errorMessage.textContent = message;
+  if (el.errorDetail) {
+    if (detail) {
+      el.errorDetail.textContent = detail;
+      el.errorDetail.style.display = 'block';
+    } else {
+      el.errorDetail.style.display = 'none';
+    }
+  }
+  if (el.errorBanner) el.errorBanner.hidden = false;
+  el.startActions.hidden = false;
+  el.loadingScreen.style.display = 'flex';
+  el.loadingScreen.style.opacity = '1';
+}
+
+function hideError() {
+  if (el.errorBanner) el.errorBanner.hidden = true;
+  if (el.errorDetail) el.errorDetail.style.display = 'none';
+}
+
 function describeCameraError(error) {
+  const msg = error?.message || '';
   if (error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError') {
-    return 'Chưa được cấp quyền Camera. Hãy cho phép Camera trong cài đặt trang web rồi thử lại.';
+    return 'Chưa được cấp quyền Camera. Hãy vào Cài đặt iPhone → Safari → Camera → Cho phép, rồi tải lại trang.';
   }
   if (error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError') {
-    return 'Thiết bị không tìm thấy camera phù hợp.';
+    return 'Thiết bị không tìm thấy camera sau phù hợp.';
   }
   if (error?.name === 'NotReadableError' || error?.name === 'TrackStartError') {
-    return 'Camera đang được ứng dụng khác sử dụng. Hãy đóng ứng dụng camera rồi thử lại.';
+    return 'Camera đang bị ứng dụng khác sử dụng (Camera, Zalo, v.v.). Hãy đóng hẳn ứng dụng đó rồi thử lại.';
   }
   if (error?.name === 'OverconstrainedError') {
-    return 'Camera không hỗ trợ cấu hình cần thiết.';
+    return 'Camera không hỗ trợ cấu hình độ phân giải yêu cầu.';
   }
-  if (error?.message === 'AR_START_TIMEOUT') {
-    return 'Khởi động camera quá thời gian. Hãy kiểm tra mạng hoặc thử lại.';
+  if (msg.includes('VIDEO_METADATA_TIMEOUT')) {
+    return 'Camera đã bật nhưng Safari không đọc được khung hình. Hãy đóng tab Safari này rồi mở lại.';
   }
-  if (error?.message === 'VIDEO_METADATA_TIMEOUT') {
-    return 'Camera đã mở nhưng không đọc được hình. Hãy tắt rồi mở lại trang.';
+  if (msg === 'AR_START_TIMEOUT') {
+    return 'Quá thời gian khởi động WebAR. Có thể do mạng tải mẫu quét 3D chậm, hãy thử lại.';
   }
-  if (error?.message === 'AR_RUNTIME_TIMEOUT' || error?.message === 'AR_RUNTIME_UNAVAILABLE') {
-    return 'Trình duyệt chưa nạp được bộ nhận diện AR. Hãy tải lại trang rồi thử lại.';
+  if (msg === 'AR_RUNTIME_TIMEOUT' || msg === 'AR_RUNTIME_UNAVAILABLE') {
+    return 'Trình duyệt chưa nạp được bộ nhận diện AR. Hãy kiểm tra kết nối mạng và thử lại.';
   }
-  return `Không thể khởi động WebAR${error?.message ? `: ${error.message}` : '.'}`;
+  return `Không thể khởi động WebAR: ${msg || error?.name || 'Lỗi không xác định'}.`;
 }
 
 async function startAR() {
   if (!experience || arState === 'starting' || arState === 'running') return;
   if (!navigator.mediaDevices?.getUserMedia) {
-    el.loadingHint.textContent = 'Trình duyệt này không hỗ trợ truy cập camera.';
-    el.startActions.hidden = false;
-    el.loadingProgress.hidden = true;
+    showError('Không hỗ trợ Camera', 'Trình duyệt Safari này không hỗ trợ truy cập camera.');
     return;
   }
 
   const version = ++sessionVersion;
   arState = 'starting';
+  hideError();
   el.simBox.classList.remove('active');
   el.simVideo.pause();
   el.loadingScreen.style.display = 'flex';
   el.loadingScreen.style.opacity = '1';
   el.startActions.hidden = true;
   el.loadingProgress.hidden = false;
-  el.loadingHint.textContent = 'Đang mở camera…';
+  el.loadingHint.textContent = 'Bước 1/4: Đang kết nối camera iPhone…';
   ensureVideoSource(el.arVideo);
 
   let cameraStream = null;
@@ -327,7 +369,11 @@ async function startAR() {
     // Bước 1: getUserMedia NGAY trong gesture context — trước mọi await tốn thời gian
     cameraStream = await navigator.mediaDevices.getUserMedia({
       audio: false,
-      video: { facingMode: { ideal: 'environment' } },
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
     });
 
     if (version !== sessionVersion) {
@@ -335,7 +381,7 @@ async function startAR() {
       return;
     }
 
-    el.loadingHint.textContent = 'Camera sẵn sàng. Đang nạp nhận diện…';
+    el.loadingHint.textContent = 'Bước 2/4: Đã kết nối camera. Đang nạp thư viện AR…';
 
     // Bước 2: Load runtime (preload ngầm — thường tức thì)
     await loadArRuntime();
@@ -345,12 +391,15 @@ async function startAR() {
       return;
     }
 
+    el.loadingHint.textContent = 'Bước 3/4: Đang tạo phiên nhận diện…';
+
     // Bước 3: Inject stream vào MindAR — MindAR dùng stream có sẵn, không gọi getUserMedia lần 2
     const resources = createMindarSession();
     resources.instance._existingStream = cameraStream;
     mindarThree = resources.instance;
     arResources = resources;
 
+    el.loadingHint.textContent = 'Bước 4/4: Đang nạp mẫu quét & khởi động AR…';
     await withTimeout(resources.instance.start(), START_TIMEOUT_MS, 'AR_START_TIMEOUT');
 
     if (version !== sessionVersion) {
@@ -369,16 +418,16 @@ async function startAR() {
     }, 400);
   } catch (error) {
     if (cameraStream) {
-      cameraStream.getTracks().forEach((t) => t.stop());
+      try {
+        cameraStream.getTracks().forEach((t) => t.stop());
+      } catch (e) {}
       cameraStream = null;
     }
     console.error('Lỗi khởi động WebAR:', error);
     await stopAR();
-    el.loadingScreen.style.display = 'flex';
-    el.loadingScreen.style.opacity = '1';
-    el.loadingHint.textContent = describeCameraError(error);
-    el.startActions.hidden = false;
-    el.loadingProgress.hidden = true;
+    const friendly = describeCameraError(error);
+    const detail = error?.message || String(error);
+    showError('Không thể khởi động WebAR', friendly, detail);
   }
 }
 
