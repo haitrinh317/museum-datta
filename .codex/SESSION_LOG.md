@@ -51,3 +51,9 @@
 - Kiểm tra context/precision thật trước renderer; WebGL2 lỗi thì release và thử canvas WebGL1 mới. Không spoof capability. Tắt antialias, cap DPR 2 và forceContextLoss khi dừng.
 - Scanner chỉ hiện khi tracking sẵn sàng; lỗi WebGL giữ preview và báo chưa khả dụng.
 - Unit tests bổ sung null precision, cả hai backend lỗi, renderer constructor lỗi. Chưa nghiệm thu trên iPhone thật.
+
+
+### WebGL độc lập — 2026-09-22
+- /webgl-diagnostic.html (GL-diagnostic-20260922-1), không camera/MindAR/Three.js; WebGL2 và WebGL1 lần lượt: context, precision, compile/link, draw/readPixels, cleanup. Kết quả chỉ tại máy; clipboard có fallback thủ công.
+- HTML/JS no-store, loại khỏi precache, không đăng ký service worker. Build và browser desktop/mobile: draw thành công, context null, chạy lại, clipboard denied đạt.
+- Chờ kết quả từ iPhone 12 Pro Max iOS 18.7 (Chrome và Safari lỗi WebAR). Đây là công cụ chẩn đoán, chưa sửa dứt điểm lỗi thiết bị.

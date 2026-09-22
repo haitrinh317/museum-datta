@@ -26,7 +26,7 @@ export default defineConfig({
         // Precache build output — exclude admin
         globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,webp,woff2,mind}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        globIgnores: ['camera-diagnostic.html', 'ar-camera-test.js', 'admin/**', '**/logo*.png', '**/og-image*.png', '**/hero_bg.png'],
+        globIgnores: ['webgl-diagnostic.html', 'webgl-diagnostic.js', 'camera-diagnostic.html', 'ar-camera-test.js', 'admin/**', '**/logo*.png', '**/og-image*.png', '**/hero_bg.png'],
         // Offline navigation fallback
         navigateFallback: '/offline.html',
         navigateFallbackDenylist: [/^\/admin/, /\.[a-zA-Z0-9]+$/],

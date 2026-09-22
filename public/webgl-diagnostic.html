@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Kiểm tra WebGL độc lập</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#081525;color:#e7eff9;font:16px/1.6 system-ui,sans-serif}
+    main{max-width:720px;margin:auto;padding:24px 20px 48px}h1{font-size:26px;line-height:1.25}
+    p{color:#c1d0e2}button,a{touch-action:manipulation}button{min-height:48px;padding:12px 18px;border:1px solid #6bdde4;border-radius:10px;background:#13354c;color:#fff;font:inherit;cursor:pointer}
+    button:disabled{opacity:.55;cursor:wait}button:focus-visible,a:focus-visible,textarea:focus-visible{outline:3px solid #60e5ed;outline-offset:3px}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}a{color:#79e5ed}textarea{width:100%;min-height:320px;padding:12px;background:#10243a;color:#e7eff9;border:1px solid #64819c;border-radius:8px;font:13px/1.5 monospace;resize:vertical}
+    #status{padding:16px;background:#10243a;border-radius:10px}small{color:#aac0d6}label{display:block;margin:16px 0 8px}
+  </style>
+</head>
+<body><main>
+  <small>GL-diagnostic-20260922-1</small>
+  <h1>Kiểm tra đồ họa WebGL</h1>
+  <p>Không mở camera, không tải MindAR hoặc Three.js. Kiểm tra tạo context, thông số shader, vẽ và đọc lại một điểm ảnh.</p>
+  <p>Kết quả chỉ nằm trên máy, gồm thông tin trình duyệt và lỗi đồ họa; không tự gửi lên máy chủ. Kiểm tra đạt chưa có nghĩa toàn bộ WebAR đã hoạt động.</p>
+  <div class="actions"><button id="run" type="button">Chạy kiểm tra</button><button id="copy" type="button" disabled>Sao chép kết quả</button></div>
+  <p id="status" role="status">Sẵn sàng. Bấm Chạy kiểm tra.</p>
+  <label for="result">Kết quả chẩn đoán (có thể chọn và sao chép thủ công)</label>
+  <textarea id="result" readonly spellcheck="false" aria-label="Kết quả chẩn đoán"></textarea>
+  <p><a href="/ar/?code=TB.012">Quay lại WebAR cá voi</a></p>
+  <noscript>Cần bật JavaScript để chạy kiểm tra.</noscript>
+</main><script src="/webgl-diagnostic.js" defer></script></body>
+</html>
