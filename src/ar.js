@@ -119,12 +119,28 @@ function stopMediaTracks() {
   });
 }
 
-function releaseBootstrapCamera() {
-  const stream = window.__museumArBootstrapStream;
-  if (!stream) return;
-  stream.getTracks().forEach((track) => track.stop());
-  window.__museumArBootstrapStream = null;
-  document.querySelector('#ar-bootstrap-preview')?.remove();
+function patchMindARForExistingStream(MindARThreeClass) {
+  // ponytail: intercept _startVideo once to reuse the stream opened in the user-gesture context;
+  // ceiling: only works if MindAR's internal _startVideo signature stays stable.
+  const orig = MindARThreeClass.prototype._startVideo;
+  MindARThreeClass.prototype._startVideo = function () {
+    if (!this._existingStream) return orig.call(this);
+    const stream = this._existingStream;
+    return new Promise((resolve) => {
+      this.video = document.createElement('video');
+      this.video.setAttribute('autoplay', '');
+      this.video.setAttribute('muted', '');
+      this.video.setAttribute('playsinline', '');
+      this.video.style.cssText = 'position:absolute;top:0;left:0;z-index:-2';
+      this.container.appendChild(this.video);
+      this.video.addEventListener('loadedmetadata', () => {
+        this.video.setAttribute('width', this.video.videoWidth);
+        this.video.setAttribute('height', this.video.videoHeight);
+        resolve();
+      });
+      this.video.srcObject = stream;
+    });
+  };
 }
 
 async function loadArRuntime() {
@@ -145,6 +161,7 @@ async function loadArRuntime() {
 
   THREE = threeModule;
   MindARThree = mindarModule.MindARThree;
+  patchMindARForExistingStream(MindARThree);
 }
 
 async function stopAR({ showStartScreen = false } = {}) {
@@ -281,16 +298,40 @@ async function startAR() {
   el.loadingScreen.style.opacity = '1';
   el.startActions.hidden = true;
   el.loadingProgress.hidden = false;
-  el.loadingHint.textContent = 'Đang mở camera và nạp dữ liệu nhận diện…';
+  el.loadingHint.textContent = 'Đang mở camera…';
   ensureVideoSource(el.arVideo);
 
+  let cameraStream = null;
   try {
-    releaseBootstrapCamera();
+    // Step 1: getUserMedia NGAY trong user-gesture context — không để camera đóng rồi mở lại
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: 'environment' } },
+    });
+
+    if (version !== sessionVersion) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+      return;
+    }
+
+    el.loadingHint.textContent = 'Camera sẵn sàng. Đang nạp dữ liệu nhận diện…';
+
+    // Step 2: Nạp runtime AR (đã preload ngầm, thường tức thì)
     await loadArRuntime();
+
+    if (version !== sessionVersion) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+      return;
+    }
+
+    // Step 3: Khởi tạo MindAR với stream có sẵn — không gọi getUserMedia lần 2
     const resources = createMindarSession();
+    resources.instance._existingStream = cameraStream;
     mindarThree = resources.instance;
     arResources = resources;
+
     await withTimeout(resources.instance.start(), START_TIMEOUT_MS, 'AR_START_TIMEOUT');
+
     if (version !== sessionVersion) {
       resources.renderer.setAnimationLoop(null);
       await Promise.resolve(resources.instance.stop()).catch(() => {});
@@ -306,6 +347,10 @@ async function startAR() {
       if (arState === 'running') el.loadingScreen.style.display = 'none';
     }, 400);
   } catch (error) {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+      cameraStream = null;
+    }
     console.error('Lỗi khởi động WebAR:', error);
     await stopAR();
     el.loadingScreen.style.display = 'flex';
@@ -346,7 +391,6 @@ function closeTargetModal() {
 
 function bindEvents() {
   document.querySelector('#btn-start-camera')?.addEventListener('click', startAR);
-  document.addEventListener('museum:ar-camera-ready', startAR);
   document.querySelector('#btn-reopen-camera')?.addEventListener('click', startAR);
   document.querySelector('#btn-quick-demo')?.addEventListener('click', () => openSimulation('Mở chế độ mô phỏng theo yêu cầu'));
   document.querySelector('#btn-launch-demo')?.addEventListener('click', () => openSimulation('Mở chế độ mô phỏng theo yêu cầu'));
@@ -394,6 +438,7 @@ function bindEvents() {
 if (applyExperience()) {
   bindEvents();
   setAudio(false);
+  loadArRuntime().catch(() => {}); // preload ngầm: khi người dùng bấm Camera thì runtime đã sẵn sàng
 } else {
   showUnsupportedExperience();
 }
