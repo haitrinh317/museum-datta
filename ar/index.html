@@ -7,11 +7,10 @@
   <meta name="description" content="Trải nghiệm thực tế tăng cường (WebAR) đưa các mẫu vật sinh vật biển tại Bảo tàng Hải dương học sống lại trong môi trường đại dương thực tế.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐋</text></svg>">
 
-  <!-- Google Fonts & Icons -->
+  <!-- Font is optional; all controls use local SVG icons. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 
   <style>
@@ -456,6 +455,10 @@
     }
 
     /* Buttons on Start Screen */
+    .control-icon { width: 20px; height: 20px; flex: 0 0 20px; fill: currentColor; }
+    .control-icon-small { width: 16px; height: 16px; flex-basis: 16px; fill: none; }
+    .control-icon-amber { color: #f59e0b; }
+
     .btn-start-camera {
       width: 100%;
       padding: 14px 24px;
@@ -544,19 +547,20 @@
     <!-- USER GESTURE ACTION BUTTONS -->
     <div id="start-actions" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 24px; width: 100%; max-width: 320px;">
       <button id="btn-start-camera" type="button" class="btn-start-camera">
-        <span class="material-icons" style="font-size: 20px;">camera_alt</span>
+        <svg class="control-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h3l1.4-2h7.2L17 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Zm8 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
         <span>Bật Camera quét mẫu vật</span>
       </button>
 
       <button id="btn-quick-demo" type="button" class="btn-secondary-action">
-        <span class="material-icons" style="font-size: 18px; color: #f59e0b;">play_circle</span>
+        <svg class="control-icon control-icon-amber" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm-2 5.2 5.5 3.8L10 15.8V8.2Z"/></svg>
         <span>Xem Mô phỏng AR (Không cần Camera)</span>
       </button>
 
       <a href="/ar/target/?code=TB.012" target="_blank" rel="noopener" class="btn-text-link" data-ar-target-link>
-        <span class="material-icons" style="font-size: 16px;">crop_free</span>
+        <svg class="control-icon control-icon-small" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <span>Xem ảnh mẫu vật để quét</span>
       </a>
+      <a href="/ar/camera-test/" class="btn-text-link">Kiểm tra quyền Camera trên iPhone</a>
     </div>
 
     <!-- INITIALIZATION PROGRESS (Shown after camera button click) -->

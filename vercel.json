@@ -21,6 +21,10 @@
       "destination": "/ar/index.html"
     },
     {
+      "source": "/ar/camera-test",
+      "destination": "/ar/camera-test/index.html"
+    },
+    {
       "source": "/ar/v2",
       "destination": "/ar/index.html"
     },

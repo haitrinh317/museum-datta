@@ -114,6 +114,7 @@ export default defineConfig({
         map:       resolve(__dirname, 'map/index.html'),
         ar:        resolve(__dirname, 'ar/index.html'),
         ar_target: resolve(__dirname, 'ar/target/index.html'),
+        ar_camera_test: resolve(__dirname, 'ar/camera-test/index.html'),
       },
     },
   },
