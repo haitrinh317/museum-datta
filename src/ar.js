@@ -119,40 +119,6 @@ function stopMediaTracks() {
   });
 }
 
-function patchMindARForExistingStream(MindARThreeClass) {
-  // ponytail: idempotent — guard against double-call from concurrent preload + startAR
-  if (MindARThreeClass.prototype._streamPatched) return;
-  MindARThreeClass.prototype._streamPatched = true;
-  const orig = MindARThreeClass.prototype._startVideo;
-  MindARThreeClass.prototype._startVideo = function () {
-    if (!this._existingStream) return orig.call(this);
-    const stream = this._existingStream;
-    return new Promise((resolve) => {
-      this.video = document.createElement('video');
-      this.video.setAttribute('autoplay', '');
-      this.video.setAttribute('muted', '');
-      this.video.setAttribute('playsinline', '');
-      this.video.style.cssText = 'position:absolute;top:0;left:0;z-index:-2';
-      this.container.appendChild(this.video);
-      let resolved = false;
-      const onReady = () => {
-        if (resolved) return;
-        resolved = true;
-        // Fallback dimensions khi stream không cung cấp videoWidth
-        this.video.setAttribute('width', this.video.videoWidth || 640);
-        this.video.setAttribute('height', this.video.videoHeight || 480);
-        resolve();
-      };
-      this.video.addEventListener('loadedmetadata', onReady, { once: true });
-      this.video.srcObject = stream;
-      // Phải gọi play() tường minh: iOS không tự autoplay với existing stream
-      this.video.play().catch(() => {});
-      // Safety net: loadedmetadata không fire nếu stream đã có metadata
-      window.setTimeout(onReady, 400);
-    });
-  };
-}
-
 async function loadArRuntime() {
   if (THREE && MindARThree) return;
 
@@ -171,7 +137,6 @@ async function loadArRuntime() {
 
   THREE = threeModule;
   MindARThree = mindarModule.MindARThree;
-  patchMindARForExistingStream(MindARThree);
 }
 
 async function stopAR({ showStartScreen = false } = {}) {
@@ -308,35 +273,17 @@ async function startAR() {
   el.loadingScreen.style.opacity = '1';
   el.startActions.hidden = true;
   el.loadingProgress.hidden = false;
-  el.loadingHint.textContent = 'Đang mở camera…';
+  el.loadingHint.textContent = 'Đang khởi động nhận diện mẫu vật…';
   ensureVideoSource(el.arVideo);
 
-  let cameraStream = null;
   try {
-    // Step 1: getUserMedia NGAY trong user-gesture context — không để camera đóng rồi mở lại
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { facingMode: { ideal: 'environment' } },
-    });
-
-    if (version !== sessionVersion) {
-      cameraStream.getTracks().forEach((t) => t.stop());
-      return;
-    }
-
-    el.loadingHint.textContent = 'Camera sẵn sàng. Đang nạp dữ liệu nhận diện…';
-
-    // Step 2: Nạp runtime AR (đã preload ngầm, thường tức thì)
+    // ponytail: runtime đã được preload ngầm khi vào trang, nên gọi này trả về ngầy lập tức.
+    // MindAR tự gọi getUserMedia() bên trong instance.start() — gesture context vẫn còn hiệu lực.
     await loadArRuntime();
 
-    if (version !== sessionVersion) {
-      cameraStream.getTracks().forEach((t) => t.stop());
-      return;
-    }
+    if (version !== sessionVersion) return;
 
-    // Step 3: Khởi tạo MindAR với stream có sẵn — không gọi getUserMedia lần 2
     const resources = createMindarSession();
-    resources.instance._existingStream = cameraStream;
     mindarThree = resources.instance;
     arResources = resources;
 
@@ -357,10 +304,6 @@ async function startAR() {
       if (arState === 'running') el.loadingScreen.style.display = 'none';
     }, 400);
   } catch (error) {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((t) => t.stop());
-      cameraStream = null;
-    }
     console.error('Lỗi khởi động WebAR:', error);
     await stopAR();
     el.loadingScreen.style.display = 'flex';
