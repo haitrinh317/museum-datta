@@ -54,18 +54,21 @@ const status = document.createElement('p');
 status.setAttribute('role', 'status');
 const cancel = document.createElement('button');
 cancel.textContent = 'Dừng camera';
+const resume = document.createElement('button');
+resume.textContent = 'Bật lại camera';
+resume.hidden = true;
 const retry = document.createElement('button');
 retry.textContent = 'Thử lại nhận diện';
 retry.hidden = true;
 const copy = document.createElement('button');
 copy.textContent = 'Sao chép chẩn đoán';
-for (const button of [cancel, retry, copy]) button.style.cssText = 'min-height:44px;margin:4px;padding:8px;border-radius:8px';
+for (const button of [cancel, resume, retry, copy]) button.style.cssText = 'min-height:44px;margin:4px;padding:8px;border-radius:8px';
 const detail = document.createElement('pre');
 detail.hidden = true;
 detail.style.whiteSpace = 'pre-wrap';
-panel.append(status, cancel, retry, copy, detail);
+panel.append(status, cancel, resume, retry, copy, detail);
 document.body.append(panel);
-const BUILD = 'AR-session-20260922-1';
+const BUILD = 'AR-session-20260922-2';
 function report(next, message, error) {
   stage = next;
   const entry = { stage: next, time: new Date().toISOString(), message, error: error ? String(error.name || '') + ': ' + String(error.message || error) : undefined };
@@ -81,6 +84,7 @@ copy.addEventListener('click', async () => {
 });
 cancel.addEventListener('click', () => stopAR({ showStartScreen: true }));
 retry.addEventListener('click', startAR);
+resume.addEventListener('click', startAR);
 report('ready', 'Sẵn sàng mở camera.');
 function disposeTracking() {
   const resources = arResources;
@@ -207,6 +211,11 @@ async function stopAR({ showStartScreen = false } = {}) {
   resetTrackingUi();
   arState = 'idle';
   retry.hidden = true;
+  resume.hidden = !showStartScreen || !experience;
+  cancel.hidden = true;
+  el.targetModal.classList.remove('open');
+  el.targetModal.hidden = true;
+  detail.hidden = true;
   if (showStartScreen) {
     el.loadingScreen.style.display = 'flex';
     el.loadingScreen.style.opacity = '1';
@@ -226,6 +235,7 @@ function createMindarSession() {
     missTolerance: 5,
     uiLoading: 'no',
     uiScanning: 'no',
+    uiError: 'no',
   });
 
   mindarThree = instance;
@@ -347,6 +357,9 @@ async function startAR() {
   const active = () => version === sessionVersion && !abort.signal.aborted;
   arState = 'starting';
   hideError();
+  resume.hidden = true;
+  cancel.hidden = false;
+  detail.hidden = true;
   retry.hidden = true;
   el.simBox.classList.remove('active');
   el.simVideo.pause();

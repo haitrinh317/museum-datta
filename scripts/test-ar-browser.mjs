@@ -40,13 +40,32 @@ try {
     ws.send(JSON.stringify({ id: number, method, params }));
   });
   const evaluate = async expression => (await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })).result.value;
+  const click = async expression => {
+    await evaluate("window.__tapEvents=[]; if(!window.__tapHook){window.__tapHook=true; for(const type of ['touchstart','touchend','click']) document.addEventListener(type,e=>window.__tapEvents.push({type,id:e.target.id,text:e.target.textContent.slice(0,60)}),true)}");
+    const point = await evaluate(`(() => { const button = ${expression}; const r = button.getBoundingClientRect(); const x = r.x+r.width/2, y=r.y+r.height/2; const hit=document.elementFromPoint(x,y); return {x,y,scale:visualViewport?.scale || 1,offsetX:visualViewport?.offsetLeft || 0,offsetY:visualViewport?.offsetTop || 0,ok:button===hit||button.contains(hit),hit:hit?.outerHTML.slice(0,400)}; })()`);
+    assert.ok(point.ok, 'Pointer blocked: '+JSON.stringify(point));
+    if (process.env.AR_MOBILE) {
+      await evaluate(`window.__testTapped = false; (${expression}).addEventListener('click',()=>{window.__testTapped=true},{once:true})`);
+      await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:(point.x-point.offsetX)*point.scale,y:(point.y-point.offsetY)*point.scale}]});
+      await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      for(let i=0;i<20 && !await evaluate('window.__testTapped');i++) await new Promise(r=>setTimeout(r,50));
+      assert.equal(await evaluate('window.__testTapped'),true,'Touch must deliver click: '+JSON.stringify({expression,point,events:await evaluate('window.__tapEvents')}));
+      return;
+    }
+    await send('Input.dispatchMouseEvent', {type:'mousePressed',x:point.x,y:point.y,button:'left',clickCount:1});
+    await send('Input.dispatchMouseEvent', {type:'mouseReleased',x:point.x,y:point.y,button:'left',clickCount:1});
+  };
+  if (process.env.AR_MOBILE) { await send('Emulation.setDeviceMetricsOverride', {width:375,height:667,deviceScaleFactor:2,mobile:true}); await send('Emulation.setTouchEmulationEnabled', {enabled:true}); }
   await send('Runtime.enable');
   await send('Network.enable');
   await send('Network.setBypassServiceWorker', { bypass: true });
   await send('Page.navigate', { url: base + '/ar/?code=TB.012' });
-  await new Promise(r => setTimeout(r, 2000));
+  for (let i=0;i<100;i++) {
+    if(await evaluate("!!document.querySelector('#camera-preview')")) break;
+    await new Promise(r=>setTimeout(r,100));
+  }
   assert.ok(await evaluate("!!document.querySelector('#camera-preview')"), 'UI initialized');
-  await evaluate("document.querySelector('#btn-start-camera').click()");
+  await click("document.querySelector('#btn-start-camera')");
   for (let i = 0; i < 60; i++) {
     const state = await evaluate("document.querySelector('section p[role=status]')?.textContent || ''");
     if (/Hướng camera|gặp lỗi|Chưa mở/.test(state)) { console.log('START:', state); break; }
@@ -57,12 +76,12 @@ try {
   console.log('DETAIL:', await evaluate("document.querySelector('section pre')?.textContent"));
   console.log('ERRORS:', errors);
   assert.equal(await evaluate("document.querySelector('#camera-preview').srcObject?.active"), true);
-  await evaluate("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Dừng camera').click()");
+  await click("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Dừng camera')");
   assert.equal(await evaluate("document.querySelector('#camera-preview').srcObject"), null);
   assert.equal(errors.length, 0, errors.join('\n'));
   console.log('Browser camera preview + stop PASS');
   await send('Network.setBlockedURLs', { urls: ['*TB.012.mind*'] });
-  await evaluate("document.querySelector('#btn-start-camera').click()");
+  await click("document.querySelector('#btn-start-camera')");
   for (let i = 0; i < 40; i++) {
     if (await evaluate("document.querySelector('section p[role=status]').textContent.includes('gặp lỗi')")) break;
     await new Promise(r => setTimeout(r, 250));
@@ -70,24 +89,26 @@ try {
   assert.equal(await evaluate("document.querySelector('#camera-preview').srcObject?.active"), true);
   assert.equal(await evaluate("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Thử lại nhận diện').hidden"), false);
   await send('Network.setBlockedURLs', { urls: [] });
-  await evaluate("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Thử lại nhận diện').click()");
+  await click("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Thử lại nhận diện')");
   for (let i = 0; i < 60; i++) {
     if (await evaluate("document.querySelector('section p[role=status]').textContent.includes('Hướng camera')")) break;
     await new Promise(r => setTimeout(r, 250));
   }
   assert.equal(await evaluate("document.querySelector('section p[role=status]').textContent.includes('Hướng camera')"), true);
-  await evaluate("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Dừng camera').click()");
+  await click("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Dừng camera')");
   assert.equal(await evaluate("document.querySelector('#camera-preview').srcObject"), null);
   assert.equal(errors.length, 0, errors.join('\n'));
   console.log('Target failure preserves preview; retry restores tracking PASS');
   for (let cycle = 0; cycle < 5; cycle++) {
-    await evaluate("document.querySelector('#btn-start-camera').click()");
+    await click(cycle % 2 ? "document.querySelector('#btn-start-camera')" : "Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Bật lại camera')");
     for (let i = 0; i < 60; i++) {
       if (await evaluate("document.querySelector('section p[role=status]').textContent.includes('Hướng camera')")) break;
       await new Promise(r => setTimeout(r, 200));
     }
     assert.equal(await evaluate("document.querySelector('section p[role=status]').textContent.includes('Hướng camera')"), true);
-    await evaluate("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Dừng camera').click()");
+    if (cycle === 0) await click("document.querySelector('#btn-show-target')");
+    await click("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Dừng camera')");
+    assert.equal(await evaluate("document.querySelector('#target-modal').hidden"), true);
     assert.equal(await evaluate("document.querySelector('#camera-preview').srcObject"), null);
   }
   console.log('Five browser tracking start/stop cycles PASS');
@@ -95,7 +116,7 @@ try {
   await new Promise(r => setTimeout(r, 100));
   assert.equal(await evaluate("document.querySelector('#error-banner').hidden"), false);
   await evaluate("navigator.mediaDevices.getUserMedia = () => new Promise(()=>{}); document.querySelector('#btn-start-camera').click()");
-  await evaluate("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Dừng camera').click()");
+  await click("Array.from(document.querySelectorAll('button')).find(x=>x.textContent==='Dừng camera')");
   assert.equal(await evaluate("document.querySelector('#start-actions').hidden"), false);
   assert.equal(await evaluate("document.querySelector('section p[role=status]').textContent.includes('Camera đã dừng')"), true);
   assert.equal(errors.length, 0, errors.join('\n'));

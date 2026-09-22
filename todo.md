@@ -245,3 +245,9 @@
 - [x] Build, 4 Node tests và Edge fake-camera integration (retry, lỗi target, 5 lần start/stop, permission/cancel).
 - [ ] Xác nhận camera và target thật trên iPhone Safari/PWA trước nghiệm thu.
 - [ ] Hoàn tất bước 4–6: media tương thích, SVG toàn bộ, cập nhật PWA và ma trận thiết bị.
+
+
+### WebAR restart — 2026-09-22
+- Bản AR-session-20260922-2: thêm Bật lại camera tại panel; Dừng đóng target modal và chi tiết chẩn đoán, ẩn nút Dừng; tắt UI lỗi mặc định MindAR.
+- Kiểm thử CDP dùng chuột/chạm thật và hit-test, quy đổi visual viewport trên mobile; kiểm tra 5 chu kỳ qua cả hai nút mở, dừng khi modal mở. Build, 4 unit tests và desktop/mobile fake-camera đạt.
+- Chưa tái hiện được đầy đủ lỗi trên thiết bị của người dùng; chưa nghiệm thu camera thật iPhone/PWA. Bản sửa là cải thiện đường phục hồi và xử lý modal còn sót, không khẳng định giải quyết mọi lỗi camera.

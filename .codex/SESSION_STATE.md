@@ -47,3 +47,9 @@
 - Chẩn đoán theo giai đoạn, nút sao chép chỉ chứa trạng thái/lỗi, không thu hình. /camera-diagnostic.html không đăng ký SW, không precache và dùng đường .html tránh navigation fallback.
 - Kiểm chứng: 4 Node tests; Edge headless camera giả + CSP: khởi tạo đến tracking, chặn target vẫn giữ preview, retry, 5 chu kỳ start/stop, từ chối quyền, huỷ chờ quyền; không có unhandled JS errors. Build/audit đạt.
 - Chưa nghiệm thu camera thật iPhone/Safari/PWA hoặc nhận diện target thật; không coi HTTP 200 là kiểm chứng camera. Bước 4–6 (media/icon/toàn bộ cập nhật PWA/ma trận thiết bị) còn mở.
+
+
+### WebAR restart — 2026-09-22
+- Bản AR-session-20260922-2: thêm Bật lại camera tại panel; Dừng đóng target modal và chi tiết chẩn đoán, ẩn nút Dừng; tắt UI lỗi mặc định MindAR.
+- Kiểm thử CDP dùng chuột/chạm thật và hit-test, quy đổi visual viewport trên mobile; kiểm tra 5 chu kỳ qua cả hai nút mở, dừng khi modal mở. Build, 4 unit tests và desktop/mobile fake-camera đạt.
+- Chưa tái hiện được đầy đủ lỗi trên thiết bị của người dùng; chưa nghiệm thu camera thật iPhone/PWA. Bản sửa là cải thiện đường phục hồi và xử lý modal còn sót, không khẳng định giải quyết mọi lỗi camera.
