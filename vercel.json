@@ -21,6 +21,10 @@
       "destination": "/ar/index.html"
     },
     {
+      "source": "/ar/v2",
+      "destination": "/ar/index.html"
+    },
+    {
       "source": "/ar/target",
       "destination": "/ar/target/index.html"
     }

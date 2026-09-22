@@ -119,6 +119,14 @@ function stopMediaTracks() {
   });
 }
 
+function releaseBootstrapCamera() {
+  const stream = window.__museumArBootstrapStream;
+  if (!stream) return;
+  stream.getTracks().forEach((track) => track.stop());
+  window.__museumArBootstrapStream = null;
+  document.querySelector('#ar-bootstrap-preview')?.remove();
+}
+
 async function loadArRuntime() {
   if (THREE && MindARThree) return;
 
@@ -277,6 +285,7 @@ async function startAR() {
   ensureVideoSource(el.arVideo);
 
   try {
+    releaseBootstrapCamera();
     await loadArRuntime();
     const resources = createMindarSession();
     mindarThree = resources.instance;
@@ -337,6 +346,7 @@ function closeTargetModal() {
 
 function bindEvents() {
   document.querySelector('#btn-start-camera')?.addEventListener('click', startAR);
+  document.addEventListener('museum:ar-camera-ready', startAR);
   document.querySelector('#btn-reopen-camera')?.addEventListener('click', startAR);
   document.querySelector('#btn-quick-demo')?.addEventListener('click', () => openSimulation('Mở chế độ mô phỏng theo yêu cầu'));
   document.querySelector('#btn-launch-demo')?.addEventListener('click', () => openSimulation('Mở chế độ mô phỏng theo yêu cầu'));

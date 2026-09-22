@@ -18,6 +18,7 @@
 
 - Refactor WebAR `TB.012`: QR sinh cục bộ, registry cấu hình theo mã mẫu, MindAR/Three bundle nội bộ, camera có timeout/retry/cleanup, asset AR cache-first và CSP/Permissions-Policy riêng cho `/ar/*`.
 - Hotfix iPhone WebAR: hoãn tải runtime Three.js/MindAR đến khi khách bấm nút Camera; lỗi nạp runtime được bắt và hiển thị thay vì làm nút không phản hồi.
+- Hotfix camera iPhone bổ sung: bootstrap camera dạng classic script, gọi getUserMedia ngay trong thao tác chạm; route /ar/v2 tránh cache PWA cũ.
 
 ## Công việc mở
 
