@@ -120,8 +120,9 @@ function stopMediaTracks() {
 }
 
 function patchMindARForExistingStream(MindARThreeClass) {
-  // ponytail: intercept _startVideo once to reuse the stream opened in the user-gesture context;
-  // ceiling: only works if MindAR's internal _startVideo signature stays stable.
+  // ponytail: idempotent — guard against double-call from concurrent preload + startAR
+  if (MindARThreeClass.prototype._streamPatched) return;
+  MindARThreeClass.prototype._streamPatched = true;
   const orig = MindARThreeClass.prototype._startVideo;
   MindARThreeClass.prototype._startVideo = function () {
     if (!this._existingStream) return orig.call(this);
@@ -133,12 +134,21 @@ function patchMindARForExistingStream(MindARThreeClass) {
       this.video.setAttribute('playsinline', '');
       this.video.style.cssText = 'position:absolute;top:0;left:0;z-index:-2';
       this.container.appendChild(this.video);
-      this.video.addEventListener('loadedmetadata', () => {
-        this.video.setAttribute('width', this.video.videoWidth);
-        this.video.setAttribute('height', this.video.videoHeight);
+      let resolved = false;
+      const onReady = () => {
+        if (resolved) return;
+        resolved = true;
+        // Fallback dimensions khi stream không cung cấp videoWidth
+        this.video.setAttribute('width', this.video.videoWidth || 640);
+        this.video.setAttribute('height', this.video.videoHeight || 480);
         resolve();
-      });
+      };
+      this.video.addEventListener('loadedmetadata', onReady, { once: true });
       this.video.srcObject = stream;
+      // Phải gọi play() tường minh: iOS không tự autoplay với existing stream
+      this.video.play().catch(() => {});
+      // Safety net: loadedmetadata không fire nếu stream đã có metadata
+      window.setTimeout(onReady, 400);
     });
   };
 }
@@ -426,7 +436,9 @@ function bindEvents() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       el.simVideo.pause();
-      if (arState === 'running' || arState === 'starting') stopAR({ showStartScreen: false });
+      // ponytail: không stop khi đang 'starting' — iOS hiển thị dialog xin quyền camera
+      // sẽ kích hoạt visibilitychange tạm thời, gây ra false-positive stop làm hỏng luồng khởi động
+      if (arState === 'running') stopAR({ showStartScreen: false });
     }
   });
   window.addEventListener('pagehide', () => {
