@@ -33,6 +33,9 @@
     [hidden]{display:none!important}
     @media(max-width:980px){#fallbackScene{height:520px}}
     @media(max-width:680px){.model #scene{display:none}.model #fallbackScene{display:block;height:390px}.model .label,.model .orb-glow{display:none!important}.model .webgl-help{display:none}.model .fallback-help{display:inline}}
+    .mobile-scrubber,.mobile-view-controls{display:none}
+    #fallbackScene{touch-action:none;cursor:grab}#fallbackScene:active{cursor:grabbing}
+    @media(max-width:680px){.stage-foot{display:none}.timeline{display:none}.mobile-scrubber{position:absolute;z-index:4;display:block;left:12px;right:12px;bottom:12px;padding:11px 15px 9px;border:1px solid #6693a8a6;border-radius:15px;background:#071b2bea;box-shadow:0 8px 26px #0008;backdrop-filter:blur(12px)}.mobile-scrubber-head{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#d8edf2;font-size:.79rem;font-weight:750}.mobile-scrubber output{color:#ffda8a;white-space:nowrap}.mobile-scrubber input{display:block;width:100%;height:28px;margin:5px 0 0;accent-color:#ffd27a;touch-action:none}.mobile-view-controls{position:absolute;z-index:4;display:flex;top:13px;right:12px;gap:6px}.mobile-view-controls button{width:40px;height:40px;padding:0;border:1px solid #6d9caeb0;border-radius:10px;background:#071b2bdb;color:#e9faff;font-size:1.3rem;font-weight:700}.mobile-view-controls button:active{background:#26536a}}
   </style>
 </head>
 <body>
@@ -66,6 +69,8 @@
           <text id="svgMoonLabel" x="230" y="302">Mặt Trăng</text>
         </g>
       </svg>
+      <div class="mobile-view-controls" role="group" aria-label="Phóng to và thu nhỏ mô hình"><button id="zoomOut" type="button" aria-label="Thu nhỏ mô hình">−</button><button id="zoomIn" type="button" aria-label="Phóng to mô hình">+</button></div>
+      <div class="mobile-scrubber"><div class="mobile-scrubber-head"><label for="mobileLunarDay">Ngày âm lịch</label><output id="mobileDayOutput" for="mobileLunarDay">Mùng 1</output></div><input id="mobileLunarDay" type="range" min="1" max="30" step="1" value="1" aria-label="Ngày trong tháng âm lịch"></div>
       <span class="label" id="sunLabel">Mặt Trời</span><span class="label" id="earthLabel">Trái Đất</span><span class="label" id="moonLabel">Mặt Trăng</span>
       <div class="stage-foot"><span class="webgl-help">↔ Kéo để xoay · Cuộn hoặc chụm để phóng to</span><span class="fallback-help">Kéo ngày âm lịch bên dưới để quan sát</span></div>
     </section>
@@ -105,19 +110,36 @@
   const model=document.querySelector('.model'),svg=document.getElementById('fallbackScene'),slider=document.getElementById('lunarDay');
   const node=id=>document.getElementById(id);
   const attr=(id,values)=>{const element=node(id);for(const [key,value] of Object.entries(values))element.setAttribute(key,String(value))};
-  let active=false;
+  let active=false,zoom=1,panX=0,panY=0,baseWidth=600,baseHeight=650,baseX=0,baseY=0;
+  const pointers=new Map();
+  const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+  function applyView(){
+    const width=baseWidth/zoom,height=baseHeight/zoom;
+    const maxX=(baseWidth-width)/2,maxY=(baseHeight-height)/2;
+    panX=clamp(panX,-maxX,maxX);panY=clamp(panY,-maxY,maxY);
+    svg.setAttribute('viewBox',[baseX+(baseWidth-width)/2+panX,baseY+(baseHeight-height)/2+panY,width,height].join(' '));
+  }
+  function setZoom(value){zoom=clamp(value,1,2.6);applyView()}
+  function pointerDistance(){const points=[...pointers.values()];return Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y)}
+  svg.addEventListener('pointerdown',event=>{if(!active)return;svg.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});event.preventDefault()});
+  svg.addEventListener('pointermove',event=>{if(!active||!pointers.has(event.pointerId))return;const previous=pointers.get(event.pointerId);let oldDistance=pointers.size===2?pointerDistance():0;pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pointers.size===2){if(oldDistance)setZoom(zoom*pointerDistance()/oldDistance)}else{const rect=svg.getBoundingClientRect();panX-=(event.clientX-previous.x)*baseWidth/(rect.width*zoom);panY-=(event.clientY-previous.y)*baseHeight/(rect.height*zoom);applyView()}event.preventDefault()});
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])svg.addEventListener(type,event=>pointers.delete(event.pointerId));
+  svg.addEventListener('wheel',event=>{if(!active)return;event.preventDefault();setZoom(zoom*Math.exp(-event.deltaY*.001))},{passive:false});
+  node('zoomIn').addEventListener('click',()=>setZoom(zoom*1.25));
+  node('zoomOut').addEventListener('click',()=>setZoom(zoom/1.25));
+
   function update(value){
     const day=Number(value),elapsed=day-1,sunAngle=Math.PI-2*Math.PI*elapsed/365.25,relativeAngle=2*Math.PI*elapsed/29.53,moonAngle=sunAngle-relativeAngle;
     const compact=model.clientWidth<=680,ex=compact?360:550,ey=compact?340:300,sunDistance=compact?245:340,moonDistance=compact?130:190,earthRadius=compact?47:62;
     const sx=ex+sunDistance*Math.cos(sunAngle),sy=ey-sunDistance*Math.sin(sunAngle),mx=ex+moonDistance*Math.cos(moonAngle),my=ey-moonDistance*Math.sin(moonAngle);
     const alignment=Math.abs(Math.cos(relativeAngle));
-    svg.setAttribute('viewBox',compact?'0 0 600 650':'0 0 1000 590');
+    baseWidth=compact?600:1000;baseHeight=compact?650:590;applyView();
     attr('svgOrbit',{cx:ex,cy:ey,r:moonDistance});
     attr('svgSunLine',{x1:sx,y1:sy,x2:ex,y2:ey});attr('svgMoonLine',{x1:mx,y1:my,x2:ex,y2:ey});
     attr('svgTide',{cx:ex,cy:ey,rx:earthRadius*(1.32+.28*alignment),ry:earthRadius*1.15,transform:'rotate('+(-moonAngle*180/Math.PI)+' '+ex+' '+ey+')'});
     attr('svgSun',{cx:sx,cy:sy,r:compact?54:70});attr('svgEarth',{cx:ex,cy:ey,r:earthRadius});attr('svgMoon',{cx:mx,cy:my,r:compact?22:29});
     attr('svgSunLabel',{x:sx,y:sy-(compact?73:92)});attr('svgEarthLabel',{x:ex,y:ey-(compact?66:85)});attr('svgMoonLabel',{x:mx,y:my-(compact?39:47)});
-    slider.value=day;
+    slider.value=day;node('mobileLunarDay').value=day;node('mobileDayOutput').textContent=(day===1?'Mùng 1':'Ngày '+day);
     for(const [id,selected] of [['spring',day===1],['neap',day===8],['full',day===15]])node(id).setAttribute('aria-pressed',selected);
     const phase=day<=3||day>=28?'trăng non':day>=13&&day<=17?'trăng tròn':day>=6&&day<=10?'bán nguyệt đầu tháng':day>=20&&day<=24?'bán nguyệt cuối tháng':'trăng đang thay đổi';
     node('dayOutput').textContent=(day===1?'Mùng 1':'Ngày '+day)+' · '+phase;
@@ -128,6 +150,7 @@
   function activate(){if(active)return;active=true;model.classList.add('using-fallback');node('reset').hidden=true;update(slider.value)}
   for(const [id,day] of [['spring',1],['neap',8],['full',15]])node(id).addEventListener('click',()=>{if(active)update(day)});
   slider.addEventListener('input',event=>{if(active)update(event.target.value)});
+  node('mobileLunarDay').addEventListener('input',event=>{if(active)update(event.target.value)});
   window.addEventListener('resize',()=>{if(active)update(slider.value)});
   window.tideFallback={activate,update,get active(){return active}};
   if(matchMedia('(max-width: 680px)').matches)activate();
@@ -180,7 +203,7 @@
     }
   }
   function setDay(value){day=Number(value);let {relativeAngle}=positions(day),alignment=Math.abs(Math.cos(relativeAngle));
-    document.getElementById('lunarDay').value=day;
+    document.getElementById('lunarDay').value=day;document.getElementById('mobileLunarDay').value=day;document.getElementById('mobileDayOutput').textContent=(day===1?'Mùng 1':'Ngày '+day);
     for(const [id,selected] of [['spring',day===1],['neap',day===8],['full',day===15]])document.getElementById(id).setAttribute('aria-pressed',selected);
     let phase=day<=3||day>=28?'trăng non':day>=13&&day<=17?'trăng tròn':day>=6&&day<=10?'bán nguyệt đầu tháng':day>=20&&day<=24?'bán nguyệt cuối tháng':'trăng đang thay đổi';
     document.getElementById('dayOutput').textContent=(day===1?'Mùng 1':'Ngày '+day)+' · '+phase;
