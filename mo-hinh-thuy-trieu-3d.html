@@ -17,6 +17,7 @@
     canvas{position:relative;z-index:1;display:block;width:100%;height:590px;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
     .stage-top,.stage-foot{position:absolute;z-index:3;pointer-events:none;display:flex;align-items:center;gap:9px;color:#cbe7ee;font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.stage-top{top:20px;left:22px}.stage-foot{bottom:18px;left:20px;padding:9px 12px;border:1px solid #6da2ba55;border-radius:100px;background:#071c2ab8;letter-spacing:.02em;text-transform:none;font-size:.77rem;font-weight:600}.stage-dot{width:7px;height:7px;border-radius:50%;background:#80d9e4;box-shadow:0 0 12px #78e7fa}
     .orb-glow{position:absolute;z-index:0;pointer-events:none;width:var(--glow-size,200px);height:var(--glow-size,200px);border-radius:50%;transform:translate(-50%,-50%);filter:blur(5px)}.sun-glow{background:radial-gradient(circle,#fff3b879 0%,#ffc85a52 27%,#ff8a1e22 58%,transparent 72%);animation:sunPulse 4s ease-in-out infinite alternate}.tide-glow{background:radial-gradient(circle,#33c9f900 28%,#30c7f524 52%,#21b5f20d 68%,transparent 76%);animation:tidePulse 3.5s ease-in-out infinite}
+    .label-leaders{position:absolute;inset:0;z-index:3;width:100%;height:100%;pointer-events:none;overflow:hidden}.label-leaders line{stroke:#a9d7e5;stroke-width:1.5;stroke-opacity:.75;stroke-dasharray:3 4}
     .label{position:absolute;z-index:3;pointer-events:none;padding:5px 9px;border:1px solid #a5d4e366;border-radius:7px;background:#071c2cbf;color:#f5fbfc;font-size:clamp(.7rem,1.1vw,.85rem);font-weight:750;text-shadow:0 2px 8px #000;white-space:nowrap;transform:translate(-50%,-50%);backdrop-filter:blur(6px)}
     .panel,.timeline,.info-card{border:1px solid #36586d;border-radius:22px;background:linear-gradient(155deg,#102d41,#0a2233 72%);box-shadow:0 16px 45px #0003}.panel{display:flex;flex-direction:column;padding:25px 23px}.panel-kicker{display:flex;align-items:center;gap:9px;color:#9bc9d5;font-size:.72rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.panel-kicker i{width:8px;height:8px;background:#73d9e8;border-radius:50%;box-shadow:0 0 12px #5fd7e7}.panel h2{margin:16px 0 10px;font-size:clamp(1.5rem,2.1vw,2rem);line-height:1.16;letter-spacing:-.025em}.panel>p{color:#c4d9e2;line-height:1.58;margin:0;font-size:.94rem}.measure{margin:23px 0;padding:17px 0;border-block:1px solid #41647a8c}.measure-head{display:flex;justify-content:space-between;gap:8px;color:#b6d0db;font-size:.8rem}.measure-head strong{color:#ffdb91}.measure-bars{display:flex;gap:6px;align-items:end;height:35px;margin-top:13px}.measure-bars span{display:block;flex:1;border-radius:3px 3px 0 0;background:#315267}.measure-bars span:nth-child(1){height:40%}.measure-bars span:nth-child(2){height:60%}.measure-bars span:nth-child(3){height:78%}.measure-bars span:nth-child(4){height:91%}.measure-bars span:nth-child(5){height:100%}.measure[data-level=small] .measure-bars span:nth-child(-n+2),.measure[data-level=medium] .measure-bars span:nth-child(-n+3),.measure[data-level=large] .measure-bars span{background:linear-gradient(#ffe39b,#efa84e);box-shadow:0 0 15px #f7b76644}
     .control-title{margin:0 0 11px;color:#b6d4dd;font-size:.72rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.controls{display:grid;gap:9px}.controls button{min-height:46px;padding:10px 13px;text-align:left;border:1px solid #4a7184;border-radius:11px;background:#16394c;color:#ebf6f9;font-size:.87rem;font-weight:720;transition:background .2s,border-color .2s,transform .2s}.controls button:hover{background:#21516a;transform:translateY(-1px)}.controls button[aria-pressed=true]{border-color:#f8c870;background:#f8ce79;color:#17303d;box-shadow:0 4px 18px #f2b35a33}.controls #reset{margin-top:2px;background:transparent;color:#b6d3df;font-weight:600}.controls #reset:hover{background:#194052}.hint{margin-top:auto!important;padding-top:16px;font-size:.75rem!important;color:#94bac8!important}
@@ -28,11 +29,11 @@
     @media(max-width:680px){.page{padding:16px 14px 28px}.masthead{padding-bottom:14px}.brand{font-size:.67rem}.lesson-id{font-size:.64rem}.hero{padding:25px 0 20px}.hero-index{display:none}.hero h1{font-size:clamp(2rem,9vw,3rem)}.hero p{font-size:.9rem}.model{border-radius:17px}canvas{height:390px}.stage-top{top:15px;left:15px}.stage-foot{bottom:13px;left:12px;right:12px;justify-content:center;text-align:center}.label{font-size:.68rem;padding:3px 5px}.panel{display:flex;padding:20px}.panel h2{margin-top:13px}.measure{margin:18px 0}.timeline{padding:19px 17px}.timeline-head{align-items:start;flex-direction:column}.timeline label{font-size:1rem}.ticks{font-size:.65rem;gap:3px}.insights{grid-template-columns:1fr}.info-card{padding:20px}.hint{padding-top:12px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.model::before,.orb-glow{animation:none}.controls button{transition:none}.controls button:hover{transform:none}}
     #fallbackScene{position:relative;z-index:1;display:none;width:100%;height:590px;overflow:visible}
-    .fallback-help{display:none}.model.using-fallback #scene{display:none}.model.using-fallback #fallbackScene{display:block}.model.using-fallback .label,.model.using-fallback .orb-glow{display:none!important}.model.using-fallback .webgl-help{display:none}.model.using-fallback .fallback-help{display:inline}
+    .fallback-help{display:none}.model.using-fallback #scene{display:none}.model.using-fallback #fallbackScene{display:block}.model.using-fallback .label,.model.using-fallback .label-leaders,.model.using-fallback .orb-glow{display:none!important}.model.using-fallback .webgl-help{display:none}.model.using-fallback .fallback-help{display:inline}
     #fallbackScene .svg-labels{text-shadow:0 2px 6px #001321;paint-order:stroke;stroke:#071c2a;stroke-width:5px;stroke-linejoin:round}
     [hidden]{display:none!important}
     @media(max-width:980px){#fallbackScene{height:520px}}
-    @media(max-width:680px){.model #scene{display:none}.model #fallbackScene{display:block;height:390px}.model .label,.model .orb-glow{display:none!important}.model .webgl-help{display:none}.model .fallback-help{display:inline}}
+    @media(max-width:680px){.model #scene{display:none}.model #fallbackScene{display:block;height:390px}.model .label,.model .label-leaders,.model .orb-glow{display:none!important}.model .webgl-help{display:none}.model .fallback-help{display:inline}}
     .mobile-scrubber,.mobile-view-controls{display:none}
     #fallbackScene{touch-action:none;cursor:grab}#fallbackScene:active{cursor:grabbing}
     @media(max-width:680px){.stage-foot{display:none}.timeline{display:none}.mobile-scrubber{position:absolute;z-index:4;display:block;left:12px;right:12px;bottom:12px;padding:11px 15px 9px;border:1px solid #6693a8a6;border-radius:15px;background:#071b2bea;box-shadow:0 8px 26px #0008;backdrop-filter:blur(12px)}.mobile-scrubber-head{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#d8edf2;font-size:.79rem;font-weight:750}.mobile-scrubber output{color:#ffda8a;white-space:nowrap}.mobile-scrubber input{display:block;width:100%;height:28px;margin:5px 0 0;accent-color:#ffd27a;touch-action:none}.mobile-view-controls{position:absolute;z-index:4;display:flex;top:13px;right:12px;gap:6px}.mobile-view-controls button{width:40px;height:40px;padding:0;border:1px solid #6d9caeb0;border-radius:10px;background:#071b2bdb;color:#e9faff;font-size:1.3rem;font-weight:700}.mobile-view-controls button:active{background:#26536a}}
@@ -71,6 +72,7 @@
       </svg>
       <div class="mobile-view-controls" role="group" aria-label="Phóng to và thu nhỏ mô hình"><button id="zoomOut" type="button" aria-label="Thu nhỏ mô hình">−</button><button id="zoomIn" type="button" aria-label="Phóng to mô hình">+</button></div>
       <div class="mobile-scrubber"><div class="mobile-scrubber-head"><label for="mobileLunarDay">Ngày âm lịch</label><output id="mobileDayOutput" for="mobileLunarDay">Mùng 1</output></div><input id="mobileLunarDay" type="range" min="1" max="30" step="1" value="1" aria-label="Ngày trong tháng âm lịch"></div>
+      <svg class="label-leaders" id="labelLeaders" aria-hidden="true"><line id="sunLeader"/><line id="earthLeader"/><line id="moonLeader"/></svg>
       <span class="label" id="sunLabel">Mặt Trời</span><span class="label" id="earthLabel">Trái Đất</span><span class="label" id="moonLabel">Mặt Trăng</span>
       <div class="stage-foot"><span class="webgl-help">↔ Kéo để xoay · Cuộn hoặc chụm để phóng to</span><span class="fallback-help">Kéo ngày âm lịch bên dưới để quan sát</span></div>
     </section>
@@ -214,8 +216,46 @@
     let {sun,earth,moon,moonAngle,relativeAngle}=positions(day);
     drawSphere(sun,[1.17,1.17,1.17],[1,.58,.13],1);drawSphere(earth,[.83,.83,.83],[.05,.42,.8]);drawSphere(moon,[.38,.38,.38],[.75,.78,.8]);
     let strength=Math.abs(Math.cos(relativeAngle)),tide=[1.06+.19*strength,.98,.98];drawSphere(earth,tide,[.08,.75,1],0,.28,true,moonAngle);
-    function place(id,p,above){let v=[p[0],p[1]+above,p[2],1],q=[0,0,0,0];for(let r=0;r<4;r++)for(let c=0;c<4;c++)q[r]+=vp[c*4+r]*v[c];let el=document.getElementById(id);el.style.left=((q[0]/q[3]+1)*50)+'%';el.style.top=((1-q[1]/q[3])*50)+'%';el.style.display=q[3]>0?'':'none'}
-    place('sunLabel',sun,1.6);place('earthLabel',earth,1.32);place('moonLabel',moon,.65);
+    function project(p){const v=[...p,1],q=[0,0,0,0];for(let r=0;r<4;r++)for(let c=0;c<4;c++)q[r]+=vp[c*4+r]*v[c];return {x:(q[0]/q[3]+1)*canvas.clientWidth/2,y:(1-q[1]/q[3])*canvas.clientHeight/2,depth:q[3]}}
+    const bodies=[{id:'earth',point:earth,size:1.27},{id:'sun',point:sun,size:1.17},{id:'moon',point:moon,size:.38}].map(body=>{const screen=project(body.point);return {...body,...screen,radius:body.size*canvas.clientHeight/(2*Math.tan(Math.PI/6)*Math.sqrt(Math.max(.1,screen.depth*screen.depth-body.size*body.size)))}});
+    const leaders=document.getElementById('labelLeaders');leaders.setAttribute('viewBox','0 0 '+canvas.clientWidth+' '+canvas.clientHeight);
+    const placed=[],gap=16,padding=8;
+    for(const body of bodies){
+      const label=document.getElementById(body.id+'Label'),line=document.getElementById(body.id+'Leader');
+      if(body.depth<=body.size||body.x+body.radius<0||body.x-body.radius>canvas.clientWidth||body.y+body.radius<0||body.y-body.radius>canvas.clientHeight){label.style.display='none';line.style.display='none';continue}
+      label.style.display='';line.style.display='';
+      const halfW=label.offsetWidth/2,halfH=label.offsetHeight/2,r=body.radius+gap;
+      const candidates=[
+        [body.x,body.y-r-halfH],[body.x-r-halfW,body.y-r-halfH],[body.x+r+halfW,body.y-r-halfH],
+        [body.x-r-halfW,body.y],[body.x+r+halfW,body.y],
+        [body.x-r-halfW,body.y+r+halfH],[body.x+r+halfW,body.y+r+halfH],[body.x,body.y+r+halfH]
+      ];
+      let choice=null,best=Infinity;
+      for(const [x,y] of candidates){
+        const left=x-halfW,right=x+halfW,top=y-halfH,bottom=y+halfH;
+        let penalty=0;
+        if(left<padding)penalty+=(padding-left)*30;
+        if(right>canvas.clientWidth-padding)penalty+=(right-canvas.clientWidth+padding)*30;
+        if(top<54)penalty+=(54-top)*30;
+        if(bottom>canvas.clientHeight-56)penalty+=(bottom-canvas.clientHeight+56)*30;
+        for(const other of bodies){
+          const dx=Math.max(Math.abs(x-other.x)-halfW,0),dy=Math.max(Math.abs(y-other.y)-halfH,0);
+          penalty+=Math.max(0,other.radius+8-Math.hypot(dx,dy))*25;
+        }
+        for(const other of placed){
+          const overlapX=Math.max(0,Math.min(right,other.right)-Math.max(left,other.left)+8),overlapY=Math.max(0,Math.min(bottom,other.bottom)-Math.max(top,other.top)+8);
+          penalty+=overlapX*overlapY*5;
+        }
+        if(penalty<best){best=penalty;choice={x,y,left,right,top,bottom}}
+        if(penalty===0)break;
+      }
+      if(!choice){label.style.display='none';line.style.display='none';continue}
+      placed.push(choice);label.style.left=choice.x+'px';label.style.top=choice.y+'px';
+      const dx=choice.x-body.x,dy=choice.y-body.y,length=Math.hypot(dx,dy),ux=dx/length,uy=dy/length;
+      const edge=Math.min(halfW/Math.max(Math.abs(ux),.001),halfH/Math.max(Math.abs(uy),.001));
+      line.setAttribute('x1',body.x+ux*body.radius);line.setAttribute('y1',body.y+uy*body.radius);
+      line.setAttribute('x2',choice.x-ux*edge);line.setAttribute('y2',choice.y-uy*edge);
+    }
     function placeGlow(id,p,diameter){let v=[...p,1],q=[0,0,0,0];for(let r=0;r<4;r++)for(let c=0;c<4;c++)q[r]+=vp[c*4+r]*v[c];let el=document.getElementById(id),size=Math.max(110,Math.min(460,diameter*canvas.clientHeight/(2*Math.tan(Math.PI/6)*q[3])));el.style.left=((q[0]/q[3]+1)*50)+'%';el.style.top=((1-q[1]/q[3])*50)+'%';el.style.setProperty('--glow-size',size+'px');el.style.display=q[3]>0?'':'none'}
     placeGlow('sunGlow',sun,3.7);placeGlow('tideGlow',earth,2.8);
     if(!verifiedFrame){let label=document.getElementById('sunGlow'),px=Math.floor(parseFloat(label.style.left)*w/100),py=Math.floor((100-parseFloat(label.style.top))*h/100);
