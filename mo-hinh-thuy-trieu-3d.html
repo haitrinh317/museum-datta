@@ -128,6 +128,25 @@
   node('zoomIn').addEventListener('click',()=>setZoom(zoom*1.25));
   node('zoomOut').addEventListener('click',()=>setZoom(zoom/1.25));
 
+  const observationVariants=[
+    ['Triều cường gần trăng non','Triều cường gần trăng tròn','Triều kém gần kỳ bán nguyệt','Giai đoạn chuyển tiếp'],
+    ['Ba thiên thể gần thẳng hàng. Tác động gây thủy triều của Mặt Trời và Mặt Trăng cộng thêm vào nhau, nên độ chênh giữa nước lên và nước xuống lớn hơn.','Nhìn từ Trái Đất, hướng Mặt Trời và Mặt Trăng gần vuông góc. Hai tác động bù trừ một phần, nên độ chênh giữa nước lên và nước xuống nhỏ hơn.','Mặt Trăng tiếp tục chuyển động quanh Trái Đất. Độ chênh giữa nước lên và nước xuống đang thay đổi dần giữa triều cường và triều kém.']
+  ];
+  function reserveObservationSpace(){
+    const elements=[node('title'),node('explain')];
+    if(model.clientWidth>680){for(const element of elements)element.style.minHeight='';return}
+    elements.forEach((element,index)=>{
+      element.style.minHeight='';
+      const probe=element.cloneNode(false);
+      probe.removeAttribute('id');
+      probe.style.cssText='position:absolute;visibility:hidden;pointer-events:none;min-height:0;width:'+element.getBoundingClientRect().width+'px';
+      element.parentNode.appendChild(probe);
+      let maxHeight=0;
+      for(const text of observationVariants[index]){probe.textContent=text;maxHeight=Math.max(maxHeight,probe.getBoundingClientRect().height)}
+      probe.remove();
+      element.style.minHeight=Math.ceil(maxHeight)+'px';
+    });
+  }
   function update(value){
     const day=Number(value),elapsed=day-1,sunAngle=Math.PI-2*Math.PI*elapsed/365.25,relativeAngle=2*Math.PI*elapsed/29.53,moonAngle=sunAngle-relativeAngle;
     const compact=model.clientWidth<=680,ex=compact?360:550,ey=compact?340:300,sunDistance=compact?245:340,moonDistance=compact?130:190,earthRadius=compact?47:62;
@@ -151,9 +170,10 @@
   for(const [id,day] of [['spring',1],['neap',8],['full',15]])node(id).addEventListener('click',()=>{if(active)update(day)});
   slider.addEventListener('input',event=>{if(active)update(event.target.value)});
   node('mobileLunarDay').addEventListener('input',event=>{if(active)update(event.target.value)});
-  window.addEventListener('resize',()=>{if(active)update(slider.value)});
+  window.addEventListener('resize',()=>{if(active)update(slider.value);reserveObservationSpace()});
   window.tideFallback={activate,update,get active(){return active}};
   if(matchMedia('(max-width: 680px)').matches)activate();
+  reserveObservationSpace();
 })();
 </script>
 <script>
