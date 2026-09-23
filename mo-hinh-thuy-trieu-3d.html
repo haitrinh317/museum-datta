@@ -27,19 +27,47 @@
     @media(max-width:980px){.observatory{grid-template-columns:1fr}.panel{display:grid;grid-template-columns:1fr 1fr;column-gap:26px}.panel-kicker,.panel h2,.panel>p,.measure{grid-column:1}.panel .control-title,.panel .controls,.panel .hint{grid-column:2}.panel .control-title{grid-row:1;align-self:center}.panel .controls{grid-row:2 / span 3}.panel .hint{grid-row:5}canvas{height:520px}}
     @media(max-width:680px){.page{padding:16px 14px 28px}.masthead{padding-bottom:14px}.brand{font-size:.67rem}.lesson-id{font-size:.64rem}.hero{padding:25px 0 20px}.hero-index{display:none}.hero h1{font-size:clamp(2rem,9vw,3rem)}.hero p{font-size:.9rem}.model{border-radius:17px}canvas{height:390px}.stage-top{top:15px;left:15px}.stage-foot{bottom:13px;left:12px;right:12px;justify-content:center;text-align:center}.label{font-size:.68rem;padding:3px 5px}.panel{display:flex;padding:20px}.panel h2{margin-top:13px}.measure{margin:18px 0}.timeline{padding:19px 17px}.timeline-head{align-items:start;flex-direction:column}.timeline label{font-size:1rem}.ticks{font-size:.65rem;gap:3px}.insights{grid-template-columns:1fr}.info-card{padding:20px}.hint{padding-top:12px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.model::before,.orb-glow{animation:none}.controls button{transition:none}.controls button:hover{transform:none}}
+    #fallbackScene{position:relative;z-index:1;display:none;width:100%;height:590px;overflow:visible}
+    .fallback-help{display:none}.model.using-fallback #scene{display:none}.model.using-fallback #fallbackScene{display:block}.model.using-fallback .label,.model.using-fallback .orb-glow{display:none!important}.model.using-fallback .webgl-help{display:none}.model.using-fallback .fallback-help{display:inline}
+    #fallbackScene .svg-labels{text-shadow:0 2px 6px #001321;paint-order:stroke;stroke:#071c2a;stroke-width:5px;stroke-linejoin:round}
+    [hidden]{display:none!important}
+    @media(max-width:980px){#fallbackScene{height:520px}}
+    @media(max-width:680px){.model #scene{display:none}.model #fallbackScene{display:block;height:390px}.model .label,.model .orb-glow{display:none!important}.model .webgl-help{display:none}.model .fallback-help{display:inline}}
   </style>
 </head>
 <body>
 <main class="page">
   <div class="masthead"><div class="brand"><span class="brand-mark" aria-hidden="true">≋</span><span>Phòng học đại dương</span></div><div class="lesson-id">Bài học tương tác <strong>01</strong></div></div>
-  <header class="hero"><div><p class="eyebrow">Khám phá khoa học · Quan sát trong 3D</p><h1>Nhịp điệu của <span>thủy triều</span></h1><p>Mặt Trăng và Mặt Trời cùng tác động lên biển. Kéo ngày âm lịch để thấy vị trí của chúng thay đổi và khám phá khi nào nước triều mạnh hơn.</p></div><div class="hero-index" aria-hidden="true">01</div></header>
+  <header class="hero"><div><p class="eyebrow">Khám phá khoa học · Mô hình tương tác</p><h1>Nhịp điệu của <span>thủy triều</span></h1><p>Mặt Trăng và Mặt Trời cùng tác động lên biển. Kéo ngày âm lịch để thấy vị trí của chúng thay đổi và khám phá khi nào nước triều mạnh hơn.</p></div><div class="hero-index" aria-hidden="true">01</div></header>
   <div class="observatory">
     <section class="model" aria-label="Mô hình ba chiều của Mặt Trời, Trái Đất, Mặt Trăng và vùng nước thủy triều">
       <div class="orb-glow sun-glow" id="sunGlow" aria-hidden="true"></div><div class="orb-glow tide-glow" id="tideGlow" aria-hidden="true"></div>
       <div class="stage-top"><span class="stage-dot"></span>Mô hình không gian</div>
       <canvas id="scene" aria-label="Mô hình 3D tương tác. Kéo để xoay, cuộn để phóng to."></canvas>
+      <svg id="fallbackScene" viewBox="0 0 600 650" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="fallbackTitle fallbackDesc">
+        <title id="fallbackTitle">Sơ đồ Mặt Trời, Mặt Trăng, Trái Đất và thủy triều</title>
+        <desc id="fallbackDesc">Vị trí các thiên thể thay đổi khi chọn ngày âm lịch. Vùng xanh quanh Trái Đất biểu thị nước biển.</desc>
+        <defs>
+          <radialGradient id="sunFill" cx="36%" cy="31%"><stop stop-color="#fff1ab"/><stop offset=".52" stop-color="#ffc761"/><stop offset="1" stop-color="#fa8b2d"/></radialGradient>
+          <radialGradient id="earthFill" cx="32%" cy="27%"><stop stop-color="#79e6ed"/><stop offset=".45" stop-color="#1e9fbe"/><stop offset="1" stop-color="#0d4778"/></radialGradient>
+          <radialGradient id="moonFill" cx="33%" cy="28%"><stop stop-color="#f1f3ed"/><stop offset=".6" stop-color="#adb7c1"/><stop offset="1" stop-color="#64778c"/></radialGradient>
+          <radialGradient id="waterFill"><stop offset=".52" stop-color="#41c5ee" stop-opacity=".08"/><stop offset=".8" stop-color="#42d6f5" stop-opacity=".44"/><stop offset="1" stop-color="#48c7fa" stop-opacity=".08"/></radialGradient>
+        </defs>
+        <circle id="svgOrbit" cx="360" cy="340" r="130" fill="none" stroke="#7bc5dc" stroke-opacity=".2" stroke-dasharray="5 10"/>
+        <line id="svgSunLine" x1="115" y1="340" x2="360" y2="340" stroke="#ffcf77" stroke-opacity=".45" stroke-width="2" stroke-dasharray="6 9"/>
+        <line id="svgMoonLine" x1="230" y1="340" x2="360" y2="340" stroke="#8bdcf2" stroke-opacity=".6" stroke-width="2" stroke-dasharray="5 8"/>
+        <ellipse id="svgTide" cx="360" cy="340" rx="82" ry="58" fill="url(#waterFill)" stroke="#69d7f5" stroke-opacity=".65" stroke-width="2"/>
+        <circle id="svgSun" cx="115" cy="340" r="54" fill="url(#sunFill)"/>
+        <circle id="svgEarth" cx="360" cy="340" r="47" fill="url(#earthFill)"/>
+        <circle id="svgMoon" cx="230" cy="340" r="22" fill="url(#moonFill)"/>
+        <g class="svg-labels" fill="#f2f9fc" font-size="21" font-weight="700" text-anchor="middle">
+          <text id="svgSunLabel" x="115" y="265">Mặt Trời</text>
+          <text id="svgEarthLabel" x="360" y="273">Trái Đất</text>
+          <text id="svgMoonLabel" x="230" y="302">Mặt Trăng</text>
+        </g>
+      </svg>
       <span class="label" id="sunLabel">Mặt Trời</span><span class="label" id="earthLabel">Trái Đất</span><span class="label" id="moonLabel">Mặt Trăng</span>
-      <div class="stage-foot">↔ Kéo để xoay · Cuộn hoặc chụm để phóng to</div>
+      <div class="stage-foot"><span class="webgl-help">↔ Kéo để xoay · Cuộn hoặc chụm để phóng to</span><span class="fallback-help">Kéo ngày âm lịch bên dưới để quan sát</span></div>
     </section>
     <aside class="panel" id="statusCard" aria-live="polite">
       <div class="panel-kicker"><i aria-hidden="true"></i>Đang quan sát</div>
@@ -74,12 +102,50 @@
 </main>
 <script>
 (()=>{
-  const canvas=document.getElementById('scene'), gl=canvas.getContext('webgl',{alpha:true,antialias:true});
-  if(!gl){document.querySelector('.model').innerHTML='<p style="padding:2rem">Trình duyệt này chưa hỗ trợ WebGL. Hãy mở bằng phiên bản Chrome, Edge hoặc Firefox mới.</p>';return;}
+  const model=document.querySelector('.model'),svg=document.getElementById('fallbackScene'),slider=document.getElementById('lunarDay');
+  const node=id=>document.getElementById(id);
+  const attr=(id,values)=>{const element=node(id);for(const [key,value] of Object.entries(values))element.setAttribute(key,String(value))};
+  let active=false;
+  function update(value){
+    const day=Number(value),elapsed=day-1,sunAngle=Math.PI-2*Math.PI*elapsed/365.25,relativeAngle=2*Math.PI*elapsed/29.53,moonAngle=sunAngle-relativeAngle;
+    const compact=model.clientWidth<=680,ex=compact?360:550,ey=compact?340:300,sunDistance=compact?245:340,moonDistance=compact?130:190,earthRadius=compact?47:62;
+    const sx=ex+sunDistance*Math.cos(sunAngle),sy=ey-sunDistance*Math.sin(sunAngle),mx=ex+moonDistance*Math.cos(moonAngle),my=ey-moonDistance*Math.sin(moonAngle);
+    const alignment=Math.abs(Math.cos(relativeAngle));
+    svg.setAttribute('viewBox',compact?'0 0 600 650':'0 0 1000 590');
+    attr('svgOrbit',{cx:ex,cy:ey,r:moonDistance});
+    attr('svgSunLine',{x1:sx,y1:sy,x2:ex,y2:ey});attr('svgMoonLine',{x1:mx,y1:my,x2:ex,y2:ey});
+    attr('svgTide',{cx:ex,cy:ey,rx:earthRadius*(1.32+.28*alignment),ry:earthRadius*1.15,transform:'rotate('+(-moonAngle*180/Math.PI)+' '+ex+' '+ey+')'});
+    attr('svgSun',{cx:sx,cy:sy,r:compact?54:70});attr('svgEarth',{cx:ex,cy:ey,r:earthRadius});attr('svgMoon',{cx:mx,cy:my,r:compact?22:29});
+    attr('svgSunLabel',{x:sx,y:sy-(compact?73:92)});attr('svgEarthLabel',{x:ex,y:ey-(compact?66:85)});attr('svgMoonLabel',{x:mx,y:my-(compact?39:47)});
+    slider.value=day;
+    for(const [id,selected] of [['spring',day===1],['neap',day===8],['full',day===15]])node(id).setAttribute('aria-pressed',selected);
+    const phase=day<=3||day>=28?'trăng non':day>=13&&day<=17?'trăng tròn':day>=6&&day<=10?'bán nguyệt đầu tháng':day>=20&&day<=24?'bán nguyệt cuối tháng':'trăng đang thay đổi';
+    node('dayOutput').textContent=(day===1?'Mùng 1':'Ngày '+day)+' · '+phase;
+    if(alignment>.8){node('title').textContent='Triều cường gần '+(Math.cos(relativeAngle)>0?'trăng non':'trăng tròn');node('explain').textContent='Ba thiên thể gần thẳng hàng. Tác động gây thủy triều của Mặt Trời và Mặt Trăng cộng thêm vào nhau, nên độ chênh giữa nước lên và nước xuống lớn hơn.';node('tideMeasure').dataset.level='large';node('rangeText').textContent='Lớn hơn'}
+    else if(alignment<.35){node('title').textContent='Triều kém gần kỳ bán nguyệt';node('explain').textContent='Nhìn từ Trái Đất, hướng Mặt Trời và Mặt Trăng gần vuông góc. Hai tác động bù trừ một phần, nên độ chênh giữa nước lên và nước xuống nhỏ hơn.';node('tideMeasure').dataset.level='small';node('rangeText').textContent='Nhỏ hơn'}
+    else{node('title').textContent='Giai đoạn chuyển tiếp';node('explain').textContent='Mặt Trăng tiếp tục chuyển động quanh Trái Đất. Độ chênh giữa nước lên và nước xuống đang thay đổi dần giữa triều cường và triều kém.';node('tideMeasure').dataset.level='medium';node('rangeText').textContent='Đang thay đổi'}
+  }
+  function activate(){if(active)return;active=true;model.classList.add('using-fallback');node('reset').hidden=true;update(slider.value)}
+  for(const [id,day] of [['spring',1],['neap',8],['full',15]])node(id).addEventListener('click',()=>{if(active)update(day)});
+  slider.addEventListener('input',event=>{if(active)update(event.target.value)});
+  window.addEventListener('resize',()=>{if(active)update(slider.value)});
+  window.tideFallback={activate,update,get active(){return active}};
+  if(matchMedia('(max-width: 680px)').matches)activate();
+})();
+</script>
+<script>
+(()=>{
+  const canvas=document.getElementById('scene');
+  let gl=null;
+  if(!window.tideFallback.active){try{gl=canvas.getContext('webgl',{alpha:true,antialias:true})}catch(error){gl=null}}
+  if(!gl||gl.isContextLost()){window.tideFallback.activate();return}
+  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();window.tideFallback.activate()});
+  try{
   const vs=`attribute vec3 p; attribute vec3 n; uniform mat4 mvp; uniform mat4 model; varying vec3 normal; varying vec3 pos; void main(){vec4 world=model*vec4(p,1.);pos=world.xyz;normal=normalize(mat3(model)*n);gl_Position=mvp*vec4(p,1.);}`;
   const fs=`precision mediump float; varying vec3 normal; varying vec3 pos; uniform vec3 color; uniform float glow; uniform float alpha; void main(){float light=.35+.65*max(dot(normalize(normal),normalize(vec3(-.65,.8,1.))),0.);float rim=pow(1.-abs(dot(normalize(normal),normalize(vec3(0.,0.,1.)))),2.);vec3 c=color*(glow>0.5?1.0:light)+color*rim*.15;gl_FragColor=vec4(c,alpha);}`;
   const shader=(type,src)=>{const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s};
   const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vs));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);gl.useProgram(program);
+  if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));
   const loc={p:gl.getAttribLocation(program,'p'),n:gl.getAttribLocation(program,'n'),mvp:gl.getUniformLocation(program,'mvp'),model:gl.getUniformLocation(program,'model'),color:gl.getUniformLocation(program,'color'),glow:gl.getUniformLocation(program,'glow'),alpha:gl.getUniformLocation(program,'alpha')};
   const verts=[],norms=[],indices=[],rings=32,segments=48;
   for(let y=0;y<=rings;y++){let v=y/rings,theta=v*Math.PI;for(let x=0;x<=segments;x++){let u=x/segments,phi=u*2*Math.PI;let a=Math.sin(theta)*Math.cos(phi),b=Math.cos(theta),c=Math.sin(theta)*Math.sin(phi);verts.push(a,b,c);norms.push(a,b,c)}}
@@ -95,11 +161,11 @@
   let yaw=.16,pitch=.22,distance=11,day=1,drag=null,pinch=0;
   const scene=document.querySelector('.model');
   function drawSphere(pos,scale,color,glow=0,alpha=1,transparent=false,angle=0){let m=model(pos,scale,angle);gl.uniformMatrix4fv(loc.model,false,new Float32Array(m));gl.uniformMatrix4fv(loc.mvp,false,new Float32Array(mul(vp,m)));gl.uniform3fv(loc.color,color);gl.uniform1f(loc.glow,glow);gl.uniform1f(loc.alpha,alpha);gl.depthMask(!transparent);gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);gl.depthMask(true)}
-  let vp;
+  let vp,verifiedFrame=false;
   function positions(lunarDay){let elapsed=lunarDay-1,earth=[.5,0,0],sunAngle=Math.PI-2*Math.PI*elapsed/365.25,relativeAngle=2*Math.PI*elapsed/29.53,moonAngle=sunAngle-relativeAngle;
     return {earth,sun:[earth[0]+4.2*Math.cos(sunAngle),earth[1]+4.2*Math.sin(sunAngle),0],moon:[earth[0]+1.95*Math.cos(moonAngle),earth[1]+1.95*Math.sin(moonAngle),0],moonAngle,relativeAngle};
   }
-  function draw(){let dpr=Math.min(devicePixelRatio||1,2),w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+  function draw(){if(window.tideFallback.active)return;if(gl.isContextLost()){window.tideFallback.activate();return}let dpr=Math.min(devicePixelRatio||1,2),w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
     gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(loc.p);gl.bindBuffer(gl.ARRAY_BUFFER,nb);gl.vertexAttribPointer(loc.n,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(loc.n);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);
     let eye=[distance*Math.sin(yaw)*Math.cos(pitch),distance*Math.sin(pitch),distance*Math.cos(yaw)*Math.cos(pitch)];vp=mul(perspective(Math.PI/3,w/h,.1,100),lookAt(eye,[0,0,0]));
     let {sun,earth,moon,moonAngle,relativeAngle}=positions(day);
@@ -109,6 +175,9 @@
     place('sunLabel',sun,1.6);place('earthLabel',earth,1.32);place('moonLabel',moon,.65);
     function placeGlow(id,p,diameter){let v=[...p,1],q=[0,0,0,0];for(let r=0;r<4;r++)for(let c=0;c<4;c++)q[r]+=vp[c*4+r]*v[c];let el=document.getElementById(id),size=Math.max(110,Math.min(460,diameter*canvas.clientHeight/(2*Math.tan(Math.PI/6)*q[3])));el.style.left=((q[0]/q[3]+1)*50)+'%';el.style.top=((1-q[1]/q[3])*50)+'%';el.style.setProperty('--glow-size',size+'px');el.style.display=q[3]>0?'':'none'}
     placeGlow('sunGlow',sun,3.7);placeGlow('tideGlow',earth,2.8);
+    if(!verifiedFrame){let label=document.getElementById('sunGlow'),px=Math.floor(parseFloat(label.style.left)*w/100),py=Math.floor((100-parseFloat(label.style.top))*h/100);
+      if(px>=0&&px<w&&py>=0&&py<h){let pixel=new Uint8Array(4);gl.readPixels(px,py,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);if(gl.isContextLost()||pixel[3]===0){window.tideFallback.activate();return}verifiedFrame=true}
+    }
   }
   function setDay(value){day=Number(value);let {relativeAngle}=positions(day),alignment=Math.abs(Math.cos(relativeAngle));
     document.getElementById('lunarDay').value=day;
@@ -127,6 +196,7 @@
   canvas.addEventListener('wheel',e=>{e.preventDefault();distance=Math.max(6,Math.min(21,distance*Math.exp(e.deltaY*.001)));draw()},{passive:false});
   canvas.addEventListener('touchstart',e=>{if(e.touches.length===2)pinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)},{passive:true});canvas.addEventListener('touchmove',e=>{if(e.touches.length===2&&pinch){let now=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);distance=Math.max(6,Math.min(21,distance*pinch/now));pinch=now;draw()}},{passive:true});
   new ResizeObserver(draw).observe(canvas);setDay(1);
+  }catch(error){window.tideFallback.activate()}
 })();
 </script>
 </body>
