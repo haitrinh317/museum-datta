@@ -29,7 +29,7 @@ export default defineConfig({
         globIgnores: ['webgl-diagnostic.html', 'webgl-diagnostic.js', 'camera-diagnostic.html', 'ar-camera-test.js', 'admin/**', '**/logo*.png', '**/og-image*.png', '**/hero_bg.png'],
         // Offline navigation fallback
         navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/^\/admin/, /\.[a-zA-Z0-9]+$/],
+        navigateFallbackDenylist: [/^\/admin/, /^\/thuy-trieu(?:\/|$)/, /\.[a-zA-Z0-9]+$/],
         // ponytail: MPA with query params (?code=XXX) — strip ALL params when matching precache
         ignoreURLParametersMatching: [/./],
         // Runtime cache strategies
