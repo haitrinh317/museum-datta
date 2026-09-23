@@ -108,6 +108,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main:     resolve(__dirname, 'index.html'),
+        tide_model: resolve(__dirname, 'mo-hinh-thuy-trieu-3d.html'),
         admin:    resolve(__dirname, 'admin/index.html'),
         browse:   resolve(__dirname, 'browse/index.html'),
         specimen:  resolve(__dirname, 'specimen/index.html'),

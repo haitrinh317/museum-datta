@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mô hình 3D: Mặt Trăng, Mặt Trời và thủy triều</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#eef8fc;background:#06131f;--ink:#eef8fc;--muted:#a9c3d0;--line:#315166;--panel:#0c2436;--cyan:#75dded;--sun:#ffcf6e}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 48% 30% at 90% 2%,#16445b99,transparent),radial-gradient(ellipse 44% 35% at 0% 58%,#0b38507a,transparent),#06131f}button,input{font:inherit}button{cursor:pointer}
+    .page{width:min(100%,1470px);margin:auto;padding:22px clamp(16px,3vw,42px) 42px}
+    .masthead{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:0 0 19px;border-bottom:1px solid #315166a8}.brand{display:flex;align-items:center;gap:11px;color:#d7f3f8;font-size:.78rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.brand-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid #7bd9e1;border-radius:50%;font-size:1.2rem;color:#83e1e6;box-shadow:inset 0 0 0 4px #12354b}.lesson-id{color:#82aebe;font-size:.75rem;letter-spacing:.13em;text-align:right;text-transform:uppercase}
+    .hero{display:flex;justify-content:space-between;align-items:end;gap:20px;padding:30px 0 26px}.eyebrow{margin:0 0 11px;color:#7edbe5;font-size:.75rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.hero h1{max-width:920px;margin:0;font-size:clamp(2rem,4.6vw,4.2rem);font-weight:760;line-height:1.08;letter-spacing:-.04em}.hero h1 span{color:#ffcf6e}.hero p{max-width:620px;margin:15px 0 0;color:#bcd3dc;line-height:1.55;font-size:1rem}.hero-index{flex:0 0 auto;color:#42718a;font-size:clamp(4rem,8vw,8rem);line-height:.8;font-weight:200;letter-spacing:-.08em}
+    .observatory{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,340px);gap:16px;align-items:stretch}
+    .model{position:relative;isolation:isolate;min-width:0;overflow:hidden;border:1px solid #4b7182;border-radius:22px;background:radial-gradient(ellipse at 48% 55%,#145078aa,transparent 48%),radial-gradient(ellipse at 84% 12%,#4b367388,transparent 40%),linear-gradient(145deg,#07172c,#020a18 75%);box-shadow:0 20px 65px #0007,inset 0 0 85px #0008}
+    .model::before{content:"";position:absolute;inset:-10%;pointer-events:none;background-image:radial-gradient(circle,#dffaff 1.3px,transparent 2px),radial-gradient(circle,#8dcce9 1px,transparent 1.8px),radial-gradient(circle,#fff3cf 1.5px,transparent 2.4px);background-size:127px 139px,211px 173px,337px 293px;background-position:8px 17px,74px 62px,105px 121px;opacity:.52;animation:stars 22s ease-in-out infinite alternate}
+    .model::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 55% 20% at 50% 108%,#178cb454,transparent 85%),linear-gradient(0deg,#03162966,transparent 28%);box-shadow:inset 0 0 75px #0009}
+    canvas{position:relative;z-index:1;display:block;width:100%;height:590px;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+    .stage-top,.stage-foot{position:absolute;z-index:3;pointer-events:none;display:flex;align-items:center;gap:9px;color:#cbe7ee;font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.stage-top{top:20px;left:22px}.stage-foot{bottom:18px;left:20px;padding:9px 12px;border:1px solid #6da2ba55;border-radius:100px;background:#071c2ab8;letter-spacing:.02em;text-transform:none;font-size:.77rem;font-weight:600}.stage-dot{width:7px;height:7px;border-radius:50%;background:#80d9e4;box-shadow:0 0 12px #78e7fa}
+    .orb-glow{position:absolute;z-index:0;pointer-events:none;width:var(--glow-size,200px);height:var(--glow-size,200px);border-radius:50%;transform:translate(-50%,-50%);filter:blur(5px)}.sun-glow{background:radial-gradient(circle,#fff3b879 0%,#ffc85a52 27%,#ff8a1e22 58%,transparent 72%);animation:sunPulse 4s ease-in-out infinite alternate}.tide-glow{background:radial-gradient(circle,#33c9f900 28%,#30c7f524 52%,#21b5f20d 68%,transparent 76%);animation:tidePulse 3.5s ease-in-out infinite}
+    .label{position:absolute;z-index:3;pointer-events:none;padding:5px 9px;border:1px solid #a5d4e366;border-radius:7px;background:#071c2cbf;color:#f5fbfc;font-size:clamp(.7rem,1.1vw,.85rem);font-weight:750;text-shadow:0 2px 8px #000;white-space:nowrap;transform:translate(-50%,-50%);backdrop-filter:blur(6px)}
+    .panel,.timeline,.info-card{border:1px solid #36586d;border-radius:22px;background:linear-gradient(155deg,#102d41,#0a2233 72%);box-shadow:0 16px 45px #0003}.panel{display:flex;flex-direction:column;padding:25px 23px}.panel-kicker{display:flex;align-items:center;gap:9px;color:#9bc9d5;font-size:.72rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.panel-kicker i{width:8px;height:8px;background:#73d9e8;border-radius:50%;box-shadow:0 0 12px #5fd7e7}.panel h2{margin:16px 0 10px;font-size:clamp(1.5rem,2.1vw,2rem);line-height:1.16;letter-spacing:-.025em}.panel>p{color:#c4d9e2;line-height:1.58;margin:0;font-size:.94rem}.measure{margin:23px 0;padding:17px 0;border-block:1px solid #41647a8c}.measure-head{display:flex;justify-content:space-between;gap:8px;color:#b6d0db;font-size:.8rem}.measure-head strong{color:#ffdb91}.measure-bars{display:flex;gap:6px;align-items:end;height:35px;margin-top:13px}.measure-bars span{display:block;flex:1;border-radius:3px 3px 0 0;background:#315267}.measure-bars span:nth-child(1){height:40%}.measure-bars span:nth-child(2){height:60%}.measure-bars span:nth-child(3){height:78%}.measure-bars span:nth-child(4){height:91%}.measure-bars span:nth-child(5){height:100%}.measure[data-level=small] .measure-bars span:nth-child(-n+2),.measure[data-level=medium] .measure-bars span:nth-child(-n+3),.measure[data-level=large] .measure-bars span{background:linear-gradient(#ffe39b,#efa84e);box-shadow:0 0 15px #f7b76644}
+    .control-title{margin:0 0 11px;color:#b6d4dd;font-size:.72rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.controls{display:grid;gap:9px}.controls button{min-height:46px;padding:10px 13px;text-align:left;border:1px solid #4a7184;border-radius:11px;background:#16394c;color:#ebf6f9;font-size:.87rem;font-weight:720;transition:background .2s,border-color .2s,transform .2s}.controls button:hover{background:#21516a;transform:translateY(-1px)}.controls button[aria-pressed=true]{border-color:#f8c870;background:#f8ce79;color:#17303d;box-shadow:0 4px 18px #f2b35a33}.controls #reset{margin-top:2px;background:transparent;color:#b6d3df;font-weight:600}.controls #reset:hover{background:#194052}.hint{margin-top:auto!important;padding-top:16px;font-size:.75rem!important;color:#94bac8!important}
+    .timeline{margin-top:16px;padding:23px 27px}.timeline-head{display:flex;justify-content:space-between;gap:14px;align-items:center}.timeline label{font-size:1.08rem;font-weight:760}.timeline output{display:inline-block;padding:9px 13px;border:1px solid #dfb35e;border-radius:9px;background:#42391e;color:#ffdb89;font-size:.84rem;font-weight:800}.timeline input[type=range]{display:block;width:100%;height:28px;margin:17px 0 4px;accent-color:#f8ca72;cursor:pointer}.ticks{display:flex;justify-content:space-between;gap:8px;color:#a8c5cf;font-size:.77rem}.ticks span{text-align:center;flex:1}.ticks span:first-child{text-align:left}.ticks span:last-child{text-align:right}.timeline p{margin:17px 0 0;padding-top:15px;border-top:1px solid #365c7180;color:#a9c9d4;font-size:.85rem;line-height:1.55}
+    .insights{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.info-card{padding:23px 26px}.info-card .number{color:#e3b966;font-size:.75rem;font-weight:800;letter-spacing:.13em}.info-card h3{margin:10px 0 9px;font-size:1.15rem}.info-card p{margin:0;color:#bcd2dc;font-size:.9rem;line-height:1.65}.note{max-width:1000px;margin:18px 0 0;color:#8fb0bd;font-size:.78rem;line-height:1.6}.sources{margin-top:8px}.sources a{color:#8bdeec;text-underline-offset:3px}
+    :focus-visible{outline:2px solid #f9d884;outline-offset:3px}
+    @keyframes stars{from{opacity:.37;transform:translate3d(-9px,7px,0)}to{opacity:.72;transform:translate3d(10px,-7px,0)}}@keyframes sunPulse{from{opacity:.72;transform:translate(-50%,-50%) scale(.94)}to{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}@keyframes tidePulse{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.96)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
+    @media(max-width:980px){.observatory{grid-template-columns:1fr}.panel{display:grid;grid-template-columns:1fr 1fr;column-gap:26px}.panel-kicker,.panel h2,.panel>p,.measure{grid-column:1}.panel .control-title,.panel .controls,.panel .hint{grid-column:2}.panel .control-title{grid-row:1;align-self:center}.panel .controls{grid-row:2 / span 3}.panel .hint{grid-row:5}canvas{height:520px}}
+    @media(max-width:680px){.page{padding:16px 14px 28px}.masthead{padding-bottom:14px}.brand{font-size:.67rem}.lesson-id{font-size:.64rem}.hero{padding:25px 0 20px}.hero-index{display:none}.hero h1{font-size:clamp(2rem,9vw,3rem)}.hero p{font-size:.9rem}.model{border-radius:17px}canvas{height:390px}.stage-top{top:15px;left:15px}.stage-foot{bottom:13px;left:12px;right:12px;justify-content:center;text-align:center}.label{font-size:.68rem;padding:3px 5px}.panel{display:flex;padding:20px}.panel h2{margin-top:13px}.measure{margin:18px 0}.timeline{padding:19px 17px}.timeline-head{align-items:start;flex-direction:column}.timeline label{font-size:1rem}.ticks{font-size:.65rem;gap:3px}.insights{grid-template-columns:1fr}.info-card{padding:20px}.hint{padding-top:12px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.model::before,.orb-glow{animation:none}.controls button{transition:none}.controls button:hover{transform:none}}
+  </style>
+</head>
+<body>
+<main class="page">
+  <div class="masthead"><div class="brand"><span class="brand-mark" aria-hidden="true">≋</span><span>Phòng học đại dương</span></div><div class="lesson-id">Bài học tương tác <strong>01</strong></div></div>
+  <header class="hero"><div><p class="eyebrow">Khám phá khoa học · Quan sát trong 3D</p><h1>Nhịp điệu của <span>thủy triều</span></h1><p>Mặt Trăng và Mặt Trời cùng tác động lên biển. Kéo ngày âm lịch để thấy vị trí của chúng thay đổi và khám phá khi nào nước triều mạnh hơn.</p></div><div class="hero-index" aria-hidden="true">01</div></header>
+  <div class="observatory">
+    <section class="model" aria-label="Mô hình ba chiều của Mặt Trời, Trái Đất, Mặt Trăng và vùng nước thủy triều">
+      <div class="orb-glow sun-glow" id="sunGlow" aria-hidden="true"></div><div class="orb-glow tide-glow" id="tideGlow" aria-hidden="true"></div>
+      <div class="stage-top"><span class="stage-dot"></span>Mô hình không gian</div>
+      <canvas id="scene" aria-label="Mô hình 3D tương tác. Kéo để xoay, cuộn để phóng to."></canvas>
+      <span class="label" id="sunLabel">Mặt Trời</span><span class="label" id="earthLabel">Trái Đất</span><span class="label" id="moonLabel">Mặt Trăng</span>
+      <div class="stage-foot">↔ Kéo để xoay · Cuộn hoặc chụm để phóng to</div>
+    </section>
+    <aside class="panel" id="statusCard" aria-live="polite">
+      <div class="panel-kicker"><i aria-hidden="true"></i>Đang quan sát</div>
+      <h2 id="title">Triều cường gần trăng non</h2>
+      <p id="explain">Mặt Trời, Mặt Trăng và Trái Đất gần thẳng hàng. Tác động gây thủy triều của Mặt Trời và Mặt Trăng cộng thêm vào nhau, làm chênh lệch giữa nước lên và nước xuống lớn hơn.</p>
+      <div class="measure" id="tideMeasure" data-level="large" aria-label="Độ chênh mực nước triều">
+        <div class="measure-head"><span>Chênh lệch mực nước</span><strong id="rangeText">Lớn hơn</strong></div>
+        <div class="measure-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="control-title">Chọn thời điểm</div>
+      <div class="controls" role="group" aria-label="Chọn trạng thái thủy triều">
+        <button id="spring" type="button" aria-pressed="true">🌑 Đầu tháng · triều cường</button>
+        <button id="neap" type="button" aria-pressed="false">🌓 Khoảng mùng 8 · triều kém</button>
+        <button id="full" type="button" aria-pressed="false">🌕 Gần rằm · triều cường</button>
+        <button id="reset" type="button">↺ Đặt lại góc nhìn</button>
+      </div>
+      <p class="hint">Vùng xanh trong quanh Trái Đất biểu thị nước biển.</p>
+    </aside>
+  </div>
+  <section class="timeline" aria-label="Diễn biến trong tháng âm lịch">
+    <div class="timeline-head"><label for="lunarDay">Khám phá một tháng âm lịch</label><output id="dayOutput" for="lunarDay">Mùng 1 · trăng non</output></div>
+    <input id="lunarDay" type="range" min="1" max="30" step="1" value="1" aria-describedby="calendarNote">
+    <div class="ticks" aria-hidden="true"><span>01<br>🌑 Trăng non</span><span>08<br>🌓 Bán nguyệt</span><span>15<br>🌕 Trăng tròn</span><span>22<br>🌗 Bán nguyệt</span><span>30<br>🌑 Trăng non</span></div>
+    <p id="calendarNote">Mô hình lấy Trái Đất làm mốc. Hướng Mặt Trời thay đổi chậm do Trái Đất quay quanh Mặt Trời; Mặt Trăng đổi vị trí nhanh hơn.</p>
+  </section>
+  <div class="insights">
+    <section class="info-card"><div class="number">01 / QUY LUẬT</div><h3>Khi nào triều cường?</h3><p>Gần trăng non và trăng tròn, ba thiên thể gần thẳng hàng. Độ chênh giữa nước lên và nước xuống lớn hơn. Gần hai kỳ bán nguyệt, chênh lệch nhỏ hơn.</p></section>
+    <section class="info-card"><div class="number">02 / CÂU HỎI THƯỜNG GẶP</div><h3>Trăng tròn có phải trăng rằm?</h3><p>“Rằm” là ngày 15 âm lịch; “trăng tròn” là một thời điểm thiên văn. Hai mốc thường rất gần nhau nhưng không nhất thiết trùng đúng ngày, giờ.</p></section>
+  </div>
+  <p class="note">Kích thước và khoảng cách được phóng đại để dễ quan sát. Ngày âm lịch chỉ là ví dụ gần đúng, không phải lịch hoặc dự báo thủy triều thực tế. Mực nước tại mỗi bờ biển còn phụ thuộc địa hình và nhiều yếu tố khác.</p>
+  <p class="note sources">Nguồn kiến thức: <a href="https://oceanservice.noaa.gov/facts/springtide.html" target="_blank" rel="noopener noreferrer">NOAA: triều cường và triều kém</a> · <a href="https://science.nasa.gov/moon/moon-phases/" target="_blank" rel="noopener noreferrer">NASA: các pha Mặt Trăng</a>.</p>
+</main>
+<script>
+(()=>{
+  const canvas=document.getElementById('scene'), gl=canvas.getContext('webgl',{alpha:true,antialias:true});
+  if(!gl){document.querySelector('.model').innerHTML='<p style="padding:2rem">Trình duyệt này chưa hỗ trợ WebGL. Hãy mở bằng phiên bản Chrome, Edge hoặc Firefox mới.</p>';return;}
+  const vs=`attribute vec3 p; attribute vec3 n; uniform mat4 mvp; uniform mat4 model; varying vec3 normal; varying vec3 pos; void main(){vec4 world=model*vec4(p,1.);pos=world.xyz;normal=normalize(mat3(model)*n);gl_Position=mvp*vec4(p,1.);}`;
+  const fs=`precision mediump float; varying vec3 normal; varying vec3 pos; uniform vec3 color; uniform float glow; uniform float alpha; void main(){float light=.35+.65*max(dot(normalize(normal),normalize(vec3(-.65,.8,1.))),0.);float rim=pow(1.-abs(dot(normalize(normal),normalize(vec3(0.,0.,1.)))),2.);vec3 c=color*(glow>0.5?1.0:light)+color*rim*.15;gl_FragColor=vec4(c,alpha);}`;
+  const shader=(type,src)=>{const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s};
+  const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vs));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);gl.useProgram(program);
+  const loc={p:gl.getAttribLocation(program,'p'),n:gl.getAttribLocation(program,'n'),mvp:gl.getUniformLocation(program,'mvp'),model:gl.getUniformLocation(program,'model'),color:gl.getUniformLocation(program,'color'),glow:gl.getUniformLocation(program,'glow'),alpha:gl.getUniformLocation(program,'alpha')};
+  const verts=[],norms=[],indices=[],rings=32,segments=48;
+  for(let y=0;y<=rings;y++){let v=y/rings,theta=v*Math.PI;for(let x=0;x<=segments;x++){let u=x/segments,phi=u*2*Math.PI;let a=Math.sin(theta)*Math.cos(phi),b=Math.cos(theta),c=Math.sin(theta)*Math.sin(phi);verts.push(a,b,c);norms.push(a,b,c)}}
+  for(let y=0;y<rings;y++)for(let x=0;x<segments;x++){let a=y*(segments+1)+x,b=a+segments+1;indices.push(a,b,a+1,b,b+1,a+1)}
+  const buffer=(data,target)=>{let b=gl.createBuffer();gl.bindBuffer(target,b);gl.bufferData(target,data,gl.STATIC_DRAW);return b};
+  let pb=buffer(new Float32Array(verts),gl.ARRAY_BUFFER),nb=buffer(new Float32Array(norms),gl.ARRAY_BUFFER),ib=buffer(new Uint16Array(indices),gl.ELEMENT_ARRAY_BUFFER);
+  const I=()=>[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+  const mul=(a,b)=>{let o=new Array(16).fill(0);for(let col=0;col<4;col++)for(let row=0;row<4;row++)for(let k=0;k<4;k++)o[col*4+row]+=a[k*4+row]*b[col*4+k];return o};
+  const perspective=(fovy,aspect,near,far)=>{let f=1/Math.tan(fovy/2),m=I();m[0]=f/aspect;m[5]=f;m[10]=(far+near)/(near-far);m[11]=-1;m[14]=2*far*near/(near-far);m[15]=0;return m};
+  const normalize=v=>{let q=Math.hypot(...v);return v.map(x=>x/q)};
+  const lookAt=(eye,target)=>{let z=normalize(eye.map((x,i)=>x-target[i])),x=normalize([z[2],0,-z[0]]),y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]];let m=I();[x,y,z].forEach((v,c)=>v.forEach((n,r)=>m[r*4+c]=n));m[12]=-x.reduce((a,n,i)=>a+n*eye[i],0);m[13]=-y.reduce((a,n,i)=>a+n*eye[i],0);m[14]=-z.reduce((a,n,i)=>a+n*eye[i],0);return m};
+  const model=(pos,scale,angle=0)=>{let m=I(),c=Math.cos(angle),s=Math.sin(angle);m[0]=c*scale[0];m[1]=s*scale[0];m[4]=-s*scale[1];m[5]=c*scale[1];m[10]=scale[2];m[12]=pos[0];m[13]=pos[1];m[14]=pos[2];return m};
+  let yaw=.16,pitch=.22,distance=11,day=1,drag=null,pinch=0;
+  const scene=document.querySelector('.model');
+  function drawSphere(pos,scale,color,glow=0,alpha=1,transparent=false,angle=0){let m=model(pos,scale,angle);gl.uniformMatrix4fv(loc.model,false,new Float32Array(m));gl.uniformMatrix4fv(loc.mvp,false,new Float32Array(mul(vp,m)));gl.uniform3fv(loc.color,color);gl.uniform1f(loc.glow,glow);gl.uniform1f(loc.alpha,alpha);gl.depthMask(!transparent);gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);gl.depthMask(true)}
+  let vp;
+  function positions(lunarDay){let elapsed=lunarDay-1,earth=[.5,0,0],sunAngle=Math.PI-2*Math.PI*elapsed/365.25,relativeAngle=2*Math.PI*elapsed/29.53,moonAngle=sunAngle-relativeAngle;
+    return {earth,sun:[earth[0]+4.2*Math.cos(sunAngle),earth[1]+4.2*Math.sin(sunAngle),0],moon:[earth[0]+1.95*Math.cos(moonAngle),earth[1]+1.95*Math.sin(moonAngle),0],moonAngle,relativeAngle};
+  }
+  function draw(){let dpr=Math.min(devicePixelRatio||1,2),w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+    gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(loc.p);gl.bindBuffer(gl.ARRAY_BUFFER,nb);gl.vertexAttribPointer(loc.n,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(loc.n);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);
+    let eye=[distance*Math.sin(yaw)*Math.cos(pitch),distance*Math.sin(pitch),distance*Math.cos(yaw)*Math.cos(pitch)];vp=mul(perspective(Math.PI/3,w/h,.1,100),lookAt(eye,[0,0,0]));
+    let {sun,earth,moon,moonAngle,relativeAngle}=positions(day);
+    drawSphere(sun,[1.17,1.17,1.17],[1,.58,.13],1);drawSphere(earth,[.83,.83,.83],[.05,.42,.8]);drawSphere(moon,[.38,.38,.38],[.75,.78,.8]);
+    let strength=Math.abs(Math.cos(relativeAngle)),tide=[1.06+.19*strength,.98,.98];drawSphere(earth,tide,[.08,.75,1],0,.28,true,moonAngle);
+    function place(id,p,above){let v=[p[0],p[1]+above,p[2],1],q=[0,0,0,0];for(let r=0;r<4;r++)for(let c=0;c<4;c++)q[r]+=vp[c*4+r]*v[c];let el=document.getElementById(id);el.style.left=((q[0]/q[3]+1)*50)+'%';el.style.top=((1-q[1]/q[3])*50)+'%';el.style.display=q[3]>0?'':'none'}
+    place('sunLabel',sun,1.6);place('earthLabel',earth,1.32);place('moonLabel',moon,.65);
+    function placeGlow(id,p,diameter){let v=[...p,1],q=[0,0,0,0];for(let r=0;r<4;r++)for(let c=0;c<4;c++)q[r]+=vp[c*4+r]*v[c];let el=document.getElementById(id),size=Math.max(110,Math.min(460,diameter*canvas.clientHeight/(2*Math.tan(Math.PI/6)*q[3])));el.style.left=((q[0]/q[3]+1)*50)+'%';el.style.top=((1-q[1]/q[3])*50)+'%';el.style.setProperty('--glow-size',size+'px');el.style.display=q[3]>0?'':'none'}
+    placeGlow('sunGlow',sun,3.7);placeGlow('tideGlow',earth,2.8);
+  }
+  function setDay(value){day=Number(value);let {relativeAngle}=positions(day),alignment=Math.abs(Math.cos(relativeAngle));
+    document.getElementById('lunarDay').value=day;
+    for(const [id,selected] of [['spring',day===1],['neap',day===8],['full',day===15]])document.getElementById(id).setAttribute('aria-pressed',selected);
+    let phase=day<=3||day>=28?'trăng non':day>=13&&day<=17?'trăng tròn':day>=6&&day<=10?'bán nguyệt đầu tháng':day>=20&&day<=24?'bán nguyệt cuối tháng':'trăng đang thay đổi';
+    document.getElementById('dayOutput').textContent=(day===1?'Mùng 1':'Ngày '+day)+' · '+phase;
+    let title=document.getElementById('title'),explain=document.getElementById('explain');
+    let measure=document.getElementById('tideMeasure'),range=document.getElementById('rangeText');
+    if(alignment>.8){title.textContent='Triều cường gần '+(Math.cos(relativeAngle)>0?'trăng non':'trăng tròn');explain.textContent='Ba thiên thể gần thẳng hàng. Tác động gây thủy triều của Mặt Trời và Mặt Trăng cộng thêm vào nhau, nên độ chênh giữa nước lên và nước xuống lớn hơn.';measure.dataset.level='large';range.textContent='Lớn hơn'}
+    else if(alignment<.35){title.textContent='Triều kém gần kỳ bán nguyệt';explain.textContent='Nhìn từ Trái Đất, hướng Mặt Trời và Mặt Trăng gần vuông góc. Hai tác động bù trừ một phần, nên độ chênh giữa nước lên và nước xuống nhỏ hơn.';measure.dataset.level='small';range.textContent='Nhỏ hơn'}
+    else{title.textContent='Giai đoạn chuyển tiếp';explain.textContent='Mặt Trăng tiếp tục chuyển động quanh Trái Đất. Độ chênh giữa nước lên và nước xuống đang thay đổi dần giữa triều cường và triều kém.';measure.dataset.level='medium';range.textContent='Đang thay đổi'}
+    draw();
+  }
+  document.getElementById('spring').onclick=()=>setDay(1);document.getElementById('neap').onclick=()=>setDay(8);document.getElementById('full').onclick=()=>setDay(15);document.getElementById('lunarDay').oninput=e=>setDay(e.target.value);document.getElementById('reset').onclick=()=>{yaw=.16;pitch=.22;distance=11;draw()};
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag=[e.clientX,e.clientY]});canvas.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-drag[0])*.008;pitch=Math.max(-1.2,Math.min(1.2,pitch+(e.clientY-drag[1])*.008));drag=[e.clientX,e.clientY];draw()});canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();distance=Math.max(6,Math.min(21,distance*Math.exp(e.deltaY*.001)));draw()},{passive:false});
+  canvas.addEventListener('touchstart',e=>{if(e.touches.length===2)pinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)},{passive:true});canvas.addEventListener('touchmove',e=>{if(e.touches.length===2&&pinch){let now=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);distance=Math.max(6,Math.min(21,distance*pinch/now));pinch=now;draw()}},{passive:true});
+  new ResizeObserver(draw).observe(canvas);setDay(1);
+})();
+</script>
+</body>
+</html>

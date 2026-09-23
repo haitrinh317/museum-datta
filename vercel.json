@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/thuy-trieu",
+      "destination": "/mo-hinh-thuy-trieu-3d.html"
+    },
+    {
       "source": "/browse",
       "destination": "/browse/index.html"
     },
